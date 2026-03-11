@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.claude
+.husky
+.editorconfig
+.prettierrc
+.prettierignore
+docs
+hack
+*.md
+LICENSE

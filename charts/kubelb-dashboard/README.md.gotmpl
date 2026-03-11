@@ -1,0 +1,34 @@
+# {{ .Name }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Install
+
+```bash
+helm install {{ .Name }} oci://ghcr.io/kubermatic/charts/{{ .Name }} --version {{ template "chart.version" . }}
+```
+
+## Example with Ingress
+
+```bash
+helm install {{ .Name }} oci://ghcr.io/kubermatic/charts/{{ .Name }} \
+  --set ingress.enabled=true \
+  --set ingress.className=nginx \
+  --set ingress.hosts[0].host=app.example.com \
+  --set ingress.hosts[0].paths[0].path=/ \
+  --set ingress.hosts[0].paths[0].pathType=Prefix
+```
+
+## Security
+
+The chart runs with a hardened security context by default:
+
+- Non-root user (uid 101, nginx)
+- Read-only root filesystem
+- All capabilities dropped
+- Seccomp RuntimeDefault profile
+- emptyDir volumes for nginx writable paths (`/tmp`, `/var/cache/nginx`, `/var/run`)
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "chart.maintainersSection" . }}
