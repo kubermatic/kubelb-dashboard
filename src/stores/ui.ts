@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-import type { ReactNode } from "react";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-export function Layout({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-auto p-5">{children}</main>
-      </div>
-    </div>
-  );
+interface UIState {
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 }
+
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      sidebarCollapsed: false,
+      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+    }),
+    { name: "kubelb-ui" },
+  ),
+);

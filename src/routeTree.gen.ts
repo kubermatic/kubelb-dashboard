@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
+import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
+import { Route as MetricsIndexRouteImport } from "./routes/metrics/index"
+import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
+import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
+import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
+const TenantsIndexRoute = TenantsIndexRouteImport.update({
+  id: "/tenants/",
+  path: "/tenants/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoutesIndexRoute = RoutesIndexRouteImport.update({
+  id: "/routes/",
+  path: "/routes/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetricsIndexRoute = MetricsIndexRouteImport.update({
+  id: "/metrics/",
+  path: "/metrics/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoadBalancersIndexRoute = LoadBalancersIndexRouteImport.update({
+  id: "/load-balancers/",
+  path: "/load-balancers/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnvoyProxyIndexRoute = EnvoyProxyIndexRouteImport.update({
+  id: "/envoy-proxy/",
+  path: "/envoy-proxy/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigurationIndexRoute = ConfigurationIndexRouteImport.update({
+  id: "/configuration/",
+  path: "/configuration/",
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/configuration/": typeof ConfigurationIndexRoute
+  "/envoy-proxy/": typeof EnvoyProxyIndexRoute
+  "/load-balancers/": typeof LoadBalancersIndexRoute
+  "/metrics/": typeof MetricsIndexRoute
+  "/routes/": typeof RoutesIndexRoute
+  "/tenants/": typeof TenantsIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/configuration": typeof ConfigurationIndexRoute
+  "/envoy-proxy": typeof EnvoyProxyIndexRoute
+  "/load-balancers": typeof LoadBalancersIndexRoute
+  "/metrics": typeof MetricsIndexRoute
+  "/routes": typeof RoutesIndexRoute
+  "/tenants": typeof TenantsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/configuration/": typeof ConfigurationIndexRoute
+  "/envoy-proxy/": typeof EnvoyProxyIndexRoute
+  "/load-balancers/": typeof LoadBalancersIndexRoute
+  "/metrics/": typeof MetricsIndexRoute
+  "/routes/": typeof RoutesIndexRoute
+  "/tenants/": typeof TenantsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/"
+  fullPaths:
+    | "/"
+    | "/configuration/"
+    | "/envoy-proxy/"
+    | "/load-balancers/"
+    | "/metrics/"
+    | "/routes/"
+    | "/tenants/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/"
-  id: "__root__" | "/"
+  to:
+    | "/"
+    | "/configuration"
+    | "/envoy-proxy"
+    | "/load-balancers"
+    | "/metrics"
+    | "/routes"
+    | "/tenants"
+  id:
+    | "__root__"
+    | "/"
+    | "/configuration/"
+    | "/envoy-proxy/"
+    | "/load-balancers/"
+    | "/metrics/"
+    | "/routes/"
+    | "/tenants/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfigurationIndexRoute: typeof ConfigurationIndexRoute
+  EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
+  LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
+  MetricsIndexRoute: typeof MetricsIndexRoute
+  RoutesIndexRoute: typeof RoutesIndexRoute
+  TenantsIndexRoute: typeof TenantsIndexRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -48,11 +130,59 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/tenants/": {
+      id: "/tenants/"
+      path: "/tenants"
+      fullPath: "/tenants/"
+      preLoaderRoute: typeof TenantsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/routes/": {
+      id: "/routes/"
+      path: "/routes"
+      fullPath: "/routes/"
+      preLoaderRoute: typeof RoutesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/metrics/": {
+      id: "/metrics/"
+      path: "/metrics"
+      fullPath: "/metrics/"
+      preLoaderRoute: typeof MetricsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/load-balancers/": {
+      id: "/load-balancers/"
+      path: "/load-balancers"
+      fullPath: "/load-balancers/"
+      preLoaderRoute: typeof LoadBalancersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/envoy-proxy/": {
+      id: "/envoy-proxy/"
+      path: "/envoy-proxy"
+      fullPath: "/envoy-proxy/"
+      preLoaderRoute: typeof EnvoyProxyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/configuration/": {
+      id: "/configuration/"
+      path: "/configuration"
+      fullPath: "/configuration/"
+      preLoaderRoute: typeof ConfigurationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfigurationIndexRoute: ConfigurationIndexRoute,
+  EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
+  LoadBalancersIndexRoute: LoadBalancersIndexRoute,
+  MetricsIndexRoute: MetricsIndexRoute,
+  RoutesIndexRoute: RoutesIndexRoute,
+  TenantsIndexRoute: TenantsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

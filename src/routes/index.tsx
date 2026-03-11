@@ -17,14 +17,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: Home,
+  component: Overview,
 });
 
-function Home() {
+function Overview() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Home</h1>
-      <p className="mt-2 text-gray-600">Welcome to the frontend template.</p>
+      <h1 className="text-2xl font-semibold">Overview</h1>
+      <p className="mt-2 text-muted-foreground">KubeLB cluster overview and health summary.</p>
     </div>
   );
 }

@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-import type { ReactNode } from "react";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { createFileRoute } from "@tanstack/react-router";
 
-export function Layout({ children }: { children: ReactNode }) {
+export const Route = createFileRoute("/load-balancers/")({
+  component: LoadBalancers,
+});
+
+function LoadBalancers() {
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-auto p-5">{children}</main>
-      </div>
+    <div>
+      <h1 className="text-2xl font-semibold">Load Balancers</h1>
+      <p className="mt-2 text-muted-foreground">
+        View and manage load balancer services across tenants.
+      </p>
     </div>
   );
 }
