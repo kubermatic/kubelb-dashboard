@@ -38,6 +38,12 @@ export const queryKeys = {
   pods: {
     list: (ns?: string) => (ns ? (["pods", "list", ns] as const) : (["pods", "list"] as const)),
   },
+  deployments: {
+    list: (ns?: string, labels?: string) =>
+      ns
+        ? (["deployments", "list", ns, labels] as const)
+        : (["deployments", "list", labels] as const),
+  },
   namespaces: {
     list: () => ["namespaces", "list"] as const,
   },

@@ -78,3 +78,23 @@ export interface WatchEvent<T> {
   type: "ADDED" | "MODIFIED" | "DELETED" | "ERROR";
   object: T;
 }
+
+export interface DeploymentSpec {
+  replicas?: number;
+  selector?: { matchLabels?: Record<string, string> };
+}
+
+export interface DeploymentStatus {
+  replicas?: number;
+  readyReplicas?: number;
+  availableReplicas?: number;
+  conditions?: Condition[];
+}
+
+export interface Deployment {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMeta;
+  spec: DeploymentSpec;
+  status?: DeploymentStatus;
+}
