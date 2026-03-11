@@ -14,7 +14,7 @@ const licenseHeaderLines = fs
   .split("\n");
 
 export default defineConfig([
-  globalIgnores(["dist", "src/routeTree.gen.ts", "hack"]),
+  globalIgnores(["dist", "src/routeTree.gen.ts", "hack", "proxy"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
