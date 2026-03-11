@@ -17,10 +17,20 @@ await app.register(proxy, {
   prefix: "/api/kube",
   rewritePrefix: "",
   websocket: true,
-  http: {
-    requestOptions: {
-      agent: config.agent,
-      headers: config.token ? { Authorization: `Bearer ${config.token}` } : undefined,
+  undici: {
+    connect: {
+      ca: config.ca?.toString(),
+      cert: config.cert?.toString(),
+      key: config.key?.toString(),
+      rejectUnauthorized: config.rejectUnauthorized,
+    },
+  },
+  replyOptions: {
+    rewriteRequestHeaders: (_originalReq, headers) => {
+      if (config.token) {
+        return { ...headers, authorization: `Bearer ${config.token}` };
+      }
+      return headers;
     },
   },
 });
