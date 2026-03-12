@@ -14,32 +14,15 @@
  * limitations under the License.
  */
 
-import { ExternalLink } from "lucide-react";
-
-const links = [
-  { label: "Documentation", href: "https://docs.kubermatic.com/kubelb" },
-  { label: "GitHub", href: "https://github.com/kubermatic/kubelb" },
-];
+import { useEdition } from "@/hooks/use-edition";
 
 export function Footer() {
+  const { isEE } = useEdition();
+
   return (
     <footer className="border-t px-3 py-2 md:px-5">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>KubeLB Dashboard</span>
-        <div className="flex gap-3">
-          {links.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              {link.label}
-              <ExternalLink className="size-3" />
-            </a>
-          ))}
-        </div>
+      <div className="flex items-center justify-center text-xs text-muted-foreground">
+        <span>{isEE ? "Enterprise Edition" : "Community Edition"}</span>
       </div>
     </footer>
   );
