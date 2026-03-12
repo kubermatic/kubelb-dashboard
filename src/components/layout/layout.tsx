@@ -15,6 +15,7 @@
  */
 
 import type { ReactNode } from "react";
+import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { MobileSidebar, Sidebar } from "@/components/layout/sidebar";
 
@@ -24,7 +25,10 @@ export function Layout({ children }: { children: ReactNode }) {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto p-3 md:p-5">{children}</main>
+        <div className="flex flex-1 flex-col overflow-auto">
+          <main className="flex-1 p-3 md:p-5">{children}</main>
+          <Footer />
+        </div>
       </div>
       <MobileSidebar />
     </div>
