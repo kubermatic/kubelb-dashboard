@@ -24,6 +24,7 @@ import {
   Network,
   Route as RouteIcon,
   Shield,
+  ShieldAlert,
   Users,
   XCircle,
 } from "lucide-react";
@@ -34,6 +35,8 @@ import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useTenants } from "@/hooks/use-tenants";
+import { useWAFPolicies } from "@/hooks/use-waf-policies";
+import { useEdition } from "@/hooks/use-edition";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { Condition, Deployment } from "@/types/kubernetes";
@@ -334,30 +337,35 @@ function ClusterStatus({ isHealthy }: { isHealthy: boolean }) {
 }
 
 function Overview() {
+  const { isEE } = useEdition();
   const tenantQuery = useTenants();
   const lbQuery = useLoadBalancers();
   const routeQuery = useRoutes();
   const deploymentQuery = useDeployments(undefined, "app.kubernetes.io/name=kubelb-envoy-proxy");
   const syncSecretQuery = useSyncSecrets();
+  const wafQuery = useWAFPolicies();
 
   const lbItems = lbQuery.data?.items ?? [];
   const routeItems = routeQuery.data?.items ?? [];
   const deploymentItems = deploymentQuery.data?.items ?? [];
   const syncSecretItems = syncSecretQuery.data?.items ?? [];
+  const wafItems = wafQuery.data?.items ?? [];
 
   const allLoaded =
     !tenantQuery.isLoading &&
     !lbQuery.isLoading &&
     !routeQuery.isLoading &&
     !deploymentQuery.isLoading &&
-    !syncSecretQuery.isLoading;
+    !syncSecretQuery.isLoading &&
+    (!isEE || !wafQuery.isLoading);
 
   const anyError =
     tenantQuery.isError ||
     lbQuery.isError ||
     routeQuery.isError ||
     deploymentQuery.isError ||
-    syncSecretQuery.isError;
+    syncSecretQuery.isError ||
+    (isEE && wafQuery.isError);
 
   const lbCounts = countByConditionStatus(
     lbItems.map((lb) => ({
@@ -386,6 +394,7 @@ function Overview() {
   );
 
   const envoyProxyCounts = countDeploymentReadiness(deploymentItems);
+  const wafCounts = countByConditionStatus(wafItems, "Valid");
 
   function formatHealthSummary(counts: {
     ready: number;
@@ -413,7 +422,12 @@ function Overview() {
         {allLoaded && <ClusterStatus isHealthy={!anyError} />}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3",
+          isEE ? "xl:grid-cols-6" : "xl:grid-cols-5",
+        )}
+      >
         <MetricCard
           icon={Users}
           label="Tenants"
@@ -452,6 +466,15 @@ function Overview() {
           query={syncSecretQuery}
           href="/sync-secrets"
         />
+        {isEE && (
+          <MetricCard
+            icon={ShieldAlert}
+            label="WAF Policies"
+            accent="warning"
+            query={wafQuery}
+            href="/waf-policies"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -517,6 +540,15 @@ function Overview() {
                     href="/sync-secrets"
                   />
                 )}
+                {isEE && wafItems.length > 0 && (
+                  <ResourceHealthRow
+                    icon={ShieldAlert}
+                    label="WAF Policies"
+                    counts={wafCounts}
+                    total={wafItems.length}
+                    href="/waf-policies"
+                  />
+                )}
               </>
             )}
           </CardContent>
@@ -549,6 +581,16 @@ function Overview() {
                 icon: Shield,
                 href: "/configuration",
               },
+              ...(isEE
+                ? [
+                    {
+                      label: "WAF Policies",
+                      desc: "Web Application Firewall policies",
+                      icon: ShieldAlert,
+                      href: "/waf-policies",
+                    },
+                  ]
+                : []),
             ].map((item) => (
               <Link
                 key={item.href}
