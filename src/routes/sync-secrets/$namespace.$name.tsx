@@ -45,6 +45,7 @@ import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useDeleteSyncSecret, useUpdateSyncSecret } from "@/hooks/use-sync-secret-mutations";
 import { useSyncSecret } from "@/hooks/use-sync-secrets";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { SyncSecret } from "@/types/kubelb";
 
@@ -112,9 +113,11 @@ function SyncSecretDetail() {
             <FileCode />
             View YAML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            Edit
-          </Button>
+          {EDITING_ENABLED && (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
+          )}
           <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
             Delete
           </Button>
@@ -148,36 +151,41 @@ function SyncSecretDetail() {
         title={`SyncSecret: ${namespace}/${name}`}
       />
 
-      {crdSchema ? (
-        <ResourceFormDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title="Edit SyncSecret"
-          schema={crdSchema}
-          uiSchema={editUiSchema}
-          formData={sanitizeForEdit(secret) as Record<string, unknown>}
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));
-          }}
-        />
-      ) : (
-        <YamlEditorDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title="Edit SyncSecret"
-          resourceKind={RESOURCE_KIND}
-          apiVersion={API_VERSION}
-          initialYaml={editYaml}
-          lockedFields={{ name: true }}
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));
-          }}
-        />
-      )}
+      {EDITING_ENABLED &&
+        (crdSchema ? (
+          <ResourceFormDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            mode="edit"
+            title="Edit SyncSecret"
+            schema={crdSchema}
+            uiSchema={editUiSchema}
+            formData={sanitizeForEdit(secret) as Record<string, unknown>}
+            isPending={updateSyncSecret.isPending}
+            onSubmit={(parsed) => {
+              void updateSyncSecret
+                .mutateAsync(parsed as SyncSecret)
+                .then(() => setEditOpen(false));
+            }}
+          />
+        ) : YAML_EDITOR_ENABLED ? (
+          <YamlEditorDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            mode="edit"
+            title="Edit SyncSecret"
+            resourceKind={RESOURCE_KIND}
+            apiVersion={API_VERSION}
+            initialYaml={editYaml}
+            lockedFields={{ name: true }}
+            isPending={updateSyncSecret.isPending}
+            onSubmit={(parsed) => {
+              void updateSyncSecret
+                .mutateAsync(parsed as SyncSecret)
+                .then(() => setEditOpen(false));
+            }}
+          />
+        ) : null)}
 
       <DeleteDialog
         open={deleteOpen}

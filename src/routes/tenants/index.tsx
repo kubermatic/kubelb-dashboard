@@ -26,6 +26,7 @@ import {
 import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -176,7 +177,7 @@ function Tenants() {
                 icon: Download,
                 onClick: () => void downloadKubeconfig(row.original.metadata.name),
               },
-              {
+              EDITING_ENABLED && {
                 label: "Edit",
                 icon: Pencil,
                 onClick: () => setEditResource(row.original),
@@ -188,7 +189,7 @@ function Tenants() {
                 separator: true,
                 onClick: () => setDeleteResource(row.original),
               },
-            ]}
+            ].filter(Boolean)}
           />
         </div>
       ),
@@ -222,10 +223,12 @@ function Tenants() {
           searchColumn="name"
           searchPlaceholder="Filter tenants..."
           toolbarLeading={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Create Tenant
-            </Button>
+            EDITING_ENABLED ? (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create Tenant
+              </Button>
+            ) : undefined
           }
           initialSearch={search}
           initialPage={page}
@@ -242,35 +245,36 @@ function Tenants() {
         />
       )}
 
-      {crdSchema ? (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Tenant"
-          schema={crdSchema}
-          uiSchema={createUiSchema}
-          formData={TENANT_TEMPLATE}
-          isPending={createTenant.isPending}
-          onSubmit={(parsed) => {
-            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
-          }}
-        />
-      ) : (
-        <YamlEditorDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Tenant"
-          resourceKind={RESOURCE_KIND}
-          apiVersion={API_VERSION}
-          initialYaml={yaml.dump(TENANT_TEMPLATE, { noRefs: true })}
-          isPending={createTenant.isPending}
-          onSubmit={(parsed) => {
-            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      {EDITING_ENABLED &&
+        (crdSchema ? (
+          <ResourceFormDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            mode="create"
+            title="Create Tenant"
+            schema={crdSchema}
+            uiSchema={createUiSchema}
+            formData={TENANT_TEMPLATE}
+            isPending={createTenant.isPending}
+            onSubmit={(parsed) => {
+              void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+            }}
+          />
+        ) : YAML_EDITOR_ENABLED ? (
+          <YamlEditorDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            mode="create"
+            title="Create Tenant"
+            resourceKind={RESOURCE_KIND}
+            apiVersion={API_VERSION}
+            initialYaml={yaml.dump(TENANT_TEMPLATE, { noRefs: true })}
+            isPending={createTenant.isPending}
+            onSubmit={(parsed) => {
+              void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+            }}
+          />
+        ) : null)}
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -279,42 +283,43 @@ function Tenants() {
         title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {crdSchema ? (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
-          schema={crdSchema}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateTenant.isPending}
-          onSubmit={(parsed) => {
-            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
-          }}
-        />
-      ) : (
-        <YamlEditorDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
-          resourceKind={RESOURCE_KIND}
-          apiVersion={API_VERSION}
-          initialYaml={
-            editResource
-              ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
-              : ""
-          }
-          lockedFields={{ name: true }}
-          isPending={updateTenant.isPending}
-          onSubmit={(parsed) => {
-            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
-          }}
-        />
-      )}
+      {EDITING_ENABLED &&
+        (crdSchema ? (
+          <ResourceFormDialog
+            open={!!editResource}
+            onOpenChange={(open) => !open && setEditResource(null)}
+            mode="edit"
+            title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+            schema={crdSchema}
+            uiSchema={editUiSchema}
+            formData={
+              editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+            }
+            isPending={updateTenant.isPending}
+            onSubmit={(parsed) => {
+              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+            }}
+          />
+        ) : YAML_EDITOR_ENABLED ? (
+          <YamlEditorDialog
+            open={!!editResource}
+            onOpenChange={(open) => !open && setEditResource(null)}
+            mode="edit"
+            title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+            resourceKind={RESOURCE_KIND}
+            apiVersion={API_VERSION}
+            initialYaml={
+              editResource
+                ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
+                : ""
+            }
+            lockedFields={{ name: true }}
+            isPending={updateTenant.isPending}
+            onSubmit={(parsed) => {
+              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+            }}
+          />
+        ) : null)}
 
       {deleteResource && (
         <DeleteDialog

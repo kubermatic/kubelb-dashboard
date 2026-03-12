@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { FORM_EDITOR_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { shadcnTheme } from "@/lib/rjsf/theme";
 
 const Form = withTheme(shadcnTheme);
@@ -59,7 +60,8 @@ export function ResourceFormDialog({
   onSubmit,
   isPending,
 }: ResourceFormDialogProps) {
-  const [tab, setTab] = useState<string>("form");
+  const defaultTab = FORM_EDITOR_ENABLED ? "form" : "yaml";
+  const [tab, setTab] = useState<string>(defaultTab);
   const [localFormData, setLocalFormData] = useState<Record<string, unknown>>(formData ?? {});
   const [yamlValue, setYamlValue] = useState("");
   const [yamlError, setYamlError] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export function ResourceFormDialog({
     setLocalFormData(formData ?? {});
     setYamlValue("");
     setYamlError(null);
-    setTab("form");
+    setTab(defaultTab);
     onOpenChange(next);
   };
 
@@ -137,34 +139,40 @@ export function ResourceFormDialog({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={handleTabChange} className="flex-1 flex flex-col min-h-0">
-          <TabsList>
-            <TabsTrigger value="form">Form</TabsTrigger>
-            <TabsTrigger value="yaml">YAML</TabsTrigger>
-          </TabsList>
+          {FORM_EDITOR_ENABLED && YAML_EDITOR_ENABLED && (
+            <TabsList>
+              <TabsTrigger value="form">Form</TabsTrigger>
+              <TabsTrigger value="yaml">YAML</TabsTrigger>
+            </TabsList>
+          )}
 
-          <TabsContent value="form" className="flex-1 overflow-y-auto mt-0 pt-4">
-            <Form
-              schema={schema}
-              uiSchema={formUiSchema}
-              formData={localFormData}
-              validator={validator}
-              onChange={handleFormChange}
-              onError={() => {}}
-            />
-          </TabsContent>
+          {FORM_EDITOR_ENABLED && (
+            <TabsContent value="form" className="flex-1 overflow-y-auto mt-0 pt-4">
+              <Form
+                schema={schema}
+                uiSchema={formUiSchema}
+                formData={localFormData}
+                validator={validator}
+                onChange={handleFormChange}
+                onError={() => {}}
+              />
+            </TabsContent>
+          )}
 
-          <TabsContent value="yaml" className="flex-1 flex flex-col min-h-0 mt-0 pt-4">
-            <Textarea
-              className="min-h-[200px] flex-1 resize-y font-mono text-sm"
-              value={yamlValue}
-              onChange={(e) => {
-                setYamlValue(e.target.value);
-                setYamlError(null);
-              }}
-              spellCheck={false}
-            />
-            {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
-          </TabsContent>
+          {YAML_EDITOR_ENABLED && (
+            <TabsContent value="yaml" className="flex-1 flex flex-col min-h-0 mt-0 pt-4">
+              <Textarea
+                className="min-h-[200px] flex-1 resize-y font-mono text-sm"
+                value={yamlValue}
+                onChange={(e) => {
+                  setYamlValue(e.target.value);
+                  setYamlError(null);
+                }}
+                spellCheck={false}
+              />
+              {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
+            </TabsContent>
+          )}
         </Tabs>
 
         <DialogFooter>
