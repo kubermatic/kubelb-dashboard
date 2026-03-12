@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -22,13 +23,15 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Route as RouteIcon } from "lucide-react";
+import { FileText, Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useRoutes } from "@/hooks/use-routes";
 import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
@@ -71,65 +74,6 @@ const statusStyles: Record<RouteConditionStatus, string> = {
   Pending: "bg-warning/10 text-warning hover:bg-warning/20",
 };
 
-const columns: ColumnDef<RouteType>[] = [
-  {
-    accessorFn: (row) => row.metadata.name,
-    id: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-    cell: ({ row }) => {
-      const { name, namespace } = row.original.metadata;
-      return (
-        <Link
-          to="/routes/$namespace/$name"
-          params={{ namespace: namespace ?? "default", name }}
-          className="font-medium text-primary hover:underline"
-        >
-          {name}
-        </Link>
-      );
-    },
-  },
-  {
-    accessorFn: (row) => row.metadata.namespace,
-    id: "namespace",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
-  },
-  {
-    id: "type",
-    accessorFn: deriveRouteType,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-  },
-  {
-    id: "source",
-    accessorFn: (row) => row.status?.resources?.source ?? "\u2014",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
-  },
-  {
-    id: "endpoints",
-    accessorFn: getEndpointCount,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
-  },
-  {
-    id: "status",
-    accessorFn: getRouteStatus,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) => {
-      const status = getRouteStatus(row.original);
-      return <Badge className={statusStyles[status]}>{status}</Badge>;
-    },
-  },
-  {
-    id: "age",
-    accessorFn: (row) => row.metadata.creationTimestamp,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-    cell: ({ row }) => {
-      const ts = row.original.metadata.creationTimestamp;
-      return ts ? formatAge(ts) : "\u2014";
-    },
-    sortingFn: "datetime",
-  },
-];
-
 function Routes() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
@@ -137,6 +81,80 @@ function Routes() {
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
   const items = data?.items ?? [];
+  const [yamlResource, setYamlResource] = useState<RouteType | null>(null);
+
+  const columns: ColumnDef<RouteType>[] = [
+    {
+      accessorFn: (row) => row.metadata.name,
+      id: "name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+      cell: ({ row }) => {
+        const { name, namespace } = row.original.metadata;
+        return (
+          <Link
+            to="/routes/$namespace/$name"
+            params={{ namespace: namespace ?? "default", name }}
+            className="font-medium text-primary hover:underline"
+          >
+            {name}
+          </Link>
+        );
+      },
+    },
+    {
+      accessorFn: (row) => row.metadata.namespace,
+      id: "namespace",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+    },
+    {
+      id: "type",
+      accessorFn: deriveRouteType,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+    },
+    {
+      id: "source",
+      accessorFn: (row) => row.status?.resources?.source ?? "\u2014",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
+    },
+    {
+      id: "endpoints",
+      accessorFn: getEndpointCount,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
+    },
+    {
+      id: "status",
+      accessorFn: getRouteStatus,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const status = getRouteStatus(row.original);
+        return <Badge className={statusStyles[status]}>{status}</Badge>;
+      },
+    },
+    {
+      id: "age",
+      accessorFn: (row) => row.metadata.creationTimestamp,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
+      cell: ({ row }) => {
+        const ts = row.original.metadata.creationTimestamp;
+        return ts ? formatAge(ts) : "\u2014";
+      },
+      sortingFn: "datetime",
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <RowActions
+            actions={[
+              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const updateSearch = (params: Partial<ListSearchParams>) =>
     void navigate({
@@ -180,6 +198,17 @@ function Routes() {
           }}
         />
       )}
+
+      <YamlViewer
+        open={!!yamlResource}
+        onOpenChange={(open) => !open && setYamlResource(null)}
+        resource={yamlResource}
+        title={
+          yamlResource
+            ? `Route: ${yamlResource.metadata.namespace}/${yamlResource.metadata.name}`
+            : undefined
+        }
+      />
     </div>
   );
 }

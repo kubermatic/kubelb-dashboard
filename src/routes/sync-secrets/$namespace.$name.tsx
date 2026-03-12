@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import yaml from "js-yaml";
+import { FileCode } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
+import { DeleteDialog } from "@/components/common/delete-dialog";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
+import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -33,8 +41,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useDeleteSyncSecret, useUpdateSyncSecret } from "@/hooks/use-sync-secret-mutations";
 import { useSyncSecret } from "@/hooks/use-sync-secrets";
+import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { SyncSecret } from "@/types/kubelb";
+
+const RESOURCE_KIND = "SyncSecret";
+const API_VERSION = "kubelb.k8c.io/v1alpha1";
+const CRD_NAME = "syncsecrets.kubelb.k8c.io";
 
 export const Route = createFileRoute("/sync-secrets/$namespace/$name")({
   component: SyncSecretDetail,
@@ -42,7 +58,16 @@ export const Route = createFileRoute("/sync-secrets/$namespace/$name")({
 
 function SyncSecretDetail() {
   const { namespace, name } = Route.useParams();
+  const navigate = useNavigate();
   const { data: secret, isLoading, error, refetch } = useSyncSecret(namespace, name);
+  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const updateSyncSecret = useUpdateSyncSecret();
+  const deleteSyncSecret = useDeleteSyncSecret();
+  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
+
+  const [yamlOpen, setYamlOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -69,16 +94,33 @@ function SyncSecretDetail() {
 
   if (!secret) return null;
 
+  const editYaml = yaml.dump(sanitizeForEdit(secret), { noRefs: true, lineWidth: -1 });
+
   return (
     <div className="space-y-6">
-      <ResourceHeader
-        name={secret.metadata.name}
-        namespace={secret.metadata.namespace}
-        kind="SyncSecret"
-        createdAt={secret.metadata.creationTimestamp}
-        backHref="/sync-secrets"
-        backLabel="Sync Secrets"
-      />
+      <div className="flex items-start justify-between">
+        <ResourceHeader
+          name={secret.metadata.name}
+          namespace={secret.metadata.namespace}
+          kind="SyncSecret"
+          createdAt={secret.metadata.creationTimestamp}
+          backHref="/sync-secrets"
+          backLabel="Sync Secrets"
+        />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>
+            <FileCode />
+            View YAML
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+            Delete
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -98,6 +140,61 @@ function SyncSecretDetail() {
           <MetadataSection metadata={secret.metadata} />
         </TabsContent>
       </Tabs>
+
+      <YamlViewer
+        open={yamlOpen}
+        onOpenChange={setYamlOpen}
+        resource={secret}
+        title={`SyncSecret: ${namespace}/${name}`}
+      />
+
+      {crdSchema ? (
+        <ResourceFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit SyncSecret"
+          schema={crdSchema}
+          uiSchema={editUiSchema}
+          formData={sanitizeForEdit(secret) as Record<string, unknown>}
+          isPending={updateSyncSecret.isPending}
+          onSubmit={(parsed) => {
+            void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));
+          }}
+        />
+      ) : (
+        <YamlEditorDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit SyncSecret"
+          resourceKind={RESOURCE_KIND}
+          apiVersion={API_VERSION}
+          initialYaml={editYaml}
+          lockedFields={{ name: true }}
+          isPending={updateSyncSecret.isPending}
+          onSubmit={(parsed) => {
+            void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));
+          }}
+        />
+      )}
+
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        resourceName={name}
+        resourceKind="SyncSecret"
+        isPending={deleteSyncSecret.isPending}
+        onConfirm={() => {
+          void deleteSyncSecret.mutateAsync({ namespace, name }).then(() => {
+            setDeleteOpen(false);
+            void navigate({
+              to: "/sync-secrets",
+              search: { search: "", page: 0, pageSize: 10 },
+            });
+          });
+        }}
+      />
     </div>
   );
 }

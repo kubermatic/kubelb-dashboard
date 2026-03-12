@@ -47,6 +47,21 @@ const RESOURCE_OVERRIDES: Record<string, ResourceUiConfig> = {
       },
     },
   },
+  SyncSecret: {
+    edit: {
+      metadata: {
+        name: { "ui:disabled": true },
+        namespace: { "ui:disabled": true },
+      },
+    },
+  },
+  Config: {
+    edit: {
+      metadata: {
+        name: { "ui:disabled": true },
+      },
+    },
+  },
 };
 
 function deepMerge(base: UiSchema, override: UiSchema): UiSchema {

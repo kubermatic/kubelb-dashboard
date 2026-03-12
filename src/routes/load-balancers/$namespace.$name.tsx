@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { FileCode } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { CopyButton } from "@/components/common/copy-button";
@@ -22,7 +24,9 @@ import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -44,6 +48,7 @@ export const Route = createFileRoute("/load-balancers/$namespace/$name")({
 function LoadBalancerDetail() {
   const { namespace, name } = Route.useParams();
   const { data: lb, isLoading, error, refetch } = useLoadBalancer(namespace, name);
+  const [yamlOpen, setYamlOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -72,14 +77,20 @@ function LoadBalancerDetail() {
 
   return (
     <div className="space-y-6">
-      <ResourceHeader
-        name={lb.metadata.name}
-        namespace={lb.metadata.namespace}
-        kind="LoadBalancer"
-        createdAt={lb.metadata.creationTimestamp}
-        backHref="/load-balancers"
-        backLabel="Load Balancers"
-      />
+      <div className="flex items-start justify-between">
+        <ResourceHeader
+          name={lb.metadata.name}
+          namespace={lb.metadata.namespace}
+          kind="LoadBalancer"
+          createdAt={lb.metadata.creationTimestamp}
+          backHref="/load-balancers"
+          backLabel="Load Balancers"
+        />
+        <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>
+          <FileCode />
+          View YAML
+        </Button>
+      </div>
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -99,6 +110,13 @@ function LoadBalancerDetail() {
           <MetadataSection metadata={lb.metadata} />
         </TabsContent>
       </Tabs>
+
+      <YamlViewer
+        open={yamlOpen}
+        onOpenChange={setYamlOpen}
+        resource={lb}
+        title={`LoadBalancer: ${namespace}/${name}`}
+      />
     </div>
   );
 }

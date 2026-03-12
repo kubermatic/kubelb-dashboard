@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -22,14 +23,17 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Shield } from "lucide-react";
+import { FileText, Shield } from "lucide-react";
 import { useDeployments } from "@/hooks/use-deployments";
 import type { Deployment } from "@/types/kubernetes";
 import { DataTable } from "@/components/common/data-table";
+import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
@@ -50,62 +54,6 @@ function getDeploymentStatus(deployment: Deployment) {
   return { label: "Unavailable", status: "False" as const };
 }
 
-const columns: ColumnDef<Deployment>[] = [
-  {
-    accessorFn: (row) => row.metadata.name,
-    id: "name",
-    header: "Name",
-    cell: ({ row }) => (
-      <Link
-        to="/envoy-proxy/$namespace/$name"
-        params={{
-          namespace: row.original.metadata.namespace ?? "default",
-          name: row.original.metadata.name,
-        }}
-        className="font-medium text-primary hover:underline"
-      >
-        {row.original.metadata.name}
-      </Link>
-    ),
-  },
-  {
-    accessorFn: (row) => row.metadata.namespace,
-    id: "namespace",
-    header: "Namespace",
-  },
-  {
-    id: "replicas",
-    header: "Replicas",
-    cell: ({ row }) => {
-      const ready = row.original.status?.readyReplicas ?? 0;
-      const desired = row.original.spec.replicas ?? 0;
-      return `${ready}/${desired}`;
-    },
-  },
-  {
-    id: "available",
-    header: "Available",
-    cell: ({ row }) => row.original.status?.availableReplicas ?? 0,
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const { label, status } = getDeploymentStatus(row.original);
-      return <StatusBadge label={label} status={status} />;
-    },
-  },
-  {
-    accessorFn: (row) => row.metadata.creationTimestamp,
-    id: "age",
-    header: "Age",
-    cell: ({ row }) => {
-      const ts = row.original.metadata.creationTimestamp;
-      return ts ? formatAge(ts) : "\u2014";
-    },
-  },
-];
-
 function EnvoyProxy() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
@@ -116,6 +64,77 @@ function EnvoyProxy() {
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/envoy-proxy/" });
   const items = data?.items ?? [];
+  const [yamlResource, setYamlResource] = useState<Deployment | null>(null);
+
+  const columns: ColumnDef<Deployment>[] = [
+    {
+      accessorFn: (row) => row.metadata.name,
+      id: "name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+      cell: ({ row }) => (
+        <Link
+          to="/envoy-proxy/$namespace/$name"
+          params={{
+            namespace: row.original.metadata.namespace ?? "default",
+            name: row.original.metadata.name,
+          }}
+          className="font-medium text-primary hover:underline"
+        >
+          {row.original.metadata.name}
+        </Link>
+      ),
+    },
+    {
+      accessorFn: (row) => row.metadata.namespace,
+      id: "namespace",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+    },
+    {
+      id: "replicas",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Replicas" />,
+      cell: ({ row }) => {
+        const ready = row.original.status?.readyReplicas ?? 0;
+        const desired = row.original.spec.replicas ?? 0;
+        return `${ready}/${desired}`;
+      },
+    },
+    {
+      id: "available",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Available" />,
+      cell: ({ row }) => row.original.status?.availableReplicas ?? 0,
+    },
+    {
+      id: "status",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const { label, status } = getDeploymentStatus(row.original);
+        return <StatusBadge label={label} status={status} />;
+      },
+    },
+    {
+      accessorFn: (row) => row.metadata.creationTimestamp,
+      id: "age",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
+      cell: ({ row }) => {
+        const ts = row.original.metadata.creationTimestamp;
+        return ts ? formatAge(ts) : "\u2014";
+      },
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <RowActions
+            actions={[
+              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const updateSearch = (params: Partial<ListSearchParams>) =>
     void navigate({
@@ -157,6 +176,17 @@ function EnvoyProxy() {
           }}
         />
       )}
+
+      <YamlViewer
+        open={!!yamlResource}
+        onOpenChange={(open) => !open && setYamlResource(null)}
+        resource={yamlResource}
+        title={
+          yamlResource
+            ? `Deployment: ${yamlResource.metadata.namespace}/${yamlResource.metadata.name}`
+            : undefined
+        }
+      />
     </div>
   );
 }

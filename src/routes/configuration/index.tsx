@@ -14,14 +14,28 @@
  * limitations under the License.
  */
 
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { FileCode } from "lucide-react";
+import yaml from "js-yaml";
+import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { useConfigs } from "@/hooks/use-config";
+import { useUpdateConfig } from "@/hooks/use-config-mutations";
+import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { Config, EnvoyProxy, ConfigSpec } from "@/types/kubelb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
+import { YamlViewer } from "@/components/common/yaml-viewer";
+
+const RESOURCE_KIND = "Config";
+const API_VERSION = "kubelb.k8c.io/v1alpha1";
+const CRD_NAME = "configs.kubelb.k8c.io";
 
 export const Route = createFileRoute("/configuration/")({
   component: Configuration,
@@ -283,6 +297,12 @@ function ConfigView({ config }: { config: Config }) {
 
 function Configuration() {
   const { data, isLoading, isError, error, refetch } = useConfigs();
+  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const updateConfig = useUpdateConfig();
+  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
+
+  const [yamlOpen, setYamlOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -325,11 +345,24 @@ function Configuration() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Configuration</h1>
-        <p className="mt-1 text-muted-foreground">
-          Global KubeLB settings and cluster configuration.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Configuration</h1>
+          <p className="mt-1 text-muted-foreground">
+            Global KubeLB settings and cluster configuration.
+          </p>
+        </div>
+        {config && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>
+              <FileCode />
+              View YAML
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
+          </div>
+        )}
       </div>
 
       {config ? (
@@ -340,6 +373,46 @@ function Configuration() {
             <p className="text-muted-foreground">No configuration found</p>
           </CardContent>
         </Card>
+      )}
+
+      <YamlViewer
+        open={yamlOpen}
+        onOpenChange={setYamlOpen}
+        resource={config ?? null}
+        title={`Config: ${config?.metadata?.name ?? ""}`}
+      />
+
+      {crdSchema ? (
+        <ResourceFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
+          schema={crdSchema}
+          uiSchema={editUiSchema}
+          formData={config ? (sanitizeForEdit(config) as Record<string, unknown>) : undefined}
+          isPending={updateConfig.isPending}
+          onSubmit={(parsed) => {
+            void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
+          }}
+        />
+      ) : (
+        <YamlEditorDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
+          resourceKind={RESOURCE_KIND}
+          apiVersion={API_VERSION}
+          initialYaml={
+            config ? yaml.dump(sanitizeForEdit(config), { noRefs: true, lineWidth: -1 }) : ""
+          }
+          lockedFields={{ name: true }}
+          isPending={updateConfig.isPending}
+          onSubmit={(parsed) => {
+            void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
+          }}
+        />
       )}
     </div>
   );
