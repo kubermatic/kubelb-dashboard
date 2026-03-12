@@ -15,11 +15,11 @@
  */
 
 import { queryKeys } from "@/api/query-keys";
-import { useKubeList } from "@/hooks/use-kube-list";
+import { useKubeWatch } from "@/hooks/use-kube-watch";
 import type { Config } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
 export function useConfigs() {
-  return useKubeList<Config>(queryKeys.config.list(), `${BASE}/configs`);
+  return useKubeWatch<Config>(queryKeys.config.list(), `${BASE}/configs`);
 }

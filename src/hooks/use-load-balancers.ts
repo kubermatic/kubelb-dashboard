@@ -16,7 +16,7 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeList } from "@/hooks/use-kube-list";
+import { useKubeWatch } from "@/hooks/use-kube-watch";
 import type { LoadBalancer } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
@@ -25,7 +25,7 @@ export function useLoadBalancers(namespace?: string) {
   const path = namespace
     ? `${BASE}/namespaces/${namespace}/loadbalancers`
     : `${BASE}/loadbalancers`;
-  return useKubeList<LoadBalancer>(queryKeys.loadBalancers.list(namespace), path);
+  return useKubeWatch<LoadBalancer>(queryKeys.loadBalancers.list(namespace), path);
 }
 
 export function useLoadBalancer(namespace: string, name: string) {

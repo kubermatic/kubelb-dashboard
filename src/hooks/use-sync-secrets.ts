@@ -15,12 +15,12 @@
  */
 
 import { queryKeys } from "@/api/query-keys";
-import { useKubeList } from "@/hooks/use-kube-list";
+import { useKubeWatch } from "@/hooks/use-kube-watch";
 import type { SyncSecret } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
 export function useSyncSecrets(namespace?: string) {
   const path = namespace ? `${BASE}/namespaces/${namespace}/syncsecrets` : `${BASE}/syncsecrets`;
-  return useKubeList<SyncSecret>(queryKeys.syncSecrets.list(namespace), path);
+  return useKubeWatch<SyncSecret>(queryKeys.syncSecrets.list(namespace), path);
 }
