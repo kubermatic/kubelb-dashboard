@@ -71,7 +71,7 @@ export const Route = createFileRoute("/sync-secrets/")({
 function getSourceSecret(s: SyncSecret): string {
   const annotations = s.metadata.annotations;
   if (!annotations) return "\u2014";
-  const ns = annotations["kubelb.k8c.io/origin-namespace"] ?? "";
+  const ns = annotations["kubelb.k8c.io/origin-ns"] ?? "";
   const name = annotations["kubelb.k8c.io/origin-name"] ?? "";
   if (ns && name) return `${ns}/${name}`;
   if (name) return name;

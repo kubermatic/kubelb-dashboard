@@ -209,7 +209,7 @@ function SyncSecretDetail() {
 
 function OverviewTab({ secret }: { secret: SyncSecret }) {
   const annotations = secret.metadata.annotations ?? {};
-  const originNs = annotations["kubelb.k8c.io/origin-namespace"] ?? "\u2014";
+  const originNs = annotations["kubelb.k8c.io/origin-ns"] ?? "\u2014";
   const originName = annotations["kubelb.k8c.io/origin-name"] ?? "\u2014";
 
   return (
