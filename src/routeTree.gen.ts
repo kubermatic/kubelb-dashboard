@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as WafPoliciesIndexRouteImport } from "./routes/waf-policies/index"
 import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
 import { Route as SyncSecretsIndexRouteImport } from "./routes/sync-secrets/index"
 import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
 import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
 import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
+import { Route as WafPoliciesNameRouteImport } from "./routes/waf-policies/$name"
 import { Route as TenantsNameRouteImport } from "./routes/tenants/$name"
 import { Route as SyncSecretsNamespaceNameRouteImport } from "./routes/sync-secrets/$namespace.$name"
 import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namespace.$name"
@@ -25,6 +27,11 @@ import { Route as EnvoyProxyNamespaceNameRouteImport } from "./routes/envoy-prox
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WafPoliciesIndexRoute = WafPoliciesIndexRouteImport.update({
+  id: "/waf-policies/",
+  path: "/waf-policies/",
   getParentRoute: () => rootRouteImport,
 } as any)
 const TenantsIndexRoute = TenantsIndexRouteImport.update({
@@ -55,6 +62,11 @@ const EnvoyProxyIndexRoute = EnvoyProxyIndexRouteImport.update({
 const ConfigurationIndexRoute = ConfigurationIndexRouteImport.update({
   id: "/configuration/",
   path: "/configuration/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WafPoliciesNameRoute = WafPoliciesNameRouteImport.update({
+  id: "/waf-policies/$name",
+  path: "/waf-policies/$name",
   getParentRoute: () => rootRouteImport,
 } as any)
 const TenantsNameRoute = TenantsNameRouteImport.update({
@@ -88,12 +100,14 @@ const EnvoyProxyNamespaceNameRoute = EnvoyProxyNamespaceNameRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/tenants/$name": typeof TenantsNameRoute
+  "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
+  "/waf-policies/": typeof WafPoliciesIndexRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
@@ -102,12 +116,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/tenants/$name": typeof TenantsNameRoute
+  "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration": typeof ConfigurationIndexRoute
   "/envoy-proxy": typeof EnvoyProxyIndexRoute
   "/load-balancers": typeof LoadBalancersIndexRoute
   "/routes": typeof RoutesIndexRoute
   "/sync-secrets": typeof SyncSecretsIndexRoute
   "/tenants": typeof TenantsIndexRoute
+  "/waf-policies": typeof WafPoliciesIndexRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
@@ -117,12 +133,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
   "/tenants/$name": typeof TenantsNameRoute
+  "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
+  "/waf-policies/": typeof WafPoliciesIndexRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
@@ -133,12 +151,14 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/tenants/$name"
+    | "/waf-policies/$name"
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
     | "/routes/"
     | "/sync-secrets/"
     | "/tenants/"
+    | "/waf-policies/"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
@@ -147,12 +167,14 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/tenants/$name"
+    | "/waf-policies/$name"
     | "/configuration"
     | "/envoy-proxy"
     | "/load-balancers"
     | "/routes"
     | "/sync-secrets"
     | "/tenants"
+    | "/waf-policies"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
@@ -161,12 +183,14 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/tenants/$name"
+    | "/waf-policies/$name"
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
     | "/routes/"
     | "/sync-secrets/"
     | "/tenants/"
+    | "/waf-policies/"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
@@ -176,12 +200,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   TenantsNameRoute: typeof TenantsNameRoute
+  WafPoliciesNameRoute: typeof WafPoliciesNameRoute
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
   EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
   LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
   RoutesIndexRoute: typeof RoutesIndexRoute
   SyncSecretsIndexRoute: typeof SyncSecretsIndexRoute
   TenantsIndexRoute: typeof TenantsIndexRoute
+  WafPoliciesIndexRoute: typeof WafPoliciesIndexRoute
   EnvoyProxyNamespaceNameRoute: typeof EnvoyProxyNamespaceNameRoute
   LoadBalancersNamespaceNameRoute: typeof LoadBalancersNamespaceNameRoute
   RoutesNamespaceNameRoute: typeof RoutesNamespaceNameRoute
@@ -195,6 +221,13 @@ declare module "@tanstack/react-router" {
       path: "/"
       fullPath: "/"
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/waf-policies/": {
+      id: "/waf-policies/"
+      path: "/waf-policies"
+      fullPath: "/waf-policies/"
+      preLoaderRoute: typeof WafPoliciesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/tenants/": {
@@ -239,6 +272,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ConfigurationIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/waf-policies/$name": {
+      id: "/waf-policies/$name"
+      path: "/waf-policies/$name"
+      fullPath: "/waf-policies/$name"
+      preLoaderRoute: typeof WafPoliciesNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/tenants/$name": {
       id: "/tenants/$name"
       path: "/tenants/$name"
@@ -280,12 +320,14 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   TenantsNameRoute: TenantsNameRoute,
+  WafPoliciesNameRoute: WafPoliciesNameRoute,
   ConfigurationIndexRoute: ConfigurationIndexRoute,
   EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
   LoadBalancersIndexRoute: LoadBalancersIndexRoute,
   RoutesIndexRoute: RoutesIndexRoute,
   SyncSecretsIndexRoute: SyncSecretsIndexRoute,
   TenantsIndexRoute: TenantsIndexRoute,
+  WafPoliciesIndexRoute: WafPoliciesIndexRoute,
   EnvoyProxyNamespaceNameRoute: EnvoyProxyNamespaceNameRoute,
   LoadBalancersNamespaceNameRoute: LoadBalancersNamespaceNameRoute,
   RoutesNamespaceNameRoute: RoutesNamespaceNameRoute,

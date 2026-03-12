@@ -23,7 +23,7 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
@@ -39,63 +39,79 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
-import { useTenants } from "@/hooks/use-tenants";
-import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
-import { downloadKubeconfig } from "@/lib/download-kubeconfig";
+import { useWAFPolicies } from "@/hooks/use-waf-policies";
+import {
+  useCreateWAFPolicy,
+  useDeleteWAFPolicy,
+  useUpdateWAFPolicy,
+} from "@/hooks/use-waf-policy-mutations";
 import { formatAge } from "@/lib/format";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
-import type { Tenant } from "@/types/kubelb";
+import type { WAFPolicy } from "@/types/kubelb";
 
-const RESOURCE_KIND = "Tenant";
+const RESOURCE_KIND = "WAFPolicy";
 const API_VERSION = "kubelb.k8c.io/v1alpha1";
 
-const CRD_NAME = "tenants.kubelb.k8c.io";
+const CRD_NAME = "wafpolicies.kubelb.k8c.io";
 
-const TENANT_TEMPLATE = {
+const WAF_POLICY_TEMPLATE = {
   apiVersion: API_VERSION,
   kind: RESOURCE_KIND,
   metadata: { name: "" },
   spec: {},
 };
 
-export const Route = createFileRoute("/tenants/")({
+export const Route = createFileRoute("/waf-policies/")({
   validateSearch: validateListSearch,
   search: { middlewares: [stripSearchParams(listSearchDefaults)] },
-  component: Tenants,
+  component: WAFPolicies,
 });
 
-function FeatureBadge({ enabled }: { enabled: boolean }) {
+function targetDisplay(spec: WAFPolicy["spec"]): string {
+  if (spec.global) return "Global";
+  if (spec.targetRef) return spec.targetRef.name;
+  if (spec.targetSelector) return "Selector";
+  return "\u2014";
+}
+
+function validConditionBadge(policy: WAFPolicy) {
+  const condition = policy.status?.conditions?.find((c) => c.type === "Valid");
+  if (!condition) return <span className="text-sm text-muted-foreground">{"\u2014"}</span>;
+
+  const colorMap = {
+    True: "bg-success/10 text-success",
+    False: "bg-destructive/10 text-destructive",
+    Unknown: "bg-warning/10 text-warning",
+  } as const;
+
   return (
-    <Badge
-      className={enabled ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}
-      variant="outline"
-    >
-      {enabled ? "Enabled" : "Disabled"}
+    <Badge className={colorMap[condition.status]} variant="outline">
+      {condition.status}
     </Badge>
   );
 }
 
-function Tenants() {
-  const { data, isLoading, isError, error, refetch } = useTenants();
+function WAFPolicies() {
+  const { data, isLoading, isError, error, refetch } = useWAFPolicies();
   const navigate = useNavigate();
-  const { search, page, pageSize } = useSearch({ from: "/tenants/" });
+  const { search, page, pageSize } = useSearch({ from: "/waf-policies/" });
   const items = data?.items ?? [];
 
   const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
-  const createTenant = useCreateTenant();
-  const updateTenant = useUpdateTenant();
-  const deleteTenant = useDeleteTenant();
+  const createWAFPolicy = useCreateWAFPolicy();
+  const updateWAFPolicy = useUpdateWAFPolicy();
+  const deleteWAFPolicy = useDeleteWAFPolicy();
 
   const createUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "create"), []);
   const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [yamlViewerResource, setYamlViewerResource] = useState<Tenant | null>(null);
-  const [editResource, setEditResource] = useState<Tenant | null>(null);
-  const [deleteResource, setDeleteResource] = useState<Tenant | null>(null);
+  const [yamlViewerResource, setYamlViewerResource] = useState<WAFPolicy | null>(null);
+  const [editResource, setEditResource] = useState<WAFPolicy | null>(null);
+  const [deleteResource, setDeleteResource] = useState<WAFPolicy | null>(null);
 
-  const columns: ColumnDef<Tenant>[] = [
+  const columns: ColumnDef<WAFPolicy>[] = [
     {
       accessorKey: "metadata.name",
       id: "name",
@@ -110,7 +126,7 @@ function Tenants() {
       ),
       cell: ({ row }) => (
         <Link
-          to="/tenants/$name"
+          to="/waf-policies/$name"
           params={{ name: row.original.metadata.name }}
           className="font-medium text-primary hover:underline"
         >
@@ -119,26 +135,28 @@ function Tenants() {
       ),
     },
     {
-      id: "l4",
-      header: "L4",
-      cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.loadBalancer?.disable} />,
+      id: "target",
+      header: "Target",
+      cell: ({ row }) => <span className="text-sm">{targetDisplay(row.original.spec)}</span>,
     },
     {
-      id: "ingress",
-      header: "Ingress",
-      cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.ingress?.disable} />,
-    },
-    {
-      id: "gateway",
-      header: "Gateway",
-      cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.gatewayAPI?.disable} />,
-    },
-    {
-      id: "dnsDomain",
-      header: "DNS Domain",
+      id: "kind",
+      header: "Kind",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>
+        <span className="text-sm">{row.original.spec.targetRef?.kind ?? "\u2014"}</span>
       ),
+    },
+    {
+      id: "failureMode",
+      header: "Failure Mode",
+      cell: ({ row }) => (
+        <Badge variant="outline">{row.original.spec.failureMode ?? "Closed"}</Badge>
+      ),
+    },
+    {
+      id: "valid",
+      header: "Valid",
+      cell: ({ row }) => validConditionBadge(row.original),
     },
     {
       accessorKey: "metadata.creationTimestamp",
@@ -173,11 +191,6 @@ function Tenants() {
                   icon: FileText,
                   onClick: () => setYamlViewerResource(row.original),
                 },
-                {
-                  label: "Download Kubeconfig",
-                  icon: Download,
-                  onClick: () => void downloadKubeconfig(row.original.metadata.name),
-                },
                 EDITING_ENABLED && {
                   label: "Edit",
                   icon: Pencil,
@@ -200,7 +213,7 @@ function Tenants() {
 
   const updateSearch = (params: Partial<ListSearchParams>) =>
     void navigate({
-      from: "/tenants/",
+      from: "/waf-policies/",
       search: (prev) => ({ ...prev, ...params }),
       replace: true,
     });
@@ -208,27 +221,25 @@ function Tenants() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Tenants</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage tenant namespaces and their resource allocations.
-        </p>
+        <h1 className="text-2xl font-semibold">WAF Policies</h1>
+        <p className="mt-1 text-muted-foreground">Manage Web Application Firewall policies.</p>
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={Users} title="No tenants found" />
+        <EmptyState icon={ShieldAlert} title="No WAF policies found" />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
           searchColumn="name"
-          searchPlaceholder="Filter tenants..."
+          searchPlaceholder="Filter WAF policies..."
           toolbarLeading={
             EDITING_ENABLED ? (
               <Button size="sm" onClick={() => setCreateOpen(true)}>
                 <Plus className="size-4" />
-                Create Tenant
+                Create WAF Policy
               </Button>
             ) : undefined
           }
@@ -240,7 +251,7 @@ function Tenants() {
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
           onRowClick={(row) => {
             void navigate({
-              to: "/tenants/$name",
+              to: "/waf-policies/$name",
               params: { name: row.original.metadata.name },
             });
           }}
@@ -253,13 +264,15 @@ function Tenants() {
             open={createOpen}
             onOpenChange={setCreateOpen}
             mode="create"
-            title="Create Tenant"
+            title="Create WAF Policy"
             schema={crdSchema}
             uiSchema={createUiSchema}
-            formData={TENANT_TEMPLATE}
-            isPending={createTenant.isPending}
+            formData={WAF_POLICY_TEMPLATE}
+            isPending={createWAFPolicy.isPending}
             onSubmit={(parsed) => {
-              void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+              void createWAFPolicy
+                .mutateAsync(parsed as WAFPolicy)
+                .then(() => setCreateOpen(false));
             }}
           />
         ) : YAML_EDITOR_ENABLED ? (
@@ -267,13 +280,15 @@ function Tenants() {
             open={createOpen}
             onOpenChange={setCreateOpen}
             mode="create"
-            title="Create Tenant"
+            title="Create WAF Policy"
             resourceKind={RESOURCE_KIND}
             apiVersion={API_VERSION}
-            initialYaml={yaml.dump(TENANT_TEMPLATE, { noRefs: true })}
-            isPending={createTenant.isPending}
+            initialYaml={yaml.dump(WAF_POLICY_TEMPLATE, { noRefs: true })}
+            isPending={createWAFPolicy.isPending}
             onSubmit={(parsed) => {
-              void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+              void createWAFPolicy
+                .mutateAsync(parsed as WAFPolicy)
+                .then(() => setCreateOpen(false));
             }}
           />
         ) : null)}
@@ -282,7 +297,7 @@ function Tenants() {
         open={!!yamlViewerResource}
         onOpenChange={(open) => !open && setYamlViewerResource(null)}
         resource={yamlViewerResource}
-        title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
+        title={yamlViewerResource ? `WAF Policy: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
       {EDITING_ENABLED &&
@@ -291,15 +306,19 @@ function Tenants() {
             open={!!editResource}
             onOpenChange={(open) => !open && setEditResource(null)}
             mode="edit"
-            title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+            title={
+              editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
+            }
             schema={crdSchema}
             uiSchema={editUiSchema}
             formData={
               editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
             }
-            isPending={updateTenant.isPending}
+            isPending={updateWAFPolicy.isPending}
             onSubmit={(parsed) => {
-              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+              void updateWAFPolicy
+                .mutateAsync(parsed as WAFPolicy)
+                .then(() => setEditResource(null));
             }}
           />
         ) : YAML_EDITOR_ENABLED ? (
@@ -307,7 +326,9 @@ function Tenants() {
             open={!!editResource}
             onOpenChange={(open) => !open && setEditResource(null)}
             mode="edit"
-            title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+            title={
+              editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
+            }
             resourceKind={RESOURCE_KIND}
             apiVersion={API_VERSION}
             initialYaml={
@@ -316,9 +337,11 @@ function Tenants() {
                 : ""
             }
             lockedFields={{ name: true }}
-            isPending={updateTenant.isPending}
+            isPending={updateWAFPolicy.isPending}
             onSubmit={(parsed) => {
-              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+              void updateWAFPolicy
+                .mutateAsync(parsed as WAFPolicy)
+                .then(() => setEditResource(null));
             }}
           />
         ) : null)}
@@ -329,19 +352,13 @@ function Tenants() {
           onOpenChange={(open) => !open && setDeleteResource(null)}
           resourceName={deleteResource.metadata.name}
           resourceKind={RESOURCE_KIND}
-          isPending={deleteTenant.isPending}
+          isPending={deleteWAFPolicy.isPending}
           onConfirm={() => {
-            void deleteTenant
+            void deleteWAFPolicy
               .mutateAsync(deleteResource.metadata.name)
               .then(() => setDeleteResource(null));
           }}
-        >
-          <p className="text-sm text-muted-foreground">
-            This will permanently delete namespace{" "}
-            <strong>tenant-{deleteResource.metadata.name}</strong> and all associated resources
-            including load balancers, routes, and secrets.
-          </p>
-        </DeleteDialog>
+        />
       )}
     </div>
   );

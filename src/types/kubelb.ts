@@ -172,6 +172,11 @@ export interface TenantSpec {
   gatewayAPI?: GatewayAPISettings;
   dns?: DNSSettings;
   certificates?: CertificatesSettings;
+  tunnel?: TenantTunnelSettings;
+  circuitBreaker?: CircuitBreaker;
+  networkPolicy?: NetworkPolicySettings;
+  loadBalancerPolicy?: LoadBalancerPolicy;
+  allowedDomains?: string[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -249,6 +254,11 @@ export interface ConfigSpec {
   gatewayAPI?: GatewayAPISettings;
   dns?: ConfigDNSSettings;
   certificates?: ConfigCertificatesSettings;
+  tunnel?: TunnelSettings;
+  circuitBreaker?: CircuitBreaker;
+  loadBalancerPolicy?: LoadBalancerPolicy;
+  waf?: WAFSettings;
+  networkPolicy?: NetworkPolicySettings;
 }
 
 export interface Config {
@@ -256,4 +266,75 @@ export interface Config {
   kind: string;
   metadata: ObjectMeta;
   spec: ConfigSpec;
+}
+
+export interface TenantTunnelSettings {
+  limit?: number;
+  disable?: boolean;
+}
+
+export interface TunnelSettings {
+  limit?: number;
+  connectionManagerURL?: string;
+  disable?: boolean;
+}
+
+export interface PerEndpointCircuitBreaker {
+  maxConnections?: number;
+}
+
+export interface CircuitBreaker {
+  maxConnections?: number;
+  maxPendingRequests?: number;
+  maxParallelRequests?: number;
+  maxParallelRetries?: number;
+  maxRequestsPerConnection?: number;
+  perEndpoint?: PerEndpointCircuitBreaker;
+}
+
+export interface NamedNetworkPolicy {
+  name: string;
+  spec: Record<string, unknown>;
+}
+
+export interface NetworkPolicySettings {
+  enable?: boolean;
+  disabledPolicies?: string[];
+  additionalPolicies?: NamedNetworkPolicy[];
+}
+
+export type LoadBalancerPolicy = "RoundRobin" | "LeastRequest" | "Random";
+
+export type WAFFailureMode = "Open" | "Closed";
+
+export interface WAFTargetRef {
+  group?: string;
+  kind: string;
+  namespace?: string;
+  name: string;
+}
+
+export interface WAFPolicySpec {
+  global?: boolean;
+  targetRef?: WAFTargetRef;
+  targetSelector?: Record<string, unknown>;
+  directives?: string[];
+  failureMode?: WAFFailureMode;
+}
+
+export interface WAFPolicyStatus {
+  conditions?: Condition[];
+}
+
+export interface WAFPolicy {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMeta;
+  spec: WAFPolicySpec;
+  status?: WAFPolicyStatus;
+}
+
+export interface WAFSettings {
+  wasmInitContainerImage?: string;
+  skipValidation?: boolean;
 }

@@ -18,6 +18,7 @@ npm-debug.log*
 !.env.example
 
 bin/
+.tanstack/
 .worktrees/
 
 ## AI generated files

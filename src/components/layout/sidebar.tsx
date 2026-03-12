@@ -23,12 +23,14 @@ import {
   Route,
   KeyRound,
   Shield,
+  ShieldAlert,
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
   X,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
+import { useEdition } from "@/hooks/use-edition";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,6 +38,7 @@ interface NavItem {
   label: string;
   to: string;
   icon: LucideIcon;
+  ee?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -46,12 +49,22 @@ const navItems: NavItem[] = [
   { label: "Sync Secrets", to: "/sync-secrets", icon: KeyRound },
   { label: "Envoy Proxy", to: "/envoy-proxy", icon: Shield },
   { label: "Configuration", to: "/configuration", icon: Settings },
+  { label: "WAF Policies", to: "/waf-policies", icon: ShieldAlert, ee: true },
 ];
 
-function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function NavLinks({
+  collapsed,
+  onNavigate,
+  ee,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+  ee?: boolean;
+}) {
+  const filtered = navItems.filter((item) => !item.ee || ee);
   return (
     <nav className="flex-1 space-y-1 p-2">
-      {navItems.map((item) => (
+      {filtered.map((item) => (
         <Link
           key={item.to}
           to={item.to}
@@ -81,6 +94,7 @@ function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
 export function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const { isEE } = useEdition();
 
   return (
     <aside
@@ -89,7 +103,7 @@ export function Sidebar() {
         collapsed ? "w-[70px]" : "w-[264px]",
       )}
     >
-      <NavLinks collapsed={collapsed} />
+      <NavLinks collapsed={collapsed} ee={isEE} />
       <div className="border-t border-border p-2">
         <button
           onClick={toggleSidebar}
@@ -105,6 +119,7 @@ export function Sidebar() {
 export function MobileSidebar() {
   const open = useUIStore((s) => s.mobileSidebarOpen);
   const close = useUIStore((s) => s.closeMobileSidebar);
+  const { isEE } = useEdition();
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +145,7 @@ export function MobileSidebar() {
             <X className="size-5" />
           </button>
         </div>
-        <NavLinks collapsed={false} onNavigate={close} />
+        <NavLinks collapsed={false} onNavigate={close} ee={isEE} />
       </aside>
     </div>
   );
