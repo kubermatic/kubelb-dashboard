@@ -51,4 +51,7 @@ export const queryKeys = {
         : (["deployments", "list", labels] as const),
     detail: (ns: string, name: string) => ["deployments", "detail", ns, name] as const,
   },
+  edition: {
+    detect: () => ["edition", "detect"] as const,
+  },
 } as const;
