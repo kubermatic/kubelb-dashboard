@@ -10,14 +10,9 @@ export interface KubeProxyConfig {
   token?: string;
 }
 
-export function loadKubeProxyConfig(kubeconfigPath?: string): KubeProxyConfig {
+export function loadKubeProxyConfig(kubeconfigPath: string): KubeProxyConfig {
   const kc = new KubeConfig();
-
-  if (kubeconfigPath) {
-    kc.loadFromFile(kubeconfigPath);
-  } else {
-    kc.loadFromDefault();
-  }
+  kc.loadFromFile(kubeconfigPath);
 
   const cluster = kc.getCurrentCluster();
   if (!cluster) {

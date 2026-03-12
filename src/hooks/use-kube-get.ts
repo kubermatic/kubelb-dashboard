@@ -16,6 +16,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { kubeGet } from "@/api/kube";
+import { POLL_INTERVAL } from "@/lib/constants";
 
 export function useKubeGet<T>(
   queryKey: readonly unknown[],
@@ -26,5 +27,6 @@ export function useKubeGet<T>(
     queryKey,
     queryFn: () => kubeGet<T>(path),
     enabled: options?.enabled,
+    refetchInterval: POLL_INTERVAL,
   });
 }

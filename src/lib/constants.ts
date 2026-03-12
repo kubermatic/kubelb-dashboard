@@ -14,20 +14,5 @@
  * limitations under the License.
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { kubeList } from "@/api/kube";
-import type { KubeList } from "@/types/kubernetes";
-import { POLL_INTERVAL } from "@/lib/constants";
-
-export function useKubeList<T>(
-  queryKey: readonly unknown[],
-  path: string,
-  options?: { labelSelector?: string; enabled?: boolean },
-) {
-  return useQuery<KubeList<T>>({
-    queryKey,
-    queryFn: () => kubeList<T>(path, { labelSelector: options?.labelSelector }),
-    enabled: options?.enabled,
-    refetchInterval: POLL_INTERVAL,
-  });
-}
+// TODO: We probably want to reduce this to 5 seconds and also make this configurable via env vars.
+export const POLL_INTERVAL = 10_000;

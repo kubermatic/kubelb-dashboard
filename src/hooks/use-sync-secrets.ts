@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { kubeList } from "@/api/kube";
-import type { KubeList } from "@/types/kubernetes";
-import { POLL_INTERVAL } from "@/lib/constants";
+import { queryKeys } from "@/api/query-keys";
+import { useKubeList } from "@/hooks/use-kube-list";
+import type { SyncSecret } from "@/types/kubelb";
 
-export function useKubeList<T>(
-  queryKey: readonly unknown[],
-  path: string,
-  options?: { labelSelector?: string; enabled?: boolean },
-) {
-  return useQuery<KubeList<T>>({
-    queryKey,
-    queryFn: () => kubeList<T>(path, { labelSelector: options?.labelSelector }),
-    enabled: options?.enabled,
-    refetchInterval: POLL_INTERVAL,
-  });
+const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+
+export function useSyncSecrets(namespace?: string) {
+  const path = namespace ? `${BASE}/namespaces/${namespace}/syncsecrets` : `${BASE}/syncsecrets`;
+  return useKubeList<SyncSecret>(queryKeys.syncSecrets.list(namespace), path);
 }

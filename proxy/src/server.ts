@@ -6,6 +6,11 @@ import { loadKubeProxyConfig } from "./kube-config.js";
 const port = parseInt(process.env["PORT"] ?? "3001", 10);
 const kubeconfigPath = process.env["KUBECONFIG"];
 
+if (!kubeconfigPath) {
+  console.error("KUBECONFIG environment variable is not set. Exiting.");
+  process.exit(1);
+}
+
 const config = loadKubeProxyConfig(kubeconfigPath);
 
 const app = Fastify({ logger: true });

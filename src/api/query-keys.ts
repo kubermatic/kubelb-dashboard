@@ -31,6 +31,11 @@ export const queryKeys = {
     list: () => ["tenants", "list"] as const,
     detail: (name: string) => ["tenants", "detail", name] as const,
   },
+  syncSecrets: {
+    all: ["syncsecrets"] as const,
+    list: (ns?: string) =>
+      ns ? (["syncsecrets", "list", ns] as const) : (["syncsecrets", "list"] as const),
+  },
   config: {
     all: ["config"] as const,
     list: () => ["config", "list"] as const,

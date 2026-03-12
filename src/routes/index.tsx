@@ -14,15 +14,28 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
-import { AlertCircle, Network, Route as RouteIcon, Shield, Users } from "lucide-react";
-import { StatCard, StatCardSkeleton } from "@/components/common/stat-card";
-import { StatusBadge } from "@/components/common/status-badge";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  KeyRound,
+  Network,
+  Route as RouteIcon,
+  Shield,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDeployments } from "@/hooks/use-deployments";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
+import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useTenants } from "@/hooks/use-tenants";
+import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 import type { Condition } from "@/types/kubernetes";
 
 export const Route = createFileRoute("/")({
@@ -34,34 +47,117 @@ interface ResourceQueryResult {
   isError: boolean;
   error: Error | null;
   refetch: () => void;
+  data?: { items: unknown[] };
 }
 
-function QueryError({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-      <AlertCircle className="h-4 w-4 shrink-0" />
-      <span className="flex-1">{error?.message ?? "Failed to fetch data"}</span>
-      <button
-        onClick={onRetry}
-        className="shrink-0 rounded-md bg-destructive/10 px-3 py-1 text-xs font-medium hover:bg-destructive/20"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
+type AccentColor = "primary" | "secondary" | "success" | "warning" | "destructive";
 
-function StatCardWithQuery({
+const accentConfig: Record<AccentColor, { border: string; bg: string; icon: string }> = {
+  primary: {
+    border: "border-l-primary",
+    bg: "bg-primary/5",
+    icon: "text-primary",
+  },
+  secondary: {
+    border: "border-l-secondary",
+    bg: "bg-secondary/5",
+    icon: "text-secondary",
+  },
+  success: {
+    border: "border-l-success",
+    bg: "bg-success/5",
+    icon: "text-success",
+  },
+  warning: {
+    border: "border-l-warning",
+    bg: "bg-warning/5",
+    icon: "text-warning",
+  },
+  destructive: {
+    border: "border-l-destructive",
+    bg: "bg-destructive/5",
+    icon: "text-destructive",
+  },
+};
+
+function MetricCard({
+  icon: Icon,
+  label,
   query,
-  ...cardProps
-}: Omit<React.ComponentProps<typeof StatCard>, "count"> & {
-  query: ResourceQueryResult & { data?: { items: unknown[] } };
+  accent = "primary",
+  href,
+}: {
+  icon: LucideIcon;
+  label: string;
+  query: ResourceQueryResult;
+  accent?: AccentColor;
+  href?: string;
 }) {
-  if (query.isLoading) return <StatCardSkeleton />;
-  if (query.isError) {
-    return <QueryError error={query.error} onRetry={query.refetch} />;
+  const config = accentConfig[accent];
+
+  if (query.isLoading) {
+    return (
+      <Card className="border-l-4 border-l-muted">
+        <CardContent className="flex items-center justify-between py-5">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-14" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-lg" />
+        </CardContent>
+      </Card>
+    );
   }
-  return <StatCard {...cardProps} count={query.data?.items.length ?? 0} />;
+
+  if (query.isError) {
+    return (
+      <Card className="border-l-4 border-l-destructive">
+        <CardContent className="flex items-center gap-3 py-5">
+          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-destructive">
+              {query.error?.message ?? "Failed to fetch"}
+            </p>
+            <p className="text-xs text-muted-foreground">{label}</p>
+          </div>
+          <button
+            onClick={() => query.refetch()}
+            className="shrink-0 text-xs font-medium text-primary hover:text-primary-hover"
+          >
+            Retry
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const count = query.data?.items.length ?? 0;
+  const inner = (
+    <Card
+      className={cn(
+        "border-l-4 transition-shadow duration-200",
+        config.border,
+        href && "cursor-pointer hover:shadow-md",
+      )}
+    >
+      <CardContent className="flex items-center justify-between py-5">
+        <div>
+          <p className="font-mono text-3xl font-semibold tracking-tight text-foreground">{count}</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+        </div>
+        <div className={cn("flex h-11 w-11 items-center justify-center rounded-lg", config.bg)}>
+          <Icon className={cn("h-5 w-5", config.icon)} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (href) {
+    return <Link to={href}>{inner}</Link>;
+  }
+  return inner;
 }
 
 interface ConditionOwner {
@@ -90,101 +186,307 @@ function countByConditionStatus<T extends ConditionOwner>(
   return { ready, pending, error };
 }
 
-function ResourceStatusRow({
+function HealthBar({
+  counts,
+  total,
+}: {
+  counts: { ready: number; pending: number; error: number };
+  total: number;
+}) {
+  if (total === 0) return null;
+  const readyPct = (counts.ready / total) * 100;
+  const pendingPct = (counts.pending / total) * 100;
+  const errorPct = (counts.error / total) * 100;
+
+  return (
+    <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+      {readyPct > 0 && (
+        <div
+          className="bg-success transition-all duration-500"
+          style={{ width: `${String(readyPct)}%` }}
+        />
+      )}
+      {pendingPct > 0 && (
+        <div
+          className="bg-warning transition-all duration-500"
+          style={{ width: `${String(pendingPct)}%` }}
+        />
+      )}
+      {errorPct > 0 && (
+        <div
+          className="bg-destructive transition-all duration-500"
+          style={{ width: `${String(errorPct)}%` }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResourceHealthRow({
+  icon: Icon,
   label,
   counts,
+  total,
+  href,
 }: {
+  icon: LucideIcon;
   label: string;
   counts: { ready: number; pending: number; error: number };
+  total: number;
+  href?: string;
 }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium">{label}</span>
-      <div className="flex gap-2">
-        <StatusBadge label={`${String(counts.ready)} Ready`} status="True" />
-        {counts.pending > 0 && (
-          <StatusBadge label={`${String(counts.pending)} Pending`} status="Unknown" />
-        )}
-        {counts.error > 0 && <StatusBadge label={`${String(counts.error)} Error`} status="False" />}
+  const className = cn(
+    "group flex items-center gap-4 rounded-lg px-4 py-3 transition-colors",
+    href && "cursor-pointer hover:bg-surface-hover",
+  );
+
+  const content = (
+    <>
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-sm font-medium">{label}</span>
+          <div className="flex items-center gap-3 text-xs">
+            {counts.ready > 0 && (
+              <span className="flex items-center gap-1 text-success">
+                <CheckCircle2 className="h-3 w-3" />
+                {counts.ready}
+              </span>
+            )}
+            {counts.pending > 0 && (
+              <span className="flex items-center gap-1 text-warning">
+                <Clock className="h-3 w-3" />
+                {counts.pending}
+              </span>
+            )}
+            {counts.error > 0 && (
+              <span className="flex items-center gap-1 text-destructive">
+                <XCircle className="h-3 w-3" />
+                {counts.error}
+              </span>
+            )}
+          </div>
+        </div>
+        <HealthBar counts={counts} total={total} />
       </div>
+      {href && (
+        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+      )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link to={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+  return <div className={className}>{content}</div>;
+}
+
+function ClusterStatus({ isHealthy }: { isHealthy: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn("relative flex h-2.5 w-2.5")}>
+        {isHealthy && (
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+        )}
+        <span
+          className={cn(
+            "relative inline-flex h-2.5 w-2.5 rounded-full",
+            isHealthy ? "bg-success" : "bg-destructive",
+          )}
+        />
+      </span>
+      <span className="text-xs font-medium text-muted-foreground">
+        {isHealthy ? "Cluster Healthy" : "Cluster Degraded"}
+      </span>
     </div>
   );
 }
 
 function Overview() {
+  const tenantQuery = useTenants();
   const lbQuery = useLoadBalancers();
   const routeQuery = useRoutes();
-  const tenantQuery = useTenants();
-  const deploymentQuery = useDeployments("kubelb");
+  const deploymentQuery = useDeployments(undefined, "app.kubernetes.io/name=kubelb-envoy-proxy");
+  const syncSecretQuery = useSyncSecrets();
 
   const lbItems = lbQuery.data?.items ?? [];
   const routeItems = routeQuery.data?.items ?? [];
 
-  const hasStatusData =
-    !lbQuery.isLoading && !routeQuery.isLoading && lbItems.length + routeItems.length > 0;
+  const allLoaded =
+    !tenantQuery.isLoading &&
+    !lbQuery.isLoading &&
+    !routeQuery.isLoading &&
+    !deploymentQuery.isLoading &&
+    !syncSecretQuery.isLoading;
+
+  const anyError =
+    tenantQuery.isError ||
+    lbQuery.isError ||
+    routeQuery.isError ||
+    deploymentQuery.isError ||
+    syncSecretQuery.isError;
+
+  const lbCounts = countByConditionStatus(
+    lbItems.map((lb) => ({
+      status: {
+        conditions: lb.status?.loadBalancer?.ingress
+          ? [
+              {
+                type: "Ready",
+                status: "True" as const,
+                lastTransitionTime: "",
+                reason: "",
+                message: "",
+              },
+            ]
+          : undefined,
+      },
+    })),
+    "Ready",
+  );
+
+  const routeCounts = countByConditionStatus(
+    routeItems.map((r) => ({
+      status: { conditions: r.status?.resources?.route?.conditions },
+    })),
+    "Ready",
+  );
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Overview</h1>
-        <p className="mt-1 text-muted-foreground">KubeLB cluster overview and health summary.</p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            KubeLB cluster overview and health summary.
+          </p>
+        </div>
+        {allLoaded && <ClusterStatus isHealthy={!anyError} />}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCardWithQuery icon={Network} label="Load Balancers" accent="primary" query={lbQuery} />
-        <StatCardWithQuery icon={RouteIcon} label="Routes" accent="secondary" query={routeQuery} />
-        <StatCardWithQuery icon={Users} label="Tenants" accent="primary" query={tenantQuery} />
-        <StatCardWithQuery
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <MetricCard
+          icon={Users}
+          label="Tenants"
+          accent="primary"
+          query={tenantQuery}
+          href="/tenants"
+        />
+        <MetricCard
+          icon={Network}
+          label="Load Balancers"
+          accent="primary"
+          query={lbQuery}
+          href="/load-balancers"
+        />
+        <MetricCard
+          icon={RouteIcon}
+          label="Routes"
+          accent="secondary"
+          query={routeQuery}
+          href="/routes"
+        />
+        <MetricCard
           icon={Shield}
           label="Envoy Proxies"
-          accent="primary"
+          accent="success"
           query={deploymentQuery}
+          href="/envoy-proxy"
         />
+        <MetricCard icon={KeyRound} label="Sync Secrets" accent="warning" query={syncSecretQuery} />
       </div>
 
-      {hasStatusData && (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Resource Status</CardTitle>
+          <CardHeader className="border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Resource Health
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {lbItems.length > 0 && (
-              <ResourceStatusRow
-                label="Load Balancers"
-                counts={countByConditionStatus(
-                  lbItems.map((lb) => ({
-                    status: {
-                      conditions: lb.status?.loadBalancer?.ingress
-                        ? [
-                            {
-                              type: "Ready",
-                              status: "True" as const,
-                              lastTransitionTime: "",
-                              reason: "",
-                              message: "",
-                            },
-                          ]
-                        : undefined,
-                    },
-                  })),
-                  "Ready",
+          <CardContent className="space-y-1 p-2">
+            {lbQuery.isLoading || routeQuery.isLoading ? (
+              <div className="space-y-4 p-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : lbItems.length + routeItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <CheckCircle2 className="mb-2 h-8 w-8 opacity-30" />
+                <p className="text-sm">No resources to monitor yet.</p>
+              </div>
+            ) : (
+              <>
+                {lbItems.length > 0 && (
+                  <ResourceHealthRow
+                    icon={Network}
+                    label="Load Balancers"
+                    counts={lbCounts}
+                    total={lbItems.length}
+                    href="/load-balancers"
+                  />
                 )}
-              />
-            )}
-            {routeItems.length > 0 && (
-              <ResourceStatusRow
-                label="Routes"
-                counts={countByConditionStatus(
-                  routeItems.map((r) => ({
-                    status: { conditions: r.status?.resources?.route?.conditions },
-                  })),
-                  "Ready",
+                {routeItems.length > 0 && (
+                  <ResourceHealthRow
+                    icon={RouteIcon}
+                    label="Routes"
+                    counts={routeCounts}
+                    total={routeItems.length}
+                    href="/routes"
+                  />
                 )}
-              />
+              </>
             )}
           </CardContent>
         </Card>
-      )}
+
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Quick Navigation
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-2">
+            {[
+              {
+                label: "Tenants",
+                desc: "Manage tenant configurations",
+                icon: Users,
+                href: "/tenants",
+              },
+              {
+                label: "Load Balancers",
+                desc: "View L4 load balancers",
+                icon: Network,
+                href: "/load-balancers",
+              },
+              { label: "Routes", desc: "View L7 routes", icon: RouteIcon, href: "/routes" },
+              {
+                label: "Configuration",
+                desc: "Global cluster settings",
+                icon: Shield,
+                href: "/configuration",
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="group flex items-center gap-3 rounded-lg px-4 py-2.5 transition-colors hover:bg-surface-hover"
+              >
+                <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -185,6 +185,18 @@ export interface Tenant {
   status?: TenantStatus;
 }
 
+// SyncSecret
+
+export interface SyncSecret {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMeta;
+  immutable?: boolean;
+  data?: Record<string, string>;
+  stringData?: Record<string, string>;
+  type?: string;
+}
+
 // Config
 
 export interface EnvoyProxyGracefulShutdown {
