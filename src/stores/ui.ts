@@ -20,6 +20,9 @@ import { persist } from "zustand/middleware";
 interface UIState {
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
+  mobileSidebarOpen: boolean;
+  openMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -27,7 +30,13 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarCollapsed: false,
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      mobileSidebarOpen: false,
+      openMobileSidebar: () => set({ mobileSidebarOpen: true }),
+      closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
     }),
-    { name: "kubelb-ui" },
+    {
+      name: "kubelb-ui",
+      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed }),
+    },
   ),
 );

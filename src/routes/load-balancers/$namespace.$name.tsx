@@ -16,10 +16,12 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 
+import { KubeApiError } from "@/api/kube";
 import { MetadataSection } from "@/components/common/metadata-section";
+import { ResourceNotFound } from "@/components/common/not-found";
+import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -52,16 +54,20 @@ function LoadBalancerDetail() {
     );
   }
 
-  if (error || !lb) {
-    return (
-      <div className="space-y-4">
-        <p className="text-destructive">Failed to load LoadBalancer.</p>
-        <Button variant="outline" onClick={() => void refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
+  if (error) {
+    if (error instanceof KubeApiError && error.code === 404) {
+      return (
+        <ResourceNotFound
+          resourceKind="Load Balancer"
+          backHref="/load-balancers"
+          backLabel="Load Balancers"
+        />
+      );
+    }
+    return <QueryError error={error} onRetry={() => void refetch()} />;
   }
+
+  if (!lb) return null;
 
   return (
     <div className="space-y-6">

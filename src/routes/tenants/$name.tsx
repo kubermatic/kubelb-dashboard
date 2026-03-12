@@ -16,11 +16,13 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 
+import { KubeApiError } from "@/api/kube";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { MetadataSection } from "@/components/common/metadata-section";
+import { ResourceNotFound } from "@/components/common/not-found";
+import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,16 +58,14 @@ function TenantDetail() {
     );
   }
 
-  if (error || !tenant) {
-    return (
-      <div className="space-y-4">
-        <p className="text-destructive">Failed to load Tenant.</p>
-        <Button variant="outline" onClick={() => void refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
+  if (error) {
+    if (error instanceof KubeApiError && error.code === 404) {
+      return <ResourceNotFound resourceKind="Tenant" backHref="/tenants" backLabel="Tenants" />;
+    }
+    return <QueryError error={error} onRetry={() => void refetch()} />;
   }
+
+  if (!tenant) return null;
 
   return (
     <div className="space-y-6">

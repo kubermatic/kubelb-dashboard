@@ -16,13 +16,14 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Shield } from "lucide-react";
 import { useDeployments } from "@/hooks/use-deployments";
 import type { Deployment } from "@/types/kubernetes";
 import { DataTable } from "@/components/common/data-table";
+import { EmptyState } from "@/components/common/empty-state";
+import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatAge } from "@/lib/format";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
 
 export const Route = createFileRoute("/envoy-proxy/")({
   component: EnvoyProxy,
@@ -95,16 +96,11 @@ const columns: ColumnDef<Deployment>[] = [
 ];
 
 function EnvoyProxy() {
-  const { data, isLoading, isError, error } = useDeployments(
+  const { data, isLoading, isError, error, refetch } = useDeployments(
     undefined,
     "app.kubernetes.io/name=kubelb-envoy-proxy",
   );
-  const [search, setSearch] = useState("");
-
   const items = data?.items ?? [];
-  const filtered = search
-    ? items.filter((d) => d.metadata.name.toLowerCase().includes(search.toLowerCase()))
-    : items;
 
   return (
     <div className="space-y-6">
@@ -112,28 +108,18 @@ function EnvoyProxy() {
         <h1 className="text-2xl font-semibold">Envoy Proxy</h1>
         <p className="mt-1 text-muted-foreground">Inspect and configure Envoy proxy instances.</p>
       </div>
-
-      {isError && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {error?.message ?? "Failed to load deployments"}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Filter by name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+      {isError && error ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : !isLoading && items.length === 0 ? (
+        <EmptyState icon={Shield} title="No envoy proxies found" />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          isLoading={isLoading}
+          searchPlaceholder="Filter by name..."
         />
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={filtered}
-        isLoading={isLoading}
-        emptyMessage="No envoy proxy instances found."
-      />
+      )}
     </div>
   );
 }

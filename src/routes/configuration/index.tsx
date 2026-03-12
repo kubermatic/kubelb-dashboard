@@ -66,7 +66,7 @@ function EnvoyProxySection({ envoy }: { envoy?: EnvoyProxy }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <ConfigField label="Topology" value={envoy.topology} />
         <ConfigField label="Replicas" value={envoy.replicas} />
         <ConfigField label="DaemonSet Mode" value={envoy.useDaemonset} />
@@ -77,7 +77,7 @@ function EnvoyProxySection({ envoy }: { envoy?: EnvoyProxy }) {
       {envoy.gracefulShutdown && (
         <div>
           <h4 className="mb-2 text-sm font-medium">Graceful Shutdown</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ConfigField label="Disabled" value={envoy.gracefulShutdown.disabled} />
             <ConfigField label="Drain Timeout" value={envoy.gracefulShutdown.drainTimeout} />
             <ConfigField
@@ -99,7 +99,7 @@ function EnvoyProxySection({ envoy }: { envoy?: EnvoyProxy }) {
       {envoy.overloadManager && (
         <div>
           <h4 className="mb-2 text-sm font-medium">Overload Manager</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="text-sm">
               <span className="text-muted-foreground">Status</span>
               <div className="mt-1">
@@ -142,7 +142,7 @@ function ResourceClassSection({
       </CardHeader>
       <CardContent>
         {settings ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ConfigField label="Class" value={settings.class} />
             <div className="text-sm">
               <span className="text-muted-foreground">Status</span>
@@ -169,7 +169,7 @@ function GatewayAPISection({ settings }: { settings?: ConfigSpec["gatewayAPI"] }
       </CardHeader>
       <CardContent>
         {settings ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ConfigField label="Class" value={settings.class} />
             <div className="text-sm">
               <span className="text-muted-foreground">Status</span>
@@ -220,7 +220,7 @@ function ConfigView({ config }: { config: Config }) {
         </CardHeader>
         <CardContent>
           {spec.dns ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ConfigField label="Wildcard Domain" value={spec.dns.wildcardDomain} />
               <ConfigField
                 label="Allow Explicit Hostnames"
@@ -255,7 +255,7 @@ function ConfigView({ config }: { config: Config }) {
           <CardTitle>Annotations</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ConfigField label="Propagate All Annotations" value={spec.propagateAllAnnotations} />
           </div>
 

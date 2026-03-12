@@ -16,9 +16,12 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
+import { EmptyState } from "@/components/common/empty-state";
+import { QueryError } from "@/components/common/query-error";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { formatAge } from "@/lib/format";
 import type { LoadBalancer } from "@/types/kubelb";
@@ -123,7 +126,8 @@ const columns: ColumnDef<LoadBalancer>[] = [
 ];
 
 function LoadBalancers() {
-  const { data, isLoading } = useLoadBalancers();
+  const { data, isLoading, isError, error, refetch } = useLoadBalancers();
+  const items = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -133,13 +137,18 @@ function LoadBalancers() {
           View and manage load balancer services across tenants.
         </p>
       </div>
-      <DataTable
-        columns={columns}
-        data={data?.items ?? []}
-        isLoading={isLoading}
-        emptyMessage="No load balancers found"
-        searchPlaceholder="Search load balancers..."
-      />
+      {isError && error ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : !isLoading && items.length === 0 ? (
+        <EmptyState icon={Network} title="No load balancers found" />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          isLoading={isLoading}
+          searchPlaceholder="Search load balancers..."
+        />
+      )}
     </div>
   );
 }

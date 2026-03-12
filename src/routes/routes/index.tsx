@@ -16,9 +16,12 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
+import { EmptyState } from "@/components/common/empty-state";
+import { QueryError } from "@/components/common/query-error";
 import { useRoutes } from "@/hooks/use-routes";
 import { formatAge } from "@/lib/format";
 import type { Route as RouteType } from "@/types/kubelb";
@@ -116,7 +119,8 @@ const columns: ColumnDef<RouteType>[] = [
 ];
 
 function Routes() {
-  const { data, isLoading } = useRoutes();
+  const { data, isLoading, isError, error, refetch } = useRoutes();
+  const items = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -126,13 +130,18 @@ function Routes() {
           Manage HTTP and gRPC route configurations.
         </p>
       </div>
-      <DataTable
-        columns={columns}
-        data={data?.items ?? []}
-        isLoading={isLoading}
-        emptyMessage="No routes found"
-        searchPlaceholder="Search routes..."
-      />
+      {isError && error ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : !isLoading && items.length === 0 ? (
+        <EmptyState icon={RouteIcon} title="No routes found" />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          isLoading={isLoading}
+          searchPlaceholder="Search routes..."
+        />
+      )}
     </div>
   );
 }

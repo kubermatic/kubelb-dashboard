@@ -15,14 +15,18 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useDeployment } from "@/hooks/use-deployments";
-import { ResourceHeader } from "@/components/common/resource-header";
-import { MetadataSection } from "@/components/common/metadata-section";
+
+import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
+import { MetadataSection } from "@/components/common/metadata-section";
+import { ResourceNotFound } from "@/components/common/not-found";
+import { QueryError } from "@/components/common/query-error";
+import { ResourceHeader } from "@/components/common/resource-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDeployment } from "@/hooks/use-deployments";
 
 export const Route = createFileRoute("/envoy-proxy/$namespace/$name")({
   component: EnvoyProxyDetail,
@@ -30,7 +34,7 @@ export const Route = createFileRoute("/envoy-proxy/$namespace/$name")({
 
 function EnvoyProxyDetail() {
   const { namespace, name } = Route.useParams();
-  const { data: deployment, isLoading, isError, error } = useDeployment(namespace, name);
+  const { data: deployment, isLoading, isError, error, refetch } = useDeployment(namespace, name);
 
   if (isLoading) {
     return (
@@ -41,22 +45,20 @@ function EnvoyProxyDetail() {
     );
   }
 
-  if (isError || !deployment) {
-    return (
-      <div className="space-y-4">
-        <ResourceHeader
-          name={name}
-          namespace={namespace}
-          kind="Deployment"
+  if (isError && error) {
+    if (error instanceof KubeApiError && error.code === 404) {
+      return (
+        <ResourceNotFound
+          resourceKind="Envoy Proxy"
           backHref="/envoy-proxy"
           backLabel="Envoy Proxies"
         />
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {error?.message ?? "Deployment not found"}
-        </div>
-      </div>
-    );
+      );
+    }
+    return <QueryError error={error} onRetry={() => void refetch()} />;
   }
+
+  if (!deployment) return null;
 
   return (
     <div className="space-y-6">

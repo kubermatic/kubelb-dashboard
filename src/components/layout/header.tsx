@@ -15,10 +15,12 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
+import { useUIStore } from "@/stores/ui";
 
 export function Header() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const openMobileSidebar = useUIStore((s) => s.openMobileSidebar);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -29,7 +31,18 @@ export function Header() {
 
   return (
     <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-4">
-      <span className="text-lg font-semibold text-foreground">KubeLB</span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={openMobileSidebar}
+          className="rounded-md p-2 text-foreground hover:bg-surface-hover md:hidden"
+        >
+          <Menu className="size-5" />
+        </button>
+        <span className="text-lg font-semibold text-foreground">
+          <span className="md:hidden">KubeLB</span>
+          <span className="hidden md:inline">KubeLB Dashboard</span>
+        </span>
+      </div>
       <button
         onClick={toggleTheme}
         className="rounded-md p-2 text-foreground hover:bg-surface-hover"

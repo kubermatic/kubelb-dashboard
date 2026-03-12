@@ -16,9 +16,11 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Users } from "lucide-react";
 
 import { DataTable } from "@/components/common/data-table";
+import { EmptyState } from "@/components/common/empty-state";
+import { QueryError } from "@/components/common/query-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTenants } from "@/hooks/use-tenants";
@@ -79,7 +81,7 @@ const columns: ColumnDef<Tenant>[] = [
     id: "dnsDomain",
     header: "DNS Domain",
     cell: ({ row }) => (
-      <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "—"}</span>
+      <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>
     ),
   },
   {
@@ -93,13 +95,14 @@ const columns: ColumnDef<Tenant>[] = [
     ),
     cell: ({ row }) => {
       const ts = row.original.metadata.creationTimestamp;
-      return <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "—"}</span>;
+      return <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>;
     },
   },
 ];
 
 function Tenants() {
-  const { data, isLoading } = useTenants();
+  const { data, isLoading, isError, error, refetch } = useTenants();
+  const items = data?.items ?? [];
 
   return (
     <div className="space-y-4">
@@ -109,14 +112,19 @@ function Tenants() {
           Manage tenant namespaces and their resource allocations.
         </p>
       </div>
-      <DataTable
-        columns={columns}
-        data={data?.items ?? []}
-        isLoading={isLoading}
-        emptyMessage="No tenants found."
-        searchColumn="name"
-        searchPlaceholder="Filter tenants..."
-      />
+      {isError && error ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : !isLoading && items.length === 0 ? (
+        <EmptyState icon={Users} title="No tenants found" />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          isLoading={isLoading}
+          searchColumn="name"
+          searchPlaceholder="Filter tenants..."
+        />
+      )}
     </div>
   );
 }

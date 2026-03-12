@@ -41,7 +41,7 @@ export function MetadataSection({ metadata }: MetadataSectionProps) {
           <CardTitle>Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="grid grid-cols-[120px_1fr] gap-y-2">
+          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[120px_1fr] gap-y-2">
             <span className="text-muted-foreground">UID</span>
             <span className="font-mono text-xs break-all">{metadata.uid ?? "—"}</span>
             <span className="text-muted-foreground">Resource Version</span>
