@@ -4,7 +4,7 @@ Web dashboard for [KubeLB](https://docs.kubermatic.com/kubelb/) — a cloud-nati
 
 ## Development
 
-Prerequisites: Node.js 22+, a kubeconfig with access to a cluster running KubeLB CRDs.
+Prerequisites: Node.js 22+, a kubeconfig for KubeLB Management cluster.
 
 ```bash
 export KUBECONFIG=/path/to/your/kubeconfig

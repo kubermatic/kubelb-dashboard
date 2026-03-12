@@ -33,7 +33,7 @@ import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
-import { RowActions } from "@/components/common/row-actions";
+import { RowActions, type RowAction } from "@/components/common/row-actions";
 import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -166,30 +166,32 @@ function Tenants() {
       cell: ({ row }) => (
         <div onClick={(e) => e.stopPropagation()}>
           <RowActions
-            actions={[
-              {
-                label: "View YAML",
-                icon: FileText,
-                onClick: () => setYamlViewerResource(row.original),
-              },
-              {
-                label: "Download Kubeconfig",
-                icon: Download,
-                onClick: () => void downloadKubeconfig(row.original.metadata.name),
-              },
-              EDITING_ENABLED && {
-                label: "Edit",
-                icon: Pencil,
-                onClick: () => setEditResource(row.original),
-              },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ].filter(Boolean)}
+            actions={
+              [
+                {
+                  label: "View YAML",
+                  icon: FileText,
+                  onClick: () => setYamlViewerResource(row.original),
+                },
+                {
+                  label: "Download Kubeconfig",
+                  icon: Download,
+                  onClick: () => void downloadKubeconfig(row.original.metadata.name),
+                },
+                EDITING_ENABLED && {
+                  label: "Edit",
+                  icon: Pencil,
+                  onClick: () => setEditResource(row.original),
+                },
+                {
+                  label: "Delete",
+                  icon: Trash2,
+                  variant: "destructive",
+                  separator: true,
+                  onClick: () => setDeleteResource(row.original),
+                },
+              ].filter(Boolean) as RowAction[]
+            }
           />
         </div>
       ),

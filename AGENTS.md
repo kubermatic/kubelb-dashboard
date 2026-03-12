@@ -65,6 +65,20 @@ npx shadcn@latest init
 npx shadcn@latest add button
 ```
 
+## CE/EE Edition Split
+
+Single repo, single build. Edition auto-detected at runtime via CRD discovery:
+
+```
+GET /api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies → 200=EE, 404=CE
+```
+
+- **`useEdition()` hook** (`src/hooks/use-edition.ts`) — returns `{ edition, isEE, loading }`. Cached forever (`staleTime: Infinity`). Edition can't change during pod lifetime.
+- **Sidebar** — `NavItem.ee?: boolean` flag. Items with `ee: true` hidden on CE.
+- **Shared types** — `TenantSpec`/`ConfigSpec` in `src/types/kubelb.ts` have optional EE fields (tunnel, circuitBreaker, networkPolicy, loadBalancerPolicy, allowedDomains, waf). Undefined on CE.
+- **Detail pages** — EE sections wrapped in `{isEE && <Section />}`.
+- **EE-only pages** — WAF Policies (`/waf-policies`) with full CRUD.
+
 ## Conventions
 
 - `@/` path alias maps to `src/`
