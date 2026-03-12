@@ -25,6 +25,7 @@ import {
 } from "@tanstack/react-router";
 import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { dump } from "js-yaml";
+import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -260,7 +261,9 @@ function Tenants() {
         title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
         resourceKind={RESOURCE_KIND}
         apiVersion={API_VERSION}
-        initialYaml={editResource ? dump(editResource, { noRefs: true, lineWidth: -1 }) : ""}
+        initialYaml={
+          editResource ? dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 }) : ""
+        }
         lockedFields={{ name: true }}
         isPending={updateTenant.isPending}
         onSubmit={(parsed) => {

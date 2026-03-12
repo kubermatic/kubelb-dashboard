@@ -17,6 +17,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
+import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { Download, FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
@@ -83,7 +84,7 @@ function TenantDetail() {
 
   if (!tenant) return null;
 
-  const tenantYaml = yaml.dump(tenant, { noRefs: true, lineWidth: -1 });
+  const editYaml = yaml.dump(sanitizeForEdit(tenant), { noRefs: true, lineWidth: -1 });
 
   return (
     <div className="space-y-6">
@@ -150,7 +151,7 @@ function TenantDetail() {
         title="Edit Tenant"
         resourceKind="Tenant"
         apiVersion="kubelb.k8c.io/v1alpha1"
-        initialYaml={tenantYaml}
+        initialYaml={editYaml}
         lockedFields={{ name: true }}
         isPending={updateTenant.isPending}
         onSubmit={(parsed) => {

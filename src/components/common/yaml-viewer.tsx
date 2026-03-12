@@ -17,8 +17,9 @@
 import { useMemo } from "react";
 import { dump } from "js-yaml";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CopyButton } from "@/components/common/copy-button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { sanitizeForView } from "@/lib/kube-sanitize";
 
 interface YamlViewerProps {
   open: boolean;
@@ -28,7 +29,10 @@ interface YamlViewerProps {
 }
 
 export function YamlViewer({ open, onOpenChange, resource, title }: YamlViewerProps) {
-  const yaml = useMemo(() => dump(resource, { noRefs: true, lineWidth: -1 }), [resource]);
+  const yaml = useMemo(
+    () => dump(sanitizeForView(resource), { noRefs: true, lineWidth: -1 }),
+    [resource],
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
