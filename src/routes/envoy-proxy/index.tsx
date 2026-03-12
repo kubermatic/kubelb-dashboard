@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Shield } from "lucide-react";
 import { useDeployments } from "@/hooks/use-deployments";
@@ -100,6 +100,7 @@ function EnvoyProxy() {
     undefined,
     "app.kubernetes.io/name=kubelb-envoy-proxy",
   );
+  const navigate = useNavigate();
   const items = data?.items ?? [];
 
   return (
@@ -117,7 +118,15 @@ function EnvoyProxy() {
           columns={columns}
           data={items}
           isLoading={isLoading}
+          searchColumn="name"
           searchPlaceholder="Filter by name..."
+          onRowClick={(row) => {
+            const { name, namespace } = row.original.metadata;
+            void navigate({
+              to: "/envoy-proxy/$namespace/$name",
+              params: { namespace: namespace ?? "default", name },
+            });
+          }}
         />
       )}
     </div>

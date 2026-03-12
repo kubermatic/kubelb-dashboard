@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +128,7 @@ const columns: ColumnDef<LoadBalancer>[] = [
 
 function LoadBalancers() {
   const { data, isLoading, isError, error, refetch } = useLoadBalancers();
+  const navigate = useNavigate();
   const items = data?.items ?? [];
 
   return (
@@ -147,7 +148,15 @@ function LoadBalancers() {
           columns={columns}
           data={items}
           isLoading={isLoading}
+          searchColumn="name"
           searchPlaceholder="Search load balancers..."
+          onRowClick={(row) => {
+            const { name, namespace } = row.original.metadata;
+            void navigate({
+              to: "/load-balancers/$namespace/$name",
+              params: { namespace: namespace ?? "default", name },
+            });
+          }}
         />
       )}
     </div>

@@ -15,7 +15,7 @@
  */
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpDown, Users } from "lucide-react";
 
 import { DataTable } from "@/components/common/data-table";
@@ -102,6 +102,7 @@ const columns: ColumnDef<Tenant>[] = [
 
 function Tenants() {
   const { data, isLoading, isError, error, refetch } = useTenants();
+  const navigate = useNavigate();
   const items = data?.items ?? [];
 
   return (
@@ -123,6 +124,12 @@ function Tenants() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Filter tenants..."
+          onRowClick={(row) => {
+            void navigate({
+              to: "/tenants/$name",
+              params: { name: row.original.metadata.name },
+            });
+          }}
         />
       )}
     </div>

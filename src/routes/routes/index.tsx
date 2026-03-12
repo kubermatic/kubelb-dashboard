@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +121,7 @@ const columns: ColumnDef<RouteType>[] = [
 
 function Routes() {
   const { data, isLoading, isError, error, refetch } = useRoutes();
+  const navigate = useNavigate();
   const items = data?.items ?? [];
 
   return (
@@ -140,7 +141,15 @@ function Routes() {
           columns={columns}
           data={items}
           isLoading={isLoading}
+          searchColumn="name"
           searchPlaceholder="Search routes..."
+          onRowClick={(row) => {
+            const { name, namespace } = row.original.metadata;
+            void navigate({
+              to: "/routes/$namespace/$name",
+              params: { namespace: namespace ?? "default", name },
+            });
+          }}
         />
       )}
     </div>
