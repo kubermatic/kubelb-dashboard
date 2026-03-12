@@ -10,6 +10,8 @@ RUN npm run build
 
 FROM node:22-alpine
 
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubelb-dashboard"
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n fe,proxy -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:proxy\"",
+    "dev": "concurrently -n fe,api -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:api\"",
     "dev:frontend": "vite",
-    "dev:proxy": "npm run dev --prefix proxy",
+    "dev:api": "npm run dev --prefix api",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",

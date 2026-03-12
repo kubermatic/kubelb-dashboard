@@ -29,10 +29,18 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api/kube": {
+      "/api/": {
         target: "http://localhost:3001",
         changeOrigin: true,
         ws: true,
+      },
+      "/healthz": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+      "/readyz": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
       },
     },
   },
