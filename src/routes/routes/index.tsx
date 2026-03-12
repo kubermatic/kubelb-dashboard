@@ -57,8 +57,9 @@ function deriveRouteType(route: RouteType): string {
 function getSourceName(route: RouteType): string {
   const resource = route.spec.source?.kubernetes?.resource;
   if (!resource) return "\u2014";
-  const name = resource["name"] as string | undefined;
-  const ns = resource["namespace"] as string | undefined;
+  const meta = resource["metadata"] as Record<string, unknown> | undefined;
+  const name = (meta?.["name"] as string) ?? (resource["name"] as string | undefined);
+  const ns = (meta?.["namespace"] as string) ?? (resource["namespace"] as string | undefined);
   if (ns && name) return `${ns}/${name}`;
   return name ?? "\u2014";
 }

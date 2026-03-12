@@ -110,6 +110,9 @@ function RouteDetail() {
 function OverviewTab({ route }: { route: RouteResource }) {
   const resource = route.spec.source?.kubernetes?.resource;
   const routeKind = (resource?.kind as string) ?? "Unknown";
+  const meta = resource?.metadata as Record<string, unknown> | undefined;
+  const sourceName = (meta?.name as string) ?? (resource?.name as string | undefined);
+  const sourceNs = (meta?.namespace as string) ?? (resource?.namespace as string | undefined);
 
   return (
     <>
@@ -121,16 +124,16 @@ function OverviewTab({ route }: { route: RouteResource }) {
           <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
             <span className="text-muted-foreground">Type</span>
             <Badge variant="outline">{routeKind}</Badge>
-            {"name" in (resource ?? {}) && (
+            {sourceName && (
               <>
                 <span className="text-muted-foreground">Name</span>
-                <span>{String(resource?.name)}</span>
+                <span>{sourceName}</span>
               </>
             )}
-            {"namespace" in (resource ?? {}) && (
+            {sourceNs && (
               <>
                 <span className="text-muted-foreground">Namespace</span>
-                <span>{String(resource?.namespace)}</span>
+                <span>{sourceNs}</span>
               </>
             )}
           </div>
