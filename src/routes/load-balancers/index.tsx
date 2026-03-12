@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,12 +31,13 @@ import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { formatAge } from "@/lib/format";
-import { type ListSearchParams, validateListSearch } from "@/lib/search-params";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/")({
   validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: LoadBalancers,
 });
 

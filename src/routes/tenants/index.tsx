@@ -15,7 +15,13 @@
  */
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { ArrowUpDown, Users } from "lucide-react";
 
 import { DataTable } from "@/components/common/data-table";
@@ -25,11 +31,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTenants } from "@/hooks/use-tenants";
 import { formatAge } from "@/lib/format";
-import { type ListSearchParams, validateListSearch } from "@/lib/search-params";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
 
 export const Route = createFileRoute("/tenants/")({
   validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: Tenants,
 });
 

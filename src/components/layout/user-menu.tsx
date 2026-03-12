@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-import { ExternalLink, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -37,19 +36,6 @@ export function UserMenu() {
         <TooltipContent>Account</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          render={
-            <a
-              href="https://docs.kubermatic.com/kubelb"
-              target="_blank"
-              rel="noopener noreferrer"
-            />
-          }
-        >
-          <ExternalLink />
-          Documentation
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem disabled>
           <LogOut />
           Sign out

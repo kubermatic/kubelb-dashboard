@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Shield } from "lucide-react";
 import { useDeployments } from "@/hooks/use-deployments";
@@ -25,11 +31,12 @@ import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatAge } from "@/lib/format";
-import { type ListSearchParams, validateListSearch } from "@/lib/search-params";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 
 export const Route = createFileRoute("/envoy-proxy/")({
   validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: EnvoyProxy,
 });
 

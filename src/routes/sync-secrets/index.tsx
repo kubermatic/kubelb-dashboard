@@ -14,20 +14,29 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { KeyRound } from "lucide-react";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
+import { useUIStore } from "@/stores/ui";
 import { formatAge } from "@/lib/format";
-import { type ListSearchParams, validateListSearch } from "@/lib/search-params";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
 
 export const Route = createFileRoute("/sync-secrets/")({
   validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: SyncSecrets,
 });
 
@@ -83,7 +92,10 @@ const columns: ColumnDef<SyncSecret>[] = [
 ];
 
 function SyncSecrets() {
-  const { data, isLoading, isError, error, refetch } = useSyncSecrets();
+  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
+  const { data, isLoading, isError, error, refetch } = useSyncSecrets(
+    selectedNamespace ?? undefined,
+  );
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
@@ -112,6 +124,7 @@ function SyncSecrets() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search sync secrets..."
+          toolbarLeading={<NamespaceSelector />}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}

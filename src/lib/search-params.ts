@@ -20,6 +20,12 @@ export interface ListSearchParams {
   pageSize: number;
 }
 
+export const listSearchDefaults: ListSearchParams = {
+  search: "",
+  page: 0,
+  pageSize: 10,
+};
+
 export function validateListSearch(search: Record<string, unknown>): ListSearchParams {
   return {
     search: (search.search as string) || "",
