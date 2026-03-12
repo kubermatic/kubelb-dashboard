@@ -166,7 +166,11 @@ function TenantDetail() {
         resourceKind="Tenant"
         isPending={deleteTenant.isPending}
         onConfirm={() => {
-          void deleteTenant.mutateAsync(name).then(() => navigate({ to: "/tenants" }));
+          void deleteTenant
+            .mutateAsync(name)
+            .then(() =>
+              navigate({ to: "/tenants", search: { search: "", page: 0, pageSize: 10 } }),
+            );
         }}
       >
         <p className="text-sm text-destructive">

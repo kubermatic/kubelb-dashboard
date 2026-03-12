@@ -33,6 +33,7 @@ const EDIT_STRIP_METADATA = [
 const VIEW_STRIP_METADATA = ["managedFields"];
 
 function stripMetadataFields(resource: unknown, fields: string[]): unknown {
+  if (!resource || typeof resource !== "object") return resource;
   const obj = structuredClone(resource) as KubeResource;
   if (obj.metadata && typeof obj.metadata === "object") {
     for (const field of fields) {
