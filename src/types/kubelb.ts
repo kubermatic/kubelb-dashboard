@@ -138,6 +138,7 @@ export interface Route {
 
 export interface LoadBalancerSettings {
   class?: string;
+  limit?: number;
   disable?: boolean;
 }
 
@@ -146,21 +147,37 @@ export interface IngressSettings {
   disable?: boolean;
 }
 
+export interface GatewaySettings {
+  limit?: number;
+}
+
 export interface GatewayAPISettings {
   class?: string;
   disable?: boolean;
   defaultGateway?: ObjectReference;
+  gatewaySettings?: GatewaySettings;
+  disableHTTPRoute?: boolean;
+  disableGRPCRoute?: boolean;
+  disableTCPRoute?: boolean;
+  disableUDPRoute?: boolean;
+  disableTLSRoute?: boolean;
+  disableBackendTrafficPolicy?: boolean;
+  disableClientTrafficPolicy?: boolean;
 }
 
 export interface DNSSettings {
+  disable?: boolean;
   wildcardDomain?: string;
+  allowedDomains?: string[];
   allowExplicitHostnames?: boolean;
   useDNSAnnotations?: boolean;
   useCertificateAnnotations?: boolean;
 }
 
 export interface CertificatesSettings {
+  disable?: boolean;
   defaultClusterIssuer?: string;
+  allowedDomains?: string[];
 }
 
 export interface TenantSpec {
