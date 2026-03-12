@@ -23,7 +23,7 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import { ArrowUpDown, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { dump } from "js-yaml";
 
 import { DataTable } from "@/components/common/data-table";
@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTenants } from "@/hooks/use-tenants";
 import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
+import { downloadKubeconfig } from "@/lib/download-kubeconfig";
 import { formatAge } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
@@ -159,6 +160,11 @@ function Tenants() {
                 label: "View YAML",
                 icon: FileText,
                 onClick: () => setYamlViewerResource(row.original),
+              },
+              {
+                label: "Download Kubeconfig",
+                icon: Download,
+                onClick: () => void downloadKubeconfig(row.original.metadata.name),
               },
               {
                 label: "Edit",

@@ -17,7 +17,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
-import { FileCode, Pencil, Trash2 } from "lucide-react";
+import { Download, FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
+import { downloadKubeconfig } from "@/lib/download-kubeconfig";
 import type { Tenant } from "@/types/kubelb";
 
 export const Route = createFileRoute("/tenants/$name")({
@@ -99,6 +100,10 @@ function TenantDetail() {
           <Button variant="outline" size="sm" onClick={() => setYamlViewerOpen(true)}>
             <FileCode />
             View YAML
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void downloadKubeconfig(name)}>
+            <Download />
+            Kubeconfig
           </Button>
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             <Pencil />
