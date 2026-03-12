@@ -21,6 +21,7 @@ import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { useConfigs } from "@/hooks/use-config";
+import { useEdition } from "@/hooks/use-edition";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
@@ -213,6 +214,7 @@ function GatewayAPISection({ settings }: { settings?: ConfigSpec["gatewayAPI"] }
 
 function ConfigView({ config }: { config: Config }) {
   const { spec } = config;
+  const { isEE } = useEdition();
 
   return (
     <div className="space-y-4">
@@ -292,6 +294,124 @@ function ConfigView({ config }: { config: Config }) {
           )}
         </CardContent>
       </Card>
+
+      {isEE && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tunnel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ConfigField
+                label="Connection Manager URL"
+                value={spec.tunnel?.connectionManagerURL}
+              />
+              <ConfigField label="Limit" value={spec.tunnel?.limit} />
+              <div className="text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <div className="mt-1">
+                  <EnabledBadge
+                    enabled={spec.tunnel?.disable !== undefined ? !spec.tunnel.disable : undefined}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && (
+        <Card>
+          <CardHeader>
+            <CardTitle>WAF</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ConfigField
+                label="WASM Init Container Image"
+                value={spec.waf?.wasmInitContainerImage}
+              />
+              <ConfigField label="Skip Validation" value={spec.waf?.skipValidation} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && spec.circuitBreaker && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Circuit Breaker</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ConfigField label="Max Connections" value={spec.circuitBreaker.maxConnections} />
+              <ConfigField
+                label="Max Pending Requests"
+                value={spec.circuitBreaker.maxPendingRequests}
+              />
+              <ConfigField
+                label="Max Parallel Requests"
+                value={spec.circuitBreaker.maxParallelRequests}
+              />
+              <ConfigField
+                label="Max Parallel Retries"
+                value={spec.circuitBreaker.maxParallelRetries}
+              />
+              <ConfigField
+                label="Max Requests Per Connection"
+                value={spec.circuitBreaker.maxRequestsPerConnection}
+              />
+              {spec.circuitBreaker.perEndpoint && (
+                <ConfigField
+                  label="Per Endpoint Max Connections"
+                  value={spec.circuitBreaker.perEndpoint.maxConnections}
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && spec.loadBalancerPolicy && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Load Balancer Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConfigField label="Policy" value={spec.loadBalancerPolicy} />
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Network Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <div className="mt-1">
+                  <EnabledBadge enabled={spec.networkPolicy?.enable} />
+                </div>
+              </div>
+              <ConfigField
+                label="Disabled Policies"
+                value={
+                  spec.networkPolicy?.disabledPolicies?.length
+                    ? spec.networkPolicy.disabledPolicies.join(", ")
+                    : undefined
+                }
+              />
+              <ConfigField
+                label="Additional Policies"
+                value={spec.networkPolicy?.additionalPolicies?.length ?? 0}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
