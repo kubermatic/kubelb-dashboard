@@ -72,3 +72,7 @@ npx shadcn@latest add button
 - Query keys centralized in `src/api/query-keys.ts`
 - Pre-commit hook runs lint-staged (ESLint + Prettier on staged files)
 - CI runs lint, format check, type check, and build on all PRs
+
+## Discussion rules
+
+For each task, query, question from my side please weigh out the pros and cons. If an action has significant downsides, please mention them and ask for confirmation before proceeding. If you are unsure about the best approach, outline the options and ask for guidance. Always prioritize correctness, security, and maintainability over speed.
