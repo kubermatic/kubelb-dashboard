@@ -37,6 +37,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useEdition } from "@/hooks/use-edition";
 import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
@@ -210,6 +211,7 @@ function TenantDetail() {
 
 function OverviewTab({ tenant }: { tenant: Tenant }) {
   const { spec } = tenant;
+  const { isEE } = useEdition();
 
   return (
     <>
@@ -258,6 +260,100 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
           </div>
         </CardContent>
       </Card>
+
+      {isEE && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tunnel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+              <span className="text-muted-foreground">Status</span>
+              <FeatureBadge enabled={!spec.tunnel?.disable} />
+              <span className="text-muted-foreground">Limit</span>
+              <span>{spec.tunnel?.limit ?? "—"}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && spec.circuitBreaker && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Circuit Breaker</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+              <span className="text-muted-foreground">Max Connections</span>
+              <span>{spec.circuitBreaker.maxConnections ?? "—"}</span>
+              <span className="text-muted-foreground">Max Pending Requests</span>
+              <span>{spec.circuitBreaker.maxPendingRequests ?? "—"}</span>
+              <span className="text-muted-foreground">Max Parallel Requests</span>
+              <span>{spec.circuitBreaker.maxParallelRequests ?? "—"}</span>
+              <span className="text-muted-foreground">Max Parallel Retries</span>
+              <span>{spec.circuitBreaker.maxParallelRetries ?? "—"}</span>
+              <span className="text-muted-foreground">Max Req / Connection</span>
+              <span>{spec.circuitBreaker.maxRequestsPerConnection ?? "—"}</span>
+              {spec.circuitBreaker.perEndpoint && (
+                <>
+                  <span className="text-muted-foreground">Per-Endpoint Max Conn</span>
+                  <span>{spec.circuitBreaker.perEndpoint.maxConnections ?? "—"}</span>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && spec.networkPolicy && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Network Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+              <span className="text-muted-foreground">Status</span>
+              <FeatureBadge enabled={!!spec.networkPolicy.enable} />
+              <span className="text-muted-foreground">Disabled Policies</span>
+              <span>
+                {spec.networkPolicy.disabledPolicies?.length
+                  ? spec.networkPolicy.disabledPolicies.join(", ")
+                  : "—"}
+              </span>
+              <span className="text-muted-foreground">Additional Policies</span>
+              <span>{spec.networkPolicy.additionalPolicies?.length ?? 0}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && spec.loadBalancerPolicy && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Load Balancer Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Badge variant="outline">{spec.loadBalancerPolicy}</Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && spec.allowedDomains && spec.allowedDomains.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Allowed Domains</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {spec.allowedDomains.map((domain: string) => (
+                <Badge key={domain} variant="outline">
+                  {domain}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }
