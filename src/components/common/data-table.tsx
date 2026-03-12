@@ -79,6 +79,12 @@ interface DataTableProps<T> {
   filterColumns?: FilterColumn[];
   toolbarLeading?: ReactNode;
   onRowClick?: (row: Row<T>) => void;
+  initialSearch?: string;
+  initialPage?: number;
+  initialPageSize?: number;
+  onSearchChange?: (value: string) => void;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function DataTable<T>({
@@ -91,32 +97,61 @@ export function DataTable<T>({
   filterColumns,
   toolbarLeading,
   onRowClick,
+  initialSearch,
+  initialPage,
+  initialPageSize,
+  onSearchChange,
+  onPageChange,
+  onPageSizeChange,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
+    initialSearch && searchColumn ? [{ id: searchColumn, value: initialSearch }] : [],
+  );
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [pagination, setPagination] = useState({
+    pageIndex: initialPage ?? 0,
+    pageSize: initialPageSize ?? getStoredPageSize(),
+  });
 
   const table = useReactTable({
     data,
     columns,
-    initialState: { pagination: { pageSize: getStoredPageSize() } },
-    state: { sorting, columnFilters, columnVisibility },
+    state: { sorting, columnFilters, columnVisibility, pagination },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: (updater) => {
+      setColumnFilters(updater);
+      const next = typeof updater === "function" ? updater(columnFilters) : updater;
+      if (searchColumn) {
+        const filter = next.find((f) => f.id === searchColumn);
+        onSearchChange?.((filter?.value as string) ?? "");
+      }
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      onPageChange?.(0);
+    },
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      setPagination((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        if (next.pageIndex !== prev.pageIndex) onPageChange?.(next.pageIndex);
+        if (next.pageSize !== prev.pageSize) {
+          onPageSizeChange?.(next.pageSize);
+          try {
+            localStorage.setItem(PAGE_SIZE_KEY, String(next.pageSize));
+          } catch {
+            /* noop */
+          }
+        }
+        return next;
+      });
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handlePageSizeChange = (size: number) => {
-    try {
-      localStorage.setItem(PAGE_SIZE_KEY, String(size));
-    } catch {
-      /* noop */
-    }
-  };
+  const handlePageSizeChange = (_size: number) => {};
 
   return (
     <div className="space-y-4">

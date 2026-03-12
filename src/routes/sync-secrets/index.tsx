@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { KeyRound } from "lucide-react";
 import { DataTable } from "@/components/common/data-table";
@@ -23,9 +23,11 @@ import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { formatAge } from "@/lib/format";
+import { type ListSearchParams, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
 
 export const Route = createFileRoute("/sync-secrets/")({
+  validateSearch: validateListSearch,
   component: SyncSecrets,
 });
 
@@ -83,7 +85,15 @@ const columns: ColumnDef<SyncSecret>[] = [
 function SyncSecrets() {
   const { data, isLoading, isError, error, refetch } = useSyncSecrets();
   const navigate = useNavigate();
+  const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
+
+  const updateSearch = (params: Partial<ListSearchParams>) =>
+    void navigate({
+      from: "/sync-secrets/",
+      search: (prev) => ({ ...prev, ...params }),
+      replace: true,
+    });
 
   return (
     <div className="space-y-6">
@@ -102,6 +112,12 @@ function SyncSecrets() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search sync secrets..."
+          initialSearch={search}
+          initialPage={page}
+          initialPageSize={pageSize}
+          onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
+          onPageChange={(p) => updateSearch({ page: p })}
+          onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({

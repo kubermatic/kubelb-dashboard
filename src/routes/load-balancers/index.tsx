@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,10 +25,12 @@ import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { formatAge } from "@/lib/format";
+import { type ListSearchParams, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/")({
+  validateSearch: validateListSearch,
   component: LoadBalancers,
 });
 
@@ -134,7 +136,15 @@ function LoadBalancers() {
     selectedNamespace ?? undefined,
   );
   const navigate = useNavigate();
+  const { search, page, pageSize } = useSearch({ from: "/load-balancers/" });
   const items = data?.items ?? [];
+
+  const updateSearch = (params: Partial<ListSearchParams>) =>
+    void navigate({
+      from: "/load-balancers/",
+      search: (prev) => ({ ...prev, ...params }),
+      replace: true,
+    });
 
   return (
     <div className="space-y-6">
@@ -156,6 +166,12 @@ function LoadBalancers() {
           searchColumn="name"
           searchPlaceholder="Search load balancers..."
           toolbarLeading={<NamespaceSelector />}
+          initialSearch={search}
+          initialPage={page}
+          initialPageSize={pageSize}
+          onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
+          onPageChange={(p) => updateSearch({ page: p })}
+          onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({
