@@ -76,6 +76,51 @@ export async function kubeList<T>(
   return response.json() as Promise<KubeList<T>>;
 }
 
+export async function kubeCreate<T>(path: string, body: T): Promise<T> {
+  const response = await fetch(`${KUBE_PREFIX}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await toKubeError(response);
+  }
+  return response.json() as Promise<T>;
+}
+
+export async function kubeUpdate<T>(path: string, body: T): Promise<T> {
+  const response = await fetch(`${KUBE_PREFIX}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await toKubeError(response);
+  }
+  return response.json() as Promise<T>;
+}
+
+export async function kubeDelete(path: string): Promise<void> {
+  const response = await fetch(`${KUBE_PREFIX}${path}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw await toKubeError(response);
+  }
+}
+
+export async function kubePatch<T>(path: string, patch: unknown): Promise<T> {
+  const response = await fetch(`${KUBE_PREFIX}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/strategic-merge-patch+json" },
+    body: JSON.stringify(patch),
+  });
+  if (!response.ok) {
+    throw await toKubeError(response);
+  }
+  return response.json() as Promise<T>;
+}
+
 export function kubeWatch<T>(
   path: string,
   resourceVersion: string,

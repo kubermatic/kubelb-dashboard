@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -22,13 +23,15 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Network } from "lucide-react";
+import { FileText, Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
@@ -60,84 +63,6 @@ function isReady(lb: LoadBalancer): boolean {
   return (lb.status?.loadBalancer?.ingress?.length ?? 0) > 0;
 }
 
-const columns: ColumnDef<LoadBalancer>[] = [
-  {
-    accessorFn: (row) => row.metadata.name,
-    id: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-    cell: ({ row }) => {
-      const { name, namespace } = row.original.metadata;
-      return (
-        <Link
-          to="/load-balancers/$namespace/$name"
-          params={{ namespace: namespace ?? "default", name }}
-          className="font-medium text-primary hover:underline"
-        >
-          {name}
-        </Link>
-      );
-    },
-  },
-  {
-    accessorFn: (row) => row.metadata.namespace,
-    id: "namespace",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
-  },
-  {
-    accessorFn: (row) => row.spec.type ?? "ClusterIP",
-    id: "type",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-  },
-  {
-    id: "ports",
-    accessorFn: formatPorts,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{formatPorts(row.original) || "\u2014"}</span>
-    ),
-  },
-  {
-    id: "externalIP",
-    accessorFn: getExternalIP,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="External IP" />,
-    cell: ({ row }) => <span className="font-mono text-xs">{getExternalIP(row.original)}</span>,
-  },
-  {
-    id: "endpoints",
-    accessorFn: getEndpointCount,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
-  },
-  {
-    id: "status",
-    accessorFn: (row) => (isReady(row) ? "Ready" : "Pending"),
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) => {
-      const ready = isReady(row.original);
-      return (
-        <Badge
-          className={
-            ready
-              ? "bg-success/10 text-success hover:bg-success/20"
-              : "bg-warning/10 text-warning hover:bg-warning/20"
-          }
-        >
-          {ready ? "Ready" : "Pending"}
-        </Badge>
-      );
-    },
-  },
-  {
-    id: "age",
-    accessorFn: (row) => row.metadata.creationTimestamp,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-    cell: ({ row }) => {
-      const ts = row.original.metadata.creationTimestamp;
-      return ts ? formatAge(ts) : "\u2014";
-    },
-    sortingFn: "datetime",
-  },
-];
-
 function LoadBalancers() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
@@ -145,6 +70,99 @@ function LoadBalancers() {
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/load-balancers/" });
   const items = data?.items ?? [];
+  const [yamlResource, setYamlResource] = useState<LoadBalancer | null>(null);
+
+  const columns: ColumnDef<LoadBalancer>[] = [
+    {
+      accessorFn: (row) => row.metadata.name,
+      id: "name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+      cell: ({ row }) => {
+        const { name, namespace } = row.original.metadata;
+        return (
+          <Link
+            to="/load-balancers/$namespace/$name"
+            params={{ namespace: namespace ?? "default", name }}
+            className="font-medium text-primary hover:underline"
+          >
+            {name}
+          </Link>
+        );
+      },
+    },
+    {
+      accessorFn: (row) => row.metadata.namespace,
+      id: "namespace",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+    },
+    {
+      accessorFn: (row) => row.spec.type ?? "ClusterIP",
+      id: "type",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+    },
+    {
+      id: "ports",
+      accessorFn: formatPorts,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{formatPorts(row.original) || "\u2014"}</span>
+      ),
+    },
+    {
+      id: "externalIP",
+      accessorFn: getExternalIP,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="External IP" />,
+      cell: ({ row }) => <span className="font-mono text-xs">{getExternalIP(row.original)}</span>,
+    },
+    {
+      id: "endpoints",
+      accessorFn: getEndpointCount,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
+    },
+    {
+      id: "status",
+      accessorFn: (row) => (isReady(row) ? "Ready" : "Pending"),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const ready = isReady(row.original);
+        return (
+          <Badge
+            className={
+              ready
+                ? "bg-success/10 text-success hover:bg-success/20"
+                : "bg-warning/10 text-warning hover:bg-warning/20"
+            }
+          >
+            {ready ? "Ready" : "Pending"}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "age",
+      accessorFn: (row) => row.metadata.creationTimestamp,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
+      cell: ({ row }) => {
+        const ts = row.original.metadata.creationTimestamp;
+        return ts ? formatAge(ts) : "\u2014";
+      },
+      sortingFn: "datetime",
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <RowActions
+            actions={[
+              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const updateSearch = (params: Partial<ListSearchParams>) =>
     void navigate({
@@ -188,6 +206,17 @@ function LoadBalancers() {
           }}
         />
       )}
+
+      <YamlViewer
+        open={!!yamlResource}
+        onOpenChange={(open) => !open && setYamlResource(null)}
+        resource={yamlResource}
+        title={
+          yamlResource
+            ? `LoadBalancer: ${yamlResource.metadata.namespace}/${yamlResource.metadata.name}`
+            : undefined
+        }
+      />
     </div>
   );
 }

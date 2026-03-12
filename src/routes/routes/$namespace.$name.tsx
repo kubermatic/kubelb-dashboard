@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { FileCode } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
@@ -22,7 +24,9 @@ import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +40,7 @@ export const Route = createFileRoute("/routes/$namespace/$name")({
 function RouteDetail() {
   const { namespace, name } = Route.useParams();
   const { data: route, isLoading, error, refetch } = useRouteResource(namespace, name);
+  const [yamlOpen, setYamlOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -58,14 +63,20 @@ function RouteDetail() {
 
   return (
     <div className="space-y-6">
-      <ResourceHeader
-        name={route.metadata.name}
-        namespace={route.metadata.namespace}
-        kind="Route"
-        createdAt={route.metadata.creationTimestamp}
-        backHref="/routes"
-        backLabel="Routes"
-      />
+      <div className="flex items-start justify-between">
+        <ResourceHeader
+          name={route.metadata.name}
+          namespace={route.metadata.namespace}
+          kind="Route"
+          createdAt={route.metadata.creationTimestamp}
+          backHref="/routes"
+          backLabel="Routes"
+        />
+        <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>
+          <FileCode />
+          View YAML
+        </Button>
+      </div>
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -85,6 +96,13 @@ function RouteDetail() {
           <MetadataSection metadata={route.metadata} />
         </TabsContent>
       </Tabs>
+
+      <YamlViewer
+        open={yamlOpen}
+        onOpenChange={setYamlOpen}
+        resource={route}
+        title={`Route: ${namespace}/${name}`}
+      />
     </div>
   );
 }

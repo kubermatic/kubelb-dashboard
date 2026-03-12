@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   createFileRoute,
@@ -22,17 +23,40 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import { ArrowUpDown, Users } from "lucide-react";
+import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
+import yaml from "js-yaml";
+import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
 import { DataTable } from "@/components/common/data-table";
+import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
+import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { RowActions } from "@/components/common/row-actions";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useTenants } from "@/hooks/use-tenants";
+import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
+import { downloadKubeconfig } from "@/lib/download-kubeconfig";
 import { formatAge } from "@/lib/format";
+import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
+
+const RESOURCE_KIND = "Tenant";
+const API_VERSION = "kubelb.k8c.io/v1alpha1";
+
+const CRD_NAME = "tenants.kubelb.k8c.io";
+
+const TENANT_TEMPLATE = {
+  apiVersion: API_VERSION,
+  kind: RESOURCE_KIND,
+  metadata: { name: "" },
+  spec: {},
+};
 
 export const Route = createFileRoute("/tenants/")({
   validateSearch: validateListSearch,
@@ -51,69 +75,125 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
   );
 }
 
-const columns: ColumnDef<Tenant>[] = [
-  {
-    accessorKey: "metadata.name",
-    id: "name",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Name
-        <ArrowUpDown className="ml-1 size-3" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <Link
-        to="/tenants/$name"
-        params={{ name: row.original.metadata.name }}
-        className="font-medium text-primary hover:underline"
-      >
-        {row.original.metadata.name}
-      </Link>
-    ),
-  },
-  {
-    id: "l4",
-    header: "L4",
-    cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.loadBalancer?.disable} />,
-  },
-  {
-    id: "ingress",
-    header: "Ingress",
-    cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.ingress?.disable} />,
-  },
-  {
-    id: "gateway",
-    header: "Gateway",
-    cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.gatewayAPI?.disable} />,
-  },
-  {
-    id: "dnsDomain",
-    header: "DNS Domain",
-    cell: ({ row }) => (
-      <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>
-    ),
-  },
-  {
-    accessorKey: "metadata.creationTimestamp",
-    id: "age",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Age
-        <ArrowUpDown className="ml-1 size-3" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const ts = row.original.metadata.creationTimestamp;
-      return <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>;
-    },
-  },
-];
-
 function Tenants() {
   const { data, isLoading, isError, error, refetch } = useTenants();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
+
+  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const createTenant = useCreateTenant();
+  const updateTenant = useUpdateTenant();
+  const deleteTenant = useDeleteTenant();
+
+  const createUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "create"), []);
+  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [yamlViewerResource, setYamlViewerResource] = useState<Tenant | null>(null);
+  const [editResource, setEditResource] = useState<Tenant | null>(null);
+  const [deleteResource, setDeleteResource] = useState<Tenant | null>(null);
+
+  const columns: ColumnDef<Tenant>[] = [
+    {
+      accessorKey: "metadata.name",
+      id: "name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <ArrowUpDown className="ml-1 size-3" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <Link
+          to="/tenants/$name"
+          params={{ name: row.original.metadata.name }}
+          className="font-medium text-primary hover:underline"
+        >
+          {row.original.metadata.name}
+        </Link>
+      ),
+    },
+    {
+      id: "l4",
+      header: "L4",
+      cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.loadBalancer?.disable} />,
+    },
+    {
+      id: "ingress",
+      header: "Ingress",
+      cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.ingress?.disable} />,
+    },
+    {
+      id: "gateway",
+      header: "Gateway",
+      cell: ({ row }) => <FeatureBadge enabled={!row.original.spec.gatewayAPI?.disable} />,
+    },
+    {
+      id: "dnsDomain",
+      header: "DNS Domain",
+      cell: ({ row }) => (
+        <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>
+      ),
+    },
+    {
+      accessorKey: "metadata.creationTimestamp",
+      id: "age",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Age
+          <ArrowUpDown className="ml-1 size-3" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const ts = row.original.metadata.creationTimestamp;
+        return (
+          <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <RowActions
+            actions={[
+              {
+                label: "View YAML",
+                icon: FileText,
+                onClick: () => setYamlViewerResource(row.original),
+              },
+              {
+                label: "Download Kubeconfig",
+                icon: Download,
+                onClick: () => void downloadKubeconfig(row.original.metadata.name),
+              },
+              {
+                label: "Edit",
+                icon: Pencil,
+                onClick: () => setEditResource(row.original),
+              },
+              {
+                label: "Delete",
+                icon: Trash2,
+                variant: "destructive",
+                separator: true,
+                onClick: () => setDeleteResource(row.original),
+              },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const updateSearch = (params: Partial<ListSearchParams>) =>
     void navigate({
@@ -141,6 +221,12 @@ function Tenants() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Filter tenants..."
+          toolbarLeading={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Tenant
+            </Button>
+          }
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}
@@ -154,6 +240,101 @@ function Tenants() {
             });
           }}
         />
+      )}
+
+      {crdSchema ? (
+        <ResourceFormDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          mode="create"
+          title="Create Tenant"
+          schema={crdSchema}
+          uiSchema={createUiSchema}
+          formData={TENANT_TEMPLATE}
+          isPending={createTenant.isPending}
+          onSubmit={(parsed) => {
+            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+          }}
+        />
+      ) : (
+        <YamlEditorDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          mode="create"
+          title="Create Tenant"
+          resourceKind={RESOURCE_KIND}
+          apiVersion={API_VERSION}
+          initialYaml={yaml.dump(TENANT_TEMPLATE, { noRefs: true })}
+          isPending={createTenant.isPending}
+          onSubmit={(parsed) => {
+            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+          }}
+        />
+      )}
+
+      <YamlViewer
+        open={!!yamlViewerResource}
+        onOpenChange={(open) => !open && setYamlViewerResource(null)}
+        resource={yamlViewerResource}
+        title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
+      />
+
+      {crdSchema ? (
+        <ResourceFormDialog
+          open={!!editResource}
+          onOpenChange={(open) => !open && setEditResource(null)}
+          mode="edit"
+          title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+          schema={crdSchema}
+          uiSchema={editUiSchema}
+          formData={
+            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+          }
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+          }}
+        />
+      ) : (
+        <YamlEditorDialog
+          open={!!editResource}
+          onOpenChange={(open) => !open && setEditResource(null)}
+          mode="edit"
+          title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+          resourceKind={RESOURCE_KIND}
+          apiVersion={API_VERSION}
+          initialYaml={
+            editResource
+              ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
+              : ""
+          }
+          lockedFields={{ name: true }}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+          }}
+        />
+      )}
+
+      {deleteResource && (
+        <DeleteDialog
+          open={!!deleteResource}
+          onOpenChange={(open) => !open && setDeleteResource(null)}
+          resourceName={deleteResource.metadata.name}
+          resourceKind={RESOURCE_KIND}
+          isPending={deleteTenant.isPending}
+          onConfirm={() => {
+            void deleteTenant
+              .mutateAsync(deleteResource.metadata.name)
+              .then(() => setDeleteResource(null));
+          }}
+        >
+          <p className="text-sm text-muted-foreground">
+            This will permanently delete namespace{" "}
+            <strong>tenant-{deleteResource.metadata.name}</strong> and all associated resources
+            including load balancers, routes, and secrets.
+          </p>
+        </DeleteDialog>
       )}
     </div>
   );

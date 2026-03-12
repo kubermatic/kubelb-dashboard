@@ -14,20 +14,35 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import yaml from "js-yaml";
+import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { Download, FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
+import { DeleteDialog } from "@/components/common/delete-dialog";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
+import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
+import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
+import { downloadKubeconfig } from "@/lib/download-kubeconfig";
+import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { Tenant } from "@/types/kubelb";
+
+const CRD_NAME = "tenants.kubelb.k8c.io";
 
 export const Route = createFileRoute("/tenants/$name")({
   component: TenantDetail,
@@ -46,7 +61,16 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 
 function TenantDetail() {
   const { name } = Route.useParams();
+  const navigate = useNavigate();
   const { data: tenant, isLoading, error, refetch } = useTenant(name);
+  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const updateTenant = useUpdateTenant();
+  const deleteTenant = useDeleteTenant();
+  const editUiSchema = useMemo(() => buildUiSchema("Tenant", "edit"), []);
+
+  const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -67,16 +91,39 @@ function TenantDetail() {
 
   if (!tenant) return null;
 
+  const editYaml = yaml.dump(sanitizeForEdit(tenant), { noRefs: true, lineWidth: -1 });
+
   return (
     <div className="space-y-6">
-      <ResourceHeader
-        name={tenant.metadata.name}
-        namespace={tenant.metadata.namespace}
-        kind="Tenant"
-        createdAt={tenant.metadata.creationTimestamp}
-        backHref="/tenants"
-        backLabel="Tenants"
-      />
+      <div className="flex items-start justify-between">
+        <ResourceHeader
+          name={tenant.metadata.name}
+          namespace={tenant.metadata.namespace}
+          kind="Tenant"
+          createdAt={tenant.metadata.creationTimestamp}
+          backHref="/tenants"
+          backLabel="Tenants"
+        />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setYamlViewerOpen(true)}>
+            <FileCode />
+            View YAML
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void downloadKubeconfig(name)}>
+            <Download />
+            Kubeconfig
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil />
+            Edit
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+            <Trash2 />
+            Delete
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -96,6 +143,63 @@ function TenantDetail() {
           <MetadataSection metadata={tenant.metadata} />
         </TabsContent>
       </Tabs>
+
+      <YamlViewer
+        open={yamlViewerOpen}
+        onOpenChange={setYamlViewerOpen}
+        resource={tenant}
+        title={`Tenant: ${name}`}
+      />
+
+      {crdSchema ? (
+        <ResourceFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit Tenant"
+          schema={crdSchema}
+          uiSchema={editUiSchema}
+          formData={sanitizeForEdit(tenant) as Record<string, unknown>}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+          }}
+        />
+      ) : (
+        <YamlEditorDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit Tenant"
+          resourceKind="Tenant"
+          apiVersion="kubelb.k8c.io/v1alpha1"
+          initialYaml={editYaml}
+          lockedFields={{ name: true }}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+          }}
+        />
+      )}
+
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        resourceName={name}
+        resourceKind="Tenant"
+        isPending={deleteTenant.isPending}
+        onConfirm={() => {
+          void deleteTenant
+            .mutateAsync(name)
+            .then(() =>
+              navigate({ to: "/tenants", search: { search: "", page: 0, pageSize: 10 } }),
+            );
+        }}
+      >
+        <p className="text-sm text-destructive">
+          Deleting this tenant will also delete its namespace and all resources within it.
+        </p>
+      </DeleteDialog>
     </div>
   );
 }

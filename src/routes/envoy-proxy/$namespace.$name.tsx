@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { FileCode } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
@@ -23,6 +25,8 @@ import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
+import { YamlViewer } from "@/components/common/yaml-viewer";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,6 +39,7 @@ export const Route = createFileRoute("/envoy-proxy/$namespace/$name")({
 function EnvoyProxyDetail() {
   const { namespace, name } = Route.useParams();
   const { data: deployment, isLoading, isError, error, refetch } = useDeployment(namespace, name);
+  const [yamlOpen, setYamlOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -62,14 +67,20 @@ function EnvoyProxyDetail() {
 
   return (
     <div className="space-y-6">
-      <ResourceHeader
-        name={deployment.metadata.name}
-        namespace={deployment.metadata.namespace}
-        kind="Deployment"
-        createdAt={deployment.metadata.creationTimestamp}
-        backHref="/envoy-proxy"
-        backLabel="Envoy Proxies"
-      />
+      <div className="flex items-start justify-between">
+        <ResourceHeader
+          name={deployment.metadata.name}
+          namespace={deployment.metadata.namespace}
+          kind="Deployment"
+          createdAt={deployment.metadata.creationTimestamp}
+          backHref="/envoy-proxy"
+          backLabel="Envoy Proxies"
+        />
+        <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>
+          <FileCode />
+          View YAML
+        </Button>
+      </div>
 
       <Tabs defaultValue="overview">
         <TabsList>
@@ -132,6 +143,13 @@ function EnvoyProxyDetail() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <YamlViewer
+        open={yamlOpen}
+        onOpenChange={setYamlOpen}
+        resource={deployment}
+        title={`Deployment: ${namespace}/${name}`}
+      />
     </div>
   );
 }
