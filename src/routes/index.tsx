@@ -397,7 +397,13 @@ function Overview() {
           query={deploymentQuery}
           href="/envoy-proxy"
         />
-        <MetricCard icon={KeyRound} label="Sync Secrets" accent="warning" query={syncSecretQuery} />
+        <MetricCard
+          icon={KeyRound}
+          label="Sync Secrets"
+          accent="warning"
+          query={syncSecretQuery}
+          href="/sync-secrets"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
