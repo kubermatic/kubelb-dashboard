@@ -44,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useDeleteSyncSecret, useUpdateSyncSecret } from "@/hooks/use-sync-secret-mutations";
 import { useSyncSecret } from "@/hooks/use-sync-secrets";
+import { KUBELB_LABELS } from "@/lib/constants";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
@@ -209,8 +210,8 @@ function SyncSecretDetail() {
 
 function OverviewTab({ secret }: { secret: SyncSecret }) {
   const labels = secret.metadata.labels ?? {};
-  const originNs = labels["kubelb.k8c.io/origin-ns"] ?? "\u2014";
-  const originName = labels["kubelb.k8c.io/origin-name"] ?? "\u2014";
+  const originNs = labels[KUBELB_LABELS.ORIGIN_NS] ?? "\u2014";
+  const originName = labels[KUBELB_LABELS.ORIGIN_NAME] ?? "\u2014";
 
   return (
     <>

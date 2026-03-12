@@ -34,7 +34,7 @@ import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { formatAge, tenantToNamespace } from "@/lib/format";
+import { formatAge, getOriginSource, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 
@@ -113,6 +113,14 @@ function LoadBalancers() {
       accessorFn: (row) => row.metadata.namespace,
       id: "namespace",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+    },
+    {
+      id: "source",
+      accessorFn: (row) => getOriginSource(row.metadata.labels),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{getOriginSource(row.original.metadata.labels)}</span>
+      ),
     },
     {
       id: "ports",

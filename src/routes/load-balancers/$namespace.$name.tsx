@@ -19,6 +19,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
+import { KUBELB_ANNOTATIONS as KUBELB_ANNOTATION_KEYS } from "@/lib/constants";
 import { CopyButton } from "@/components/common/copy-button";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
@@ -123,12 +124,12 @@ function LoadBalancerDetail() {
 }
 
 const KUBELB_ANNOTATIONS: Record<string, string> = {
-  "kubelb.k8c.io/proxy-protocol": "Proxy Protocol",
-  "kubelb.k8c.io/lb-policy": "LB Policy",
-  "kubelb.k8c.io/request-wildcard-domain": "Wildcard Domain",
-  "kubelb.k8c.io/manage-dns": "Managed DNS",
-  "kubelb.k8c.io/manage-certificates": "Managed Certificates",
-  "kubelb.k8c.io/propagate-annotation": "Propagate Annotations",
+  [KUBELB_ANNOTATION_KEYS.PROXY_PROTOCOL]: "Proxy Protocol",
+  [KUBELB_ANNOTATION_KEYS.LB_POLICY]: "LB Policy",
+  [KUBELB_ANNOTATION_KEYS.WILDCARD_DOMAIN]: "Wildcard Domain",
+  [KUBELB_ANNOTATION_KEYS.MANAGE_DNS]: "Managed DNS",
+  [KUBELB_ANNOTATION_KEYS.MANAGE_CERTIFICATES]: "Managed Certificates",
+  [KUBELB_ANNOTATION_KEYS.PROPAGATE_ANNOTATION]: "Propagate Annotations",
 };
 
 function OverviewTab({ lb }: { lb: LoadBalancer }) {
