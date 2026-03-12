@@ -30,11 +30,26 @@ export class KubeApiError extends Error {
   }
 }
 
+async function toKubeError(response: Response): Promise<KubeApiError> {
+  try {
+    const body = (await response.json()) as KubeStatus;
+    return new KubeApiError(body);
+  } catch {
+    return new KubeApiError({
+      kind: "Status",
+      apiVersion: "v1",
+      status: "Failure",
+      message: `${String(response.status)} ${response.statusText}`,
+      reason: response.statusText,
+      code: response.status,
+    });
+  }
+}
+
 export async function kubeGet<T>(path: string): Promise<T> {
   const response = await fetch(`${KUBE_PREFIX}${path}`);
   if (!response.ok) {
-    const body = (await response.json()) as KubeStatus;
-    throw new KubeApiError(body);
+    throw await toKubeError(response);
   }
   return response.json() as Promise<T>;
 }
@@ -56,8 +71,7 @@ export async function kubeList<T>(
 
   const response = await fetch(url.toString());
   if (!response.ok) {
-    const body = (await response.json()) as KubeStatus;
-    throw new KubeApiError(body);
+    throw await toKubeError(response);
   }
   return response.json() as Promise<KubeList<T>>;
 }
@@ -69,14 +83,17 @@ export function kubeWatch<T>(
   onError: (error: Error) => void,
 ): () => void {
   const abortController = new AbortController();
-  const url = `${KUBE_PREFIX}${path}?watch=true&resourceVersion=${encodeURIComponent(resourceVersion)}`;
+  const separator = path.includes("?") ? "&" : "?";
+  const url = `${KUBE_PREFIX}${path}${separator}watch=true&resourceVersion=${encodeURIComponent(resourceVersion)}`;
 
   void (async () => {
     try {
       const response = await fetch(url, { signal: abortController.signal });
-      if (!response.ok || !response.body) {
-        const body = (await response.json()) as KubeStatus;
-        throw new KubeApiError(body);
+      if (!response.ok) {
+        throw await toKubeError(response);
+      }
+      if (!response.body) {
+        throw new Error("Watch response has no body");
       }
 
       const reader = response.body.getReader();

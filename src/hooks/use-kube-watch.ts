@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { kubeList, kubeWatch } from "@/api/kube";
 import type { KubeList, ObjectMeta, WatchEvent } from "@/types/kubernetes";
@@ -29,6 +29,9 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
   const queryClient = useQueryClient();
   const backoffRef = useRef(1_000);
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableQueryKey = useMemo(() => queryKey, [JSON.stringify(queryKey)]);
 
   const query = useQuery<KubeList<T>>({
     queryKey,
@@ -57,14 +60,14 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
         rv,
         (event: WatchEvent<T>) => {
           backoffRef.current = 1_000;
-          handleEvent(queryClient, queryKey, event);
+          handleEvent(queryClient, stableQueryKey, event);
         },
         () => {
           if (!mounted) return;
           const delay = backoffRef.current;
           backoffRef.current = Math.min(delay * 2, MAX_BACKOFF);
           reconnectTimer = setTimeout(() => {
-            void queryClient.invalidateQueries({ queryKey });
+            void queryClient.invalidateQueries({ queryKey: stableQueryKey });
           }, delay);
         },
       );
@@ -80,22 +83,22 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
       cleanupRef.current?.();
       cleanupRef.current = null;
     };
-  }, [enabled, resourceVersion, path, options?.labelSelector, queryKey, queryClient]);
+  }, [enabled, resourceVersion, path, options?.labelSelector, stableQueryKey, queryClient]);
 
   return query;
 }
 
 function handleEvent<T extends { metadata: ObjectMeta }>(
   queryClient: ReturnType<typeof useQueryClient>,
-  queryKey: readonly unknown[],
+  key: readonly unknown[],
   event: WatchEvent<T>,
 ) {
   if (event.type === "ERROR") {
-    void queryClient.invalidateQueries({ queryKey });
+    void queryClient.invalidateQueries({ queryKey: key });
     return;
   }
 
-  queryClient.setQueryData<KubeList<T>>(queryKey, (old) => {
+  queryClient.setQueryData<KubeList<T>>(key, (old) => {
     if (!old) return old;
 
     const uid = event.object.metadata.uid;

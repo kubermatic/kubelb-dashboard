@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -68,12 +68,13 @@ const columns: ColumnDef<RouteType>[] = [
     cell: ({ row }) => {
       const { name, namespace } = row.original.metadata;
       return (
-        <a
-          href={`/routes/${namespace ?? ""}.${name}`}
+        <Link
+          to="/routes/$namespace/$name"
+          params={{ namespace: namespace ?? "default", name }}
           className="font-medium text-primary hover:underline"
         >
           {name}
-        </a>
+        </Link>
       );
     },
   },

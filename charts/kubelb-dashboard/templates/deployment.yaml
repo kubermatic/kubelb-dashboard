@@ -63,6 +63,8 @@ spec:
               mountPath: /var/run
         - name: api
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:

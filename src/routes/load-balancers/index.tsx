@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -56,12 +56,13 @@ const columns: ColumnDef<LoadBalancer>[] = [
     cell: ({ row }) => {
       const { name, namespace } = row.original.metadata;
       return (
-        <a
-          href={`/load-balancers/${namespace ?? ""}.${name}`}
+        <Link
+          to="/load-balancers/$namespace/$name"
+          params={{ namespace: namespace ?? "default", name }}
           className="font-medium text-primary hover:underline"
         >
           {name}
-        </a>
+        </Link>
       );
     },
   },
