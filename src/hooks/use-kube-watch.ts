@@ -30,8 +30,9 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
   const backoffRef = useRef(1_000);
   const cleanupRef = useRef<(() => void) | null>(null);
 
+  const serializedKey = JSON.stringify(queryKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const stableQueryKey = useMemo(() => queryKey, [JSON.stringify(queryKey)]);
+  const stableQueryKey = useMemo(() => queryKey, [serializedKey]);
 
   const query = useQuery<KubeList<T>>({
     queryKey,
