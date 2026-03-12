@@ -51,6 +51,11 @@ export const queryKeys = {
         : (["deployments", "list", labels] as const),
     detail: (ns: string, name: string) => ["deployments", "detail", ns, name] as const,
   },
+  wafPolicies: {
+    all: ["wafpolicies"] as const,
+    list: () => ["wafpolicies", "list"] as const,
+    detail: (name: string) => ["wafpolicies", "detail", name] as const,
+  },
   edition: {
     detect: () => ["edition", "detect"] as const,
   },
