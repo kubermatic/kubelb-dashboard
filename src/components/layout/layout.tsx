@@ -15,23 +15,18 @@
  */
 
 import type { ReactNode } from "react";
+import { Header } from "@/components/layout/header";
+import { MobileSidebar, Sidebar } from "@/components/layout/sidebar";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex h-14 items-center border-b px-6">
-        <span className="text-lg font-semibold">KubeLB</span>
-      </header>
-      <div className="flex flex-1">
-        <aside className="w-60 border-r p-4">
-          <nav className="space-y-1">
-            <a href="/" className="block rounded px-3 py-2 hover:bg-gray-100">
-              Home
-            </a>
-          </nav>
-        </aside>
-        <main className="flex-1 p-6">{children}</main>
+    <div className="flex h-screen flex-col overflow-hidden">
+      <Header />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-auto p-3 md:p-5">{children}</main>
       </div>
+      <MobileSidebar />
     </div>
   );
 }

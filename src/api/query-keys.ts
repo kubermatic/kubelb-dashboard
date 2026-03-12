@@ -15,5 +15,42 @@
  */
 
 export const queryKeys = {
-  all: ["app"] as const,
+  loadBalancers: {
+    all: ["loadbalancers"] as const,
+    list: (ns?: string) =>
+      ns ? (["loadbalancers", "list", ns] as const) : (["loadbalancers", "list"] as const),
+    detail: (ns: string, name: string) => ["loadbalancers", "detail", ns, name] as const,
+  },
+  routes: {
+    all: ["routes"] as const,
+    list: (ns?: string) => (ns ? (["routes", "list", ns] as const) : (["routes", "list"] as const)),
+    detail: (ns: string, name: string) => ["routes", "detail", ns, name] as const,
+  },
+  tenants: {
+    all: ["tenants"] as const,
+    list: () => ["tenants", "list"] as const,
+    detail: (name: string) => ["tenants", "detail", name] as const,
+  },
+  syncSecrets: {
+    all: ["syncsecrets"] as const,
+    list: (ns?: string) =>
+      ns ? (["syncsecrets", "list", ns] as const) : (["syncsecrets", "list"] as const),
+  },
+  config: {
+    all: ["config"] as const,
+    list: () => ["config", "list"] as const,
+  },
+  pods: {
+    list: (ns?: string) => (ns ? (["pods", "list", ns] as const) : (["pods", "list"] as const)),
+  },
+  deployments: {
+    list: (ns?: string, labels?: string) =>
+      ns
+        ? (["deployments", "list", ns, labels] as const)
+        : (["deployments", "list", labels] as const),
+    detail: (ns: string, name: string) => ["deployments", "detail", ns, name] as const,
+  },
+  namespaces: {
+    list: () => ["namespaces", "list"] as const,
+  },
 } as const;

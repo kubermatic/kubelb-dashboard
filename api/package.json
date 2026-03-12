@@ -1,0 +1,22 @@
+{
+  "name": "kubelb-dashboard-api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/http-proxy": "^11.4.1",
+    "@fastify/websocket": "^11.2.0",
+    "@kubernetes/client-node": "^1.4.0",
+    "fastify": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "tsx": "^4.20.3",
+    "typescript": "~5.9.3"
+  }
+}

@@ -1,0 +1,33 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kubelb-dashboard.fullname" . }}
+  labels:
+    {{- include "kubelb-dashboard.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["kubelb.k8c.io"]
+    resources: ["loadbalancers", "routes", "tenants", "configs", "syncsecrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubelb-dashboard.fullname" . }}
+  labels:
+    {{- include "kubelb-dashboard.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubelb-dashboard.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kubelb-dashboard.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

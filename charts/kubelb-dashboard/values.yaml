@@ -2,12 +2,23 @@
 replicaCount: 1
 
 image:
-  # -- Container image repository
+  # -- Dashboard (nginx) image repository
   repository: ghcr.io/kubermatic/kubelb-dashboard
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag (defaults to chart appVersion)
   tag: ""
+
+api:
+  image:
+    # -- API server image repository
+    repository: ghcr.io/kubermatic/kubelb-dashboard-api
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+    # -- Image tag (defaults to chart appVersion)
+    tag: ""
+  # -- API server CPU/memory resource requests and limits
+  resources: {}
 
 # -- Image pull secrets
 imagePullSecrets: []
@@ -25,6 +36,10 @@ serviceAccount:
   annotations: {}
   # -- Service account name (generated if empty)
   name: ""
+
+rbac:
+  # -- Create RBAC resources (ClusterRole + ClusterRoleBinding)
+  create: true
 
 # -- Pod annotations
 podAnnotations: {}
@@ -76,7 +91,7 @@ ingress:
   # -- Ingress TLS configuration
   tls: []
 
-# -- CPU/memory resource requests and limits
+# -- Dashboard (nginx) CPU/memory resource requests and limits
 resources: {}
 
 autoscaling:

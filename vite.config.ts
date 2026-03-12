@@ -27,6 +27,23 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/api/": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/healthz": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+      "/readyz": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,

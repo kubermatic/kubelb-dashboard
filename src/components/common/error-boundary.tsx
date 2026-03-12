@@ -16,6 +16,9 @@
 
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Props {
   children: ReactNode;
@@ -24,16 +27,17 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  error: Error | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -44,16 +48,24 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div className="flex min-h-screen items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-semibold">Something went wrong</h1>
-              <button
-                className="mt-4 rounded bg-gray-900 px-4 py-2 text-white"
-                onClick={() => this.setState({ hasError: false })}
-              >
-                Try again
-              </button>
-            </div>
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <Card className="max-w-md">
+              <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
+                <AlertTriangle className="size-10 text-destructive" />
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold">Something went wrong</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {this.state.error?.message ?? "An unexpected error occurred."}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => this.setState({ hasError: false, error: null })}
+                >
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )
       );

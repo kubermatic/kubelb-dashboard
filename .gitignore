@@ -18,3 +18,8 @@ npm-debug.log*
 !.env.example
 
 bin/
+.worktrees/
+
+## AI generated files
+ai/
+pr-reviews/
