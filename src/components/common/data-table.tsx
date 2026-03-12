@@ -16,15 +16,30 @@
 
 import {
   type ColumnDef,
+  type ColumnFiltersState,
+  type Row,
   type SortingState,
+  type VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { Settings2 } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -33,8 +48,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DataTablePagination } from "./data-table-pagination";
+import { DataTableToolbar } from "./data-table-toolbar";
+
+const PAGE_SIZE_KEY = "kubelb-page-size";
+const DEFAULT_PAGE_SIZE = 10;
+
+function getStoredPageSize(): number {
+  try {
+    const val = localStorage.getItem(PAGE_SIZE_KEY);
+    if (val) return Number(val);
+  } catch {
+    /* noop */
+  }
+  return DEFAULT_PAGE_SIZE;
+}
+
+interface FilterColumn {
+  column: string;
+  title: string;
+  options: { label: string; value: string }[];
+}
 
 interface DataTableProps<T> {
   columns: ColumnDef<T, unknown>[];
@@ -43,6 +77,15 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   searchPlaceholder?: string;
   searchColumn?: string;
+  filterColumns?: FilterColumn[];
+  toolbarLeading?: ReactNode;
+  onRowClick?: (row: Row<T>) => void;
+  initialSearch?: string;
+  initialPage?: number;
+  initialPageSize?: number;
+  onSearchChange?: (value: string) => void;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function DataTable<T>({
@@ -52,37 +95,104 @@ export function DataTable<T>({
   emptyMessage = "No results.",
   searchPlaceholder,
   searchColumn,
+  filterColumns,
+  toolbarLeading,
+  onRowClick,
+  initialSearch,
+  initialPage,
+  initialPageSize,
+  onSearchChange,
+  onPageChange,
+  onPageSizeChange,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
+    initialSearch && searchColumn ? [{ id: searchColumn, value: initialSearch }] : [],
+  );
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [pagination, setPagination] = useState({
+    pageIndex: initialPage ?? 0,
+    pageSize: initialPageSize ?? getStoredPageSize(),
+  });
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, globalFilter },
+    state: { sorting, columnFilters, columnVisibility, pagination },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: (updater) => {
+      setColumnFilters(updater);
+      const next = typeof updater === "function" ? updater(columnFilters) : updater;
+      if (searchColumn) {
+        const filter = next.find((f) => f.id === searchColumn);
+        onSearchChange?.((filter?.value as string) ?? "");
+      }
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      onPageChange?.(0);
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      setPagination((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        if (next.pageIndex !== prev.pageIndex) onPageChange?.(next.pageIndex);
+        if (next.pageSize !== prev.pageSize) {
+          onPageSizeChange?.(next.pageSize);
+          try {
+            localStorage.setItem(PAGE_SIZE_KEY, String(next.pageSize));
+          } catch {
+            /* noop */
+          }
+        }
+        return next;
+      });
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: searchColumn
-      ? (row, _columnId, filterValue: string) => {
-          const val = row.getValue<string>(searchColumn) ?? "";
-          return val.toLowerCase().includes(filterValue.toLowerCase());
-        }
-      : undefined,
   });
+
+  const handlePageSizeChange = (_size: number) => {};
 
   return (
     <div className="space-y-4">
-      {searchPlaceholder && (
-        <Input
-          placeholder={searchPlaceholder}
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
+      {(searchPlaceholder || filterColumns || toolbarLeading) && (
+        <DataTableToolbar
+          table={table}
+          searchColumn={searchColumn}
+          searchPlaceholder={searchPlaceholder}
+          filterColumns={filterColumns}
+          leading={toolbarLeading}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" size="sm">
+                  <Settings2 className="mr-1.5 size-4" />
+                  Columns
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter((col) => col.getCanHide())
+                  .map((col) => (
+                    <DropdownMenuCheckboxItem
+                      key={col.id}
+                      checked={col.getIsVisible()}
+                      onCheckedChange={(val) => col.toggleVisibility(!!val)}
+                    >
+                      {typeof col.columnDef.header === "string" ? col.columnDef.header : col.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DataTableToolbar>
       )}
       <div className="overflow-x-auto rounded-md border">
         <Table className="min-w-[600px]">
@@ -90,20 +200,10 @@ export function DataTable<T>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className={
-                      header.column.getCanSort() ? "cursor-pointer select-none" : undefined
-                    }
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
+                  <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
-                    {{
-                      asc: " \u2191",
-                      desc: " \u2193",
-                    }[header.column.getIsSorted() as string] ?? null}
                   </TableHead>
                 ))}
               </TableRow>
@@ -122,7 +222,11 @@ export function DataTable<T>({
               ))
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className={onRowClick ? "cursor-pointer" : undefined}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -140,6 +244,7 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
+      <DataTablePagination table={table} onPageSizeChange={handlePageSizeChange} />
     </div>
   );
 }

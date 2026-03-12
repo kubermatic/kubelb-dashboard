@@ -14,19 +14,30 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useRoutes } from "@/hooks/use-routes";
-import { formatAge } from "@/lib/format";
+import { formatAge, tenantToNamespace } from "@/lib/format";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
+import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
 
 export const Route = createFileRoute("/routes/")({
+  validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: Routes,
 });
 
@@ -120,8 +131,19 @@ const columns: ColumnDef<RouteType>[] = [
 ];
 
 function Routes() {
-  const { data, isLoading, isError, error, refetch } = useRoutes();
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const { data, isLoading, isError, error, refetch } = useRoutes(namespace);
+  const navigate = useNavigate();
+  const { search, page, pageSize } = useSearch({ from: "/routes/" });
   const items = data?.items ?? [];
+
+  const updateSearch = (params: Partial<ListSearchParams>) =>
+    void navigate({
+      from: "/routes/",
+      search: (prev) => ({ ...prev, ...params }),
+      replace: true,
+    });
 
   return (
     <div className="space-y-6">
@@ -140,7 +162,22 @@ function Routes() {
           columns={columns}
           data={items}
           isLoading={isLoading}
+          searchColumn="name"
           searchPlaceholder="Search routes..."
+          toolbarLeading={<TenantSelector />}
+          initialSearch={search}
+          initialPage={page}
+          initialPageSize={pageSize}
+          onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
+          onPageChange={(p) => updateSearch({ page: p })}
+          onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRowClick={(row) => {
+            const { name, namespace } = row.original.metadata;
+            void navigate({
+              to: "/routes/$namespace/$name",
+              params: { namespace: namespace ?? "default", name },
+            });
+          }}
         />
       )}
     </div>

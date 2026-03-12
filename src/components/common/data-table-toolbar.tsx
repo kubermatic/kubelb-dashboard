@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import type { ReactNode } from "react";
 import type { Table } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,6 +36,8 @@ interface DataTableToolbarProps<T> {
   searchColumn?: string;
   searchPlaceholder?: string;
   filterColumns?: FilterColumn[];
+  leading?: ReactNode;
+  children?: ReactNode;
 }
 
 export function DataTableToolbar<T>({
@@ -42,46 +45,48 @@ export function DataTableToolbar<T>({
   searchColumn,
   searchPlaceholder = "Search...",
   filterColumns,
+  leading,
+  children,
 }: DataTableToolbarProps<T>) {
-  const searchCol = searchColumn
-    ? table.getColumn(searchColumn)
-    : undefined;
+  const searchCol = searchColumn ? table.getColumn(searchColumn) : undefined;
 
   return (
-    <div className="flex items-center gap-2">
-      {searchCol && (
-        <Input
-          placeholder={searchPlaceholder}
-          value={(searchCol.getFilterValue() as string) ?? ""}
-          onChange={(e) => searchCol.setFilterValue(e.target.value)}
-          className="max-w-sm"
-        />
-      )}
-      {filterColumns?.map(({ column, title, options }) => {
-        const col = table.getColumn(column);
-        if (!col) return null;
-        return (
-          <Select
-            key={column}
-            value={((col.getFilterValue() as string) ?? "")}
-            onValueChange={(val) =>
-              col.setFilterValue(val || undefined)
-            }
-          >
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder={title} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All</SelectItem>
-              {options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-      })}
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        {leading}
+        {searchCol && (
+          <Input
+            placeholder={searchPlaceholder}
+            value={(searchCol.getFilterValue() as string) ?? ""}
+            onChange={(e) => searchCol.setFilterValue(e.target.value)}
+            className="max-w-sm"
+          />
+        )}
+        {filterColumns?.map(({ column, title, options }) => {
+          const col = table.getColumn(column);
+          if (!col) return null;
+          return (
+            <Select
+              key={column}
+              value={(col.getFilterValue() as string) ?? ""}
+              onValueChange={(val) => col.setFilterValue(val || undefined)}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder={title} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All</SelectItem>
+                {options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        })}
+      </div>
+      {children}
     </div>
   );
 }

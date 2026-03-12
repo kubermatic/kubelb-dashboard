@@ -11,12 +11,13 @@
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
+import { Route as SyncSecretsIndexRouteImport } from "./routes/sync-secrets/index"
 import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
-import { Route as MetricsIndexRouteImport } from "./routes/metrics/index"
 import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
 import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
 import { Route as TenantsNameRouteImport } from "./routes/tenants/$name"
+import { Route as SyncSecretsNamespaceNameRouteImport } from "./routes/sync-secrets/$namespace.$name"
 import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namespace.$name"
 import { Route as LoadBalancersNamespaceNameRouteImport } from "./routes/load-balancers/$namespace.$name"
 import { Route as EnvoyProxyNamespaceNameRouteImport } from "./routes/envoy-proxy/$namespace.$name"
@@ -31,14 +32,14 @@ const TenantsIndexRoute = TenantsIndexRouteImport.update({
   path: "/tenants/",
   getParentRoute: () => rootRouteImport,
 } as any)
+const SyncSecretsIndexRoute = SyncSecretsIndexRouteImport.update({
+  id: "/sync-secrets/",
+  path: "/sync-secrets/",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoutesIndexRoute = RoutesIndexRouteImport.update({
   id: "/routes/",
   path: "/routes/",
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MetricsIndexRoute = MetricsIndexRouteImport.update({
-  id: "/metrics/",
-  path: "/metrics/",
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoadBalancersIndexRoute = LoadBalancersIndexRouteImport.update({
@@ -61,6 +62,12 @@ const TenantsNameRoute = TenantsNameRouteImport.update({
   path: "/tenants/$name",
   getParentRoute: () => rootRouteImport,
 } as any)
+const SyncSecretsNamespaceNameRoute =
+  SyncSecretsNamespaceNameRouteImport.update({
+    id: "/sync-secrets/$namespace/$name",
+    path: "/sync-secrets/$namespace/$name",
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RoutesNamespaceNameRoute = RoutesNamespaceNameRouteImport.update({
   id: "/routes/$namespace/$name",
   path: "/routes/$namespace/$name",
@@ -84,12 +91,13 @@ export interface FileRoutesByFullPath {
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
-  "/metrics/": typeof MetricsIndexRoute
   "/routes/": typeof RoutesIndexRoute
+  "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
+  "/sync-secrets/$namespace/$name": typeof SyncSecretsNamespaceNameRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
@@ -97,12 +105,13 @@ export interface FileRoutesByTo {
   "/configuration": typeof ConfigurationIndexRoute
   "/envoy-proxy": typeof EnvoyProxyIndexRoute
   "/load-balancers": typeof LoadBalancersIndexRoute
-  "/metrics": typeof MetricsIndexRoute
   "/routes": typeof RoutesIndexRoute
+  "/sync-secrets": typeof SyncSecretsIndexRoute
   "/tenants": typeof TenantsIndexRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
+  "/sync-secrets/$namespace/$name": typeof SyncSecretsNamespaceNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -111,12 +120,13 @@ export interface FileRoutesById {
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
-  "/metrics/": typeof MetricsIndexRoute
   "/routes/": typeof RoutesIndexRoute
+  "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
+  "/sync-secrets/$namespace/$name": typeof SyncSecretsNamespaceNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -126,12 +136,13 @@ export interface FileRouteTypes {
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
-    | "/metrics/"
     | "/routes/"
+    | "/sync-secrets/"
     | "/tenants/"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
+    | "/sync-secrets/$namespace/$name"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
@@ -139,12 +150,13 @@ export interface FileRouteTypes {
     | "/configuration"
     | "/envoy-proxy"
     | "/load-balancers"
-    | "/metrics"
     | "/routes"
+    | "/sync-secrets"
     | "/tenants"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
+    | "/sync-secrets/$namespace/$name"
   id:
     | "__root__"
     | "/"
@@ -152,12 +164,13 @@ export interface FileRouteTypes {
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
-    | "/metrics/"
     | "/routes/"
+    | "/sync-secrets/"
     | "/tenants/"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
+    | "/sync-secrets/$namespace/$name"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -166,12 +179,13 @@ export interface RootRouteChildren {
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
   EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
   LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
-  MetricsIndexRoute: typeof MetricsIndexRoute
   RoutesIndexRoute: typeof RoutesIndexRoute
+  SyncSecretsIndexRoute: typeof SyncSecretsIndexRoute
   TenantsIndexRoute: typeof TenantsIndexRoute
   EnvoyProxyNamespaceNameRoute: typeof EnvoyProxyNamespaceNameRoute
   LoadBalancersNamespaceNameRoute: typeof LoadBalancersNamespaceNameRoute
   RoutesNamespaceNameRoute: typeof RoutesNamespaceNameRoute
+  SyncSecretsNamespaceNameRoute: typeof SyncSecretsNamespaceNameRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -190,18 +204,18 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TenantsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/sync-secrets/": {
+      id: "/sync-secrets/"
+      path: "/sync-secrets"
+      fullPath: "/sync-secrets/"
+      preLoaderRoute: typeof SyncSecretsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/routes/": {
       id: "/routes/"
       path: "/routes"
       fullPath: "/routes/"
       preLoaderRoute: typeof RoutesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    "/metrics/": {
-      id: "/metrics/"
-      path: "/metrics"
-      fullPath: "/metrics/"
-      preLoaderRoute: typeof MetricsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/load-balancers/": {
@@ -230,6 +244,13 @@ declare module "@tanstack/react-router" {
       path: "/tenants/$name"
       fullPath: "/tenants/$name"
       preLoaderRoute: typeof TenantsNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/sync-secrets/$namespace/$name": {
+      id: "/sync-secrets/$namespace/$name"
+      path: "/sync-secrets/$namespace/$name"
+      fullPath: "/sync-secrets/$namespace/$name"
+      preLoaderRoute: typeof SyncSecretsNamespaceNameRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/routes/$namespace/$name": {
@@ -262,12 +283,13 @@ const rootRouteChildren: RootRouteChildren = {
   ConfigurationIndexRoute: ConfigurationIndexRoute,
   EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
   LoadBalancersIndexRoute: LoadBalancersIndexRoute,
-  MetricsIndexRoute: MetricsIndexRoute,
   RoutesIndexRoute: RoutesIndexRoute,
+  SyncSecretsIndexRoute: SyncSecretsIndexRoute,
   TenantsIndexRoute: TenantsIndexRoute,
   EnvoyProxyNamespaceNameRoute: EnvoyProxyNamespaceNameRoute,
   LoadBalancersNamespaceNameRoute: LoadBalancersNamespaceNameRoute,
   RoutesNamespaceNameRoute: RoutesNamespaceNameRoute,
+  SyncSecretsNamespaceNameRoute: SyncSecretsNamespaceNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

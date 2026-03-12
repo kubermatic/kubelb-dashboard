@@ -114,6 +114,8 @@ export function kubeWatch<T>(
           }
         }
       }
+
+      onError(new Error("watch stream ended"));
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       onError(err instanceof Error ? err : new Error(String(err)));

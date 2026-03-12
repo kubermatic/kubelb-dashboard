@@ -15,7 +15,13 @@
  */
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { ArrowUpDown, Users } from "lucide-react";
 
 import { DataTable } from "@/components/common/data-table";
@@ -25,9 +31,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTenants } from "@/hooks/use-tenants";
 import { formatAge } from "@/lib/format";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
 
 export const Route = createFileRoute("/tenants/")({
+  validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: Tenants,
 });
 
@@ -102,7 +111,16 @@ const columns: ColumnDef<Tenant>[] = [
 
 function Tenants() {
   const { data, isLoading, isError, error, refetch } = useTenants();
+  const navigate = useNavigate();
+  const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
+
+  const updateSearch = (params: Partial<ListSearchParams>) =>
+    void navigate({
+      from: "/tenants/",
+      search: (prev) => ({ ...prev, ...params }),
+      replace: true,
+    });
 
   return (
     <div className="space-y-4">
@@ -123,6 +141,18 @@ function Tenants() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Filter tenants..."
+          initialSearch={search}
+          initialPage={page}
+          initialPageSize={pageSize}
+          onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
+          onPageChange={(p) => updateSearch({ page: p })}
+          onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRowClick={(row) => {
+            void navigate({
+              to: "/tenants/$name",
+              params: { name: row.original.metadata.name },
+            });
+          }}
         />
       )}
     </div>

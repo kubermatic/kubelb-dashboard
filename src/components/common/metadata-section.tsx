@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatTimestamp } from "@/lib/format";
 import type { ObjectMeta } from "@/types/kubernetes";
 
+import { CopyButton } from "./copy-button";
 import { KeyValuePairs } from "./key-value-pairs";
 
 interface MetadataSectionProps {
@@ -43,9 +44,15 @@ export function MetadataSection({ metadata }: MetadataSectionProps) {
         <CardContent className="space-y-3 text-sm">
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[120px_1fr] gap-y-2">
             <span className="text-muted-foreground">UID</span>
-            <span className="font-mono text-xs break-all">{metadata.uid ?? "—"}</span>
+            <span className="inline-flex items-center gap-1 font-mono text-xs break-all">
+              {metadata.uid ?? "—"}
+              {metadata.uid && <CopyButton value={metadata.uid} />}
+            </span>
             <span className="text-muted-foreground">Resource Version</span>
-            <span>{metadata.resourceVersion ?? "—"}</span>
+            <span className="inline-flex items-center gap-1">
+              {metadata.resourceVersion ?? "—"}
+              {metadata.resourceVersion && <CopyButton value={metadata.resourceVersion} />}
+            </span>
             <span className="text-muted-foreground">Created</span>
             <span>
               {metadata.creationTimestamp ? formatTimestamp(metadata.creationTimestamp) : "—"}

@@ -30,8 +30,9 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
   const backoffRef = useRef(1_000);
   const cleanupRef = useRef<(() => void) | null>(null);
 
+  const serializedKey = JSON.stringify(queryKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const stableQueryKey = useMemo(() => queryKey, [JSON.stringify(queryKey)]);
+  const stableQueryKey = useMemo(() => queryKey, [serializedKey]);
 
   const query = useQuery<KubeList<T>>({
     queryKey,
@@ -48,14 +49,19 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
     let mounted = true;
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
-    function connect(rv: string) {
+    function connect() {
       if (!mounted) return;
+
+      const data = queryClient.getQueryData<KubeList<T>>(stableQueryKey);
+      const rv = data?.metadata.resourceVersion;
+      if (!rv) return;
 
       const watchPath = options?.labelSelector
         ? `${path}?labelSelector=${encodeURIComponent(options.labelSelector)}`
         : path;
 
-      const cleanup = kubeWatch<T>(
+      cleanupRef.current?.();
+      cleanupRef.current = kubeWatch<T>(
         watchPath,
         rv,
         (event: WatchEvent<T>) => {
@@ -66,16 +72,12 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
           if (!mounted) return;
           const delay = backoffRef.current;
           backoffRef.current = Math.min(delay * 2, MAX_BACKOFF);
-          reconnectTimer = setTimeout(() => {
-            void queryClient.invalidateQueries({ queryKey: stableQueryKey });
-          }, delay);
+          reconnectTimer = setTimeout(connect, delay);
         },
       );
-
-      cleanupRef.current = cleanup;
     }
 
-    connect(resourceVersion);
+    connect();
 
     return () => {
       mounted = false;
@@ -83,7 +85,9 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
       cleanupRef.current?.();
       cleanupRef.current = null;
     };
-  }, [enabled, resourceVersion, path, options?.labelSelector, stableQueryKey, queryClient]);
+    // resourceVersion intentionally excluded — watch events update RV in cache,
+    // and connect() reads the latest RV on each reconnect
+  }, [enabled, path, options?.labelSelector, stableQueryKey, queryClient]);
 
   return query;
 }

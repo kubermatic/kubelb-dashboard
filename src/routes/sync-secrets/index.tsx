@@ -22,104 +22,86 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Shield } from "lucide-react";
-import { useDeployments } from "@/hooks/use-deployments";
-import type { Deployment } from "@/types/kubernetes";
+import { KeyRound } from "lucide-react";
 import { DataTable } from "@/components/common/data-table";
+import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
-import { StatusBadge } from "@/components/common/status-badge";
+import { useSyncSecrets } from "@/hooks/use-sync-secrets";
+import { useUIStore } from "@/stores/ui";
 import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
-import { useUIStore } from "@/stores/ui";
+import type { SyncSecret } from "@/types/kubelb";
 
-export const Route = createFileRoute("/envoy-proxy/")({
+export const Route = createFileRoute("/sync-secrets/")({
   validateSearch: validateListSearch,
   search: { middlewares: [stripSearchParams(listSearchDefaults)] },
-  component: EnvoyProxy,
+  component: SyncSecrets,
 });
 
-function getDeploymentStatus(deployment: Deployment) {
-  const available = deployment.status?.conditions?.find((c) => c.type === "Available");
-  if (available?.status === "True") return { label: "Available", status: "True" as const };
-
-  const progressing = deployment.status?.conditions?.find((c) => c.type === "Progressing");
-  if (progressing?.status === "True") return { label: "Progressing", status: "Unknown" as const };
-
-  return { label: "Unavailable", status: "False" as const };
+function getSourceSecret(s: SyncSecret): string {
+  const annotations = s.metadata.annotations;
+  if (!annotations) return "\u2014";
+  const ns = annotations["kubelb.k8c.io/origin-namespace"] ?? "";
+  const name = annotations["kubelb.k8c.io/origin-name"] ?? "";
+  if (ns && name) return `${ns}/${name}`;
+  if (name) return name;
+  return "\u2014";
 }
 
-const columns: ColumnDef<Deployment>[] = [
+const columns: ColumnDef<SyncSecret>[] = [
   {
     accessorFn: (row) => row.metadata.name,
     id: "name",
-    header: "Name",
-    cell: ({ row }) => (
-      <Link
-        to="/envoy-proxy/$namespace/$name"
-        params={{
-          namespace: row.original.metadata.namespace ?? "default",
-          name: row.original.metadata.name,
-        }}
-        className="font-medium text-primary hover:underline"
-      >
-        {row.original.metadata.name}
-      </Link>
-    ),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+    cell: ({ row }) => {
+      const { name, namespace } = row.original.metadata;
+      return (
+        <Link
+          to="/sync-secrets/$namespace/$name"
+          params={{ namespace: namespace ?? "default", name }}
+          className="font-medium text-primary hover:underline"
+        >
+          {name}
+        </Link>
+      );
+    },
   },
   {
     accessorFn: (row) => row.metadata.namespace,
     id: "namespace",
-    header: "Namespace",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
   },
   {
-    id: "replicas",
-    header: "Replicas",
-    cell: ({ row }) => {
-      const ready = row.original.status?.readyReplicas ?? 0;
-      const desired = row.original.spec.replicas ?? 0;
-      return `${ready}/${desired}`;
-    },
+    id: "sourceSecret",
+    accessorFn: getSourceSecret,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Source Secret" />,
+    cell: ({ row }) => <span className="font-mono text-xs">{getSourceSecret(row.original)}</span>,
   },
   {
-    id: "available",
-    header: "Available",
-    cell: ({ row }) => row.original.status?.availableReplicas ?? 0,
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const { label, status } = getDeploymentStatus(row.original);
-      return <StatusBadge label={label} status={status} />;
-    },
-  },
-  {
-    accessorFn: (row) => row.metadata.creationTimestamp,
     id: "age",
-    header: "Age",
+    accessorFn: (row) => row.metadata.creationTimestamp,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
     cell: ({ row }) => {
       const ts = row.original.metadata.creationTimestamp;
       return ts ? formatAge(ts) : "\u2014";
     },
+    sortingFn: "datetime",
   },
 ];
 
-function EnvoyProxy() {
+function SyncSecrets() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useDeployments(
-    namespace,
-    "app.kubernetes.io/name=kubelb-envoy-proxy",
-  );
+  const { data, isLoading, isError, error, refetch } = useSyncSecrets(namespace);
   const navigate = useNavigate();
-  const { search, page, pageSize } = useSearch({ from: "/envoy-proxy/" });
+  const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
 
   const updateSearch = (params: Partial<ListSearchParams>) =>
     void navigate({
-      from: "/envoy-proxy/",
+      from: "/sync-secrets/",
       search: (prev) => ({ ...prev, ...params }),
       replace: true,
     });
@@ -127,20 +109,20 @@ function EnvoyProxy() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Envoy Proxy</h1>
-        <p className="mt-1 text-muted-foreground">Inspect and configure Envoy proxy instances.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Sync Secrets</h1>
+        <p className="mt-1 text-sm text-muted-foreground">View synced secrets across tenants.</p>
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={Shield} title="No envoy proxies found" />
+        <EmptyState icon={KeyRound} title="No sync secrets found" />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
           searchColumn="name"
-          searchPlaceholder="Filter by name..."
+          searchPlaceholder="Search sync secrets..."
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
@@ -151,7 +133,7 @@ function EnvoyProxy() {
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({
-              to: "/envoy-proxy/$namespace/$name",
+              to: "/sync-secrets/$namespace/$name",
               params: { namespace: namespace ?? "default", name },
             });
           }}

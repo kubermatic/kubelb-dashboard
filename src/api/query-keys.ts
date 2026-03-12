@@ -35,6 +35,7 @@ export const queryKeys = {
     all: ["syncsecrets"] as const,
     list: (ns?: string) =>
       ns ? (["syncsecrets", "list", ns] as const) : (["syncsecrets", "list"] as const),
+    detail: (ns: string, name: string) => ["syncsecrets", "detail", ns, name] as const,
   },
   config: {
     all: ["config"] as const,
@@ -49,8 +50,5 @@ export const queryKeys = {
         ? (["deployments", "list", ns, labels] as const)
         : (["deployments", "list", labels] as const),
     detail: (ns: string, name: string) => ["deployments", "detail", ns, name] as const,
-  },
-  namespaces: {
-    list: () => ["namespaces", "list"] as const,
   },
 } as const;

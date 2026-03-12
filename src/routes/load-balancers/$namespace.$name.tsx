@@ -17,6 +17,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { KubeApiError } from "@/api/kube";
+import { CopyButton } from "@/components/common/copy-button";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
@@ -162,8 +163,13 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {externalIPs.map((ip) => (
-                <Badge key={ip} variant="outline" className="font-mono text-xs">
+                <Badge
+                  key={ip}
+                  variant="outline"
+                  className="inline-flex items-center gap-1 font-mono text-xs"
+                >
                   {ip}
+                  <CopyButton value={ip!} />
                 </Badge>
               ))}
             </div>

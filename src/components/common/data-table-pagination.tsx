@@ -26,13 +26,12 @@ import {
 
 interface DataTablePaginationProps<T> {
   table: Table<T>;
+  onPageSizeChange?: (size: number) => void;
 }
 
 const PAGE_SIZES = [10, 20, 50];
 
-export function DataTablePagination<T>({
-  table,
-}: DataTablePaginationProps<T>) {
+export function DataTablePagination<T>({ table, onPageSizeChange }: DataTablePaginationProps<T>) {
   return (
     <div className="flex items-center justify-between px-2">
       <div className="text-sm text-muted-foreground">
@@ -43,7 +42,11 @@ export function DataTablePagination<T>({
           <span className="text-sm text-muted-foreground">Rows</span>
           <Select
             value={table.getState().pagination.pageSize}
-            onValueChange={(val) => val && table.setPageSize(val)}
+            onValueChange={(val) => {
+              if (!val) return;
+              table.setPageSize(val);
+              onPageSizeChange?.(val);
+            }}
           >
             <SelectTrigger className="w-18">
               <SelectValue />

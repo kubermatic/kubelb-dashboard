@@ -21,9 +21,9 @@ import {
   Users,
   Network,
   Route,
+  KeyRound,
   Shield,
   Settings,
-  BarChart3,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -43,9 +43,9 @@ const navItems: NavItem[] = [
   { label: "Tenants", to: "/tenants", icon: Users },
   { label: "Load Balancers", to: "/load-balancers", icon: Network },
   { label: "Routes", to: "/routes", icon: Route },
+  { label: "Sync Secrets", to: "/sync-secrets", icon: KeyRound },
   { label: "Envoy Proxy", to: "/envoy-proxy", icon: Shield },
   { label: "Configuration", to: "/configuration", icon: Settings },
-  { label: "Metrics", to: "/metrics", icon: BarChart3 },
 ];
 
 function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {

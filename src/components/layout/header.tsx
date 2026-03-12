@@ -17,6 +17,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Menu, Moon, Sun } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpMenu } from "@/components/layout/help-menu";
+import { UserMenu } from "@/components/layout/user-menu";
 
 export function Header() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -43,12 +47,18 @@ export function Header() {
           <span className="hidden md:inline">KubeLB Dashboard</span>
         </span>
       </div>
-      <button
-        onClick={toggleTheme}
-        className="rounded-md p-2 text-foreground hover:bg-surface-hover"
-      >
-        {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
-      </button>
+      <TooltipProvider>
+        <div className="flex items-center gap-1">
+          <HelpMenu />
+          <UserMenu />
+          <Tooltip>
+            <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={toggleTheme} />}>
+              {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            </TooltipTrigger>
+            <TooltipContent>{dark ? "Light mode" : "Dark mode"}</TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
     </header>
   );
 }

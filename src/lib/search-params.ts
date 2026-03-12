@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+export interface ListSearchParams {
+  search: string;
+  page: number;
+  pageSize: number;
+}
 
-export const Route = createFileRoute("/metrics/")({
-  component: Metrics,
-});
+export const listSearchDefaults: ListSearchParams = {
+  search: "",
+  page: 0,
+  pageSize: 10,
+};
 
-function Metrics() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">Metrics</h1>
-      <p className="mt-2 text-muted-foreground">
-        Traffic metrics and load balancer performance data.
-      </p>
-    </div>
-  );
+export function validateListSearch(search: Record<string, unknown>): ListSearchParams {
+  return {
+    search: (search.search as string) || "",
+    page: Number(search.page) || 0,
+    pageSize: Number(search.pageSize) || 10,
+  };
 }

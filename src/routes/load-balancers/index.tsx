@@ -14,19 +14,31 @@
  * limitations under the License.
  */
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { formatAge } from "@/lib/format";
+import { formatAge, tenantToNamespace } from "@/lib/format";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
+import { useUIStore } from "@/stores/ui";
+
 import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/")({
+  validateSearch: validateListSearch,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: LoadBalancers,
 });
 
@@ -127,8 +139,19 @@ const columns: ColumnDef<LoadBalancer>[] = [
 ];
 
 function LoadBalancers() {
-  const { data, isLoading, isError, error, refetch } = useLoadBalancers();
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const { data, isLoading, isError, error, refetch } = useLoadBalancers(namespace);
+  const navigate = useNavigate();
+  const { search, page, pageSize } = useSearch({ from: "/load-balancers/" });
   const items = data?.items ?? [];
+
+  const updateSearch = (params: Partial<ListSearchParams>) =>
+    void navigate({
+      from: "/load-balancers/",
+      search: (prev) => ({ ...prev, ...params }),
+      replace: true,
+    });
 
   return (
     <div className="space-y-6">
@@ -147,7 +170,22 @@ function LoadBalancers() {
           columns={columns}
           data={items}
           isLoading={isLoading}
+          searchColumn="name"
           searchPlaceholder="Search load balancers..."
+          toolbarLeading={<TenantSelector />}
+          initialSearch={search}
+          initialPage={page}
+          initialPageSize={pageSize}
+          onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
+          onPageChange={(p) => updateSearch({ page: p })}
+          onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRowClick={(row) => {
+            const { name, namespace } = row.original.metadata;
+            void navigate({
+              to: "/load-balancers/$namespace/$name",
+              params: { namespace: namespace ?? "default", name },
+            });
+          }}
         />
       )}
     </div>
