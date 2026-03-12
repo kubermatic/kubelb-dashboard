@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
@@ -26,6 +26,7 @@ import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
+import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
 import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
@@ -34,10 +35,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
+import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { Tenant } from "@/types/kubelb";
+
+const CRD_NAME = "tenants.kubelb.k8c.io";
 
 export const Route = createFileRoute("/tenants/$name")({
   component: TenantDetail,
@@ -58,8 +63,10 @@ function TenantDetail() {
   const { name } = Route.useParams();
   const navigate = useNavigate();
   const { data: tenant, isLoading, error, refetch } = useTenant(name);
+  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
+  const editUiSchema = useMemo(() => buildUiSchema("Tenant", "edit"), []);
 
   const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -144,20 +151,36 @@ function TenantDetail() {
         title={`Tenant: ${name}`}
       />
 
-      <YamlEditorDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        mode="edit"
-        title="Edit Tenant"
-        resourceKind="Tenant"
-        apiVersion="kubelb.k8c.io/v1alpha1"
-        initialYaml={editYaml}
-        lockedFields={{ name: true }}
-        isPending={updateTenant.isPending}
-        onSubmit={(parsed) => {
-          void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
-        }}
-      />
+      {crdSchema ? (
+        <ResourceFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit Tenant"
+          schema={crdSchema}
+          uiSchema={editUiSchema}
+          formData={sanitizeForEdit(tenant) as Record<string, unknown>}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+          }}
+        />
+      ) : (
+        <YamlEditorDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit Tenant"
+          resourceKind="Tenant"
+          apiVersion="kubelb.k8c.io/v1alpha1"
+          initialYaml={editYaml}
+          lockedFields={{ name: true }}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+          }}
+        />
+      )}
 
       <DeleteDialog
         open={deleteOpen}
