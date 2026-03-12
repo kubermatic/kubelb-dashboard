@@ -34,6 +34,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -173,20 +174,22 @@ export function DataTable<T>({
               }
             />
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {table
-                .getAllColumns()
-                .filter((col) => col.getCanHide())
-                .map((col) => (
-                  <DropdownMenuCheckboxItem
-                    key={col.id}
-                    checked={col.getIsVisible()}
-                    onCheckedChange={(val) => col.toggleVisibility(!!val)}
-                  >
-                    {typeof col.columnDef.header === "string" ? col.columnDef.header : col.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter((col) => col.getCanHide())
+                  .map((col) => (
+                    <DropdownMenuCheckboxItem
+                      key={col.id}
+                      checked={col.getIsVisible()}
+                      onCheckedChange={(val) => col.toggleVisibility(!!val)}
+                    >
+                      {typeof col.columnDef.header === "string" ? col.columnDef.header : col.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </DataTableToolbar>
