@@ -36,7 +36,7 @@ import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useTenants } from "@/hooks/use-tenants";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import type { Condition } from "@/types/kubernetes";
+import type { Condition, Deployment } from "@/types/kubernetes";
 
 export const Route = createFileRoute("/")({
   component: Overview,
@@ -86,12 +86,14 @@ function MetricCard({
   query,
   accent = "primary",
   href,
+  healthSummary,
 }: {
   icon: LucideIcon;
   label: string;
   query: ResourceQueryResult;
   accent?: AccentColor;
   href?: string;
+  healthSummary?: string;
 }) {
   const config = accentConfig[accent];
 
@@ -146,6 +148,7 @@ function MetricCard({
           <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {label}
           </p>
+          {healthSummary && <p className="mt-1 text-xs text-muted-foreground">{healthSummary}</p>}
         </div>
         <div className={cn("flex h-11 w-11 items-center justify-center rounded-lg", config.bg)}>
           <Icon className={cn("h-5 w-5", config.icon)} />
@@ -178,6 +181,30 @@ function countByConditionStatus<T extends ConditionOwner>(
       pending++;
     } else if (condition.status === "True") {
       ready++;
+    } else {
+      error++;
+    }
+  }
+
+  return { ready, pending, error };
+}
+
+function countDeploymentReadiness(items: Deployment[]): {
+  ready: number;
+  pending: number;
+  error: number;
+} {
+  let ready = 0;
+  let pending = 0;
+  let error = 0;
+
+  for (const d of items) {
+    const desired = d.spec.replicas ?? 1;
+    const available = d.status?.readyReplicas ?? 0;
+    if (available >= desired) {
+      ready++;
+    } else if (available > 0) {
+      pending++;
     } else {
       error++;
     }
@@ -315,6 +342,8 @@ function Overview() {
 
   const lbItems = lbQuery.data?.items ?? [];
   const routeItems = routeQuery.data?.items ?? [];
+  const deploymentItems = deploymentQuery.data?.items ?? [];
+  const syncSecretItems = syncSecretQuery.data?.items ?? [];
 
   const allLoaded =
     !tenantQuery.isLoading &&
@@ -356,6 +385,22 @@ function Overview() {
     "Ready",
   );
 
+  const envoyProxyCounts = countDeploymentReadiness(deploymentItems);
+
+  function formatHealthSummary(counts: {
+    ready: number;
+    pending: number;
+    error: number;
+  }): string | undefined {
+    const total = counts.ready + counts.pending + counts.error;
+    if (total === 0) return undefined;
+    const parts: string[] = [];
+    if (counts.ready > 0) parts.push(`${String(counts.ready)} ready`);
+    if (counts.pending > 0) parts.push(`${String(counts.pending)} pending`);
+    if (counts.error > 0) parts.push(`${String(counts.error)} unhealthy`);
+    return parts.join(" / ");
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -382,6 +427,7 @@ function Overview() {
           accent="primary"
           query={lbQuery}
           href="/load-balancers"
+          healthSummary={formatHealthSummary(lbCounts)}
         />
         <MetricCard
           icon={RouteIcon}
@@ -389,6 +435,7 @@ function Overview() {
           accent="secondary"
           query={routeQuery}
           href="/routes"
+          healthSummary={formatHealthSummary(routeCounts)}
         />
         <MetricCard
           icon={Shield}
@@ -396,6 +443,7 @@ function Overview() {
           accent="success"
           query={deploymentQuery}
           href="/envoy-proxy"
+          healthSummary={formatHealthSummary(envoyProxyCounts)}
         />
         <MetricCard
           icon={KeyRound}
@@ -414,12 +462,19 @@ function Overview() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 p-2">
-            {lbQuery.isLoading || routeQuery.isLoading ? (
+            {lbQuery.isLoading ||
+            routeQuery.isLoading ||
+            deploymentQuery.isLoading ||
+            syncSecretQuery.isLoading ? (
               <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
               </div>
-            ) : lbItems.length + routeItems.length === 0 ? (
+            ) : lbItems.length +
+                routeItems.length +
+                deploymentItems.length +
+                syncSecretItems.length ===
+              0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                 <CheckCircle2 className="mb-2 h-8 w-8 opacity-30" />
                 <p className="text-sm">No resources to monitor yet.</p>
@@ -442,6 +497,24 @@ function Overview() {
                     counts={routeCounts}
                     total={routeItems.length}
                     href="/routes"
+                  />
+                )}
+                {deploymentItems.length > 0 && (
+                  <ResourceHealthRow
+                    icon={Shield}
+                    label="Envoy Proxies"
+                    counts={envoyProxyCounts}
+                    total={deploymentItems.length}
+                    href="/envoy-proxy"
+                  />
+                )}
+                {syncSecretItems.length > 0 && (
+                  <ResourceHealthRow
+                    icon={KeyRound}
+                    label="Sync Secrets"
+                    counts={{ ready: syncSecretItems.length, pending: 0, error: 0 }}
+                    total={syncSecretItems.length}
+                    href="/sync-secrets"
                   />
                 )}
               </>
