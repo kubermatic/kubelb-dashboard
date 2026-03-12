@@ -15,16 +15,124 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/common/data-table";
+import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
+import { useRoutes } from "@/hooks/use-routes";
+import { formatAge } from "@/lib/format";
+import type { Route as RouteType } from "@/types/kubelb";
 
 export const Route = createFileRoute("/routes/")({
   component: Routes,
 });
 
+function deriveRouteType(route: RouteType): string {
+  const resource = route.spec.source?.kubernetes?.resource;
+  if (!resource) return "Unknown";
+  const kind = resource["kind"] as string | undefined;
+  if (kind === "Ingress" || kind === "HTTPRoute" || kind === "GRPCRoute") return kind;
+  return kind ?? "Unknown";
+}
+
+function getEndpointCount(route: RouteType): number {
+  return route.spec.endpoints?.reduce((sum, ep) => sum + (ep.addresses?.length ?? 0), 0) ?? 0;
+}
+
+type RouteConditionStatus = "Ready" | "Error" | "Pending";
+
+function getRouteStatus(route: RouteType): RouteConditionStatus {
+  const conditions = route.status?.resources?.route?.conditions;
+  if (!conditions?.length) return "Pending";
+  const ready = conditions.find((c) => c.type === "Ready");
+  if (!ready) return "Pending";
+  if (ready.status === "True") return "Ready";
+  if (ready.status === "False") return "Error";
+  return "Pending";
+}
+
+const statusStyles: Record<RouteConditionStatus, string> = {
+  Ready: "bg-success/10 text-success hover:bg-success/20",
+  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
+  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
+};
+
+const columns: ColumnDef<RouteType>[] = [
+  {
+    accessorFn: (row) => row.metadata.name,
+    id: "name",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+    cell: ({ row }) => {
+      const { name, namespace } = row.original.metadata;
+      return (
+        <a
+          href={`/routes/${namespace ?? ""}.${name}`}
+          className="font-medium text-primary hover:underline"
+        >
+          {name}
+        </a>
+      );
+    },
+  },
+  {
+    accessorFn: (row) => row.metadata.namespace,
+    id: "namespace",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+  },
+  {
+    id: "type",
+    accessorFn: deriveRouteType,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+  },
+  {
+    id: "source",
+    accessorFn: (row) => row.status?.resources?.source ?? "\u2014",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
+  },
+  {
+    id: "endpoints",
+    accessorFn: getEndpointCount,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
+  },
+  {
+    id: "status",
+    accessorFn: getRouteStatus,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    cell: ({ row }) => {
+      const status = getRouteStatus(row.original);
+      return <Badge className={statusStyles[status]}>{status}</Badge>;
+    },
+  },
+  {
+    id: "age",
+    accessorFn: (row) => row.metadata.creationTimestamp,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
+    cell: ({ row }) => {
+      const ts = row.original.metadata.creationTimestamp;
+      return ts ? formatAge(ts) : "\u2014";
+    },
+    sortingFn: "datetime",
+  },
+];
+
 function Routes() {
+  const { data, isLoading } = useRoutes();
+
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Routes</h1>
-      <p className="mt-2 text-muted-foreground">Manage HTTP and gRPC route configurations.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Routes</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage HTTP and gRPC route configurations.
+        </p>
+      </div>
+      <DataTable
+        columns={columns}
+        data={data?.items ?? []}
+        isLoading={isLoading}
+        emptyMessage="No routes found"
+        searchPlaceholder="Search routes..."
+      />
     </div>
   );
 }

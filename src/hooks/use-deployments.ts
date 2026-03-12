@@ -15,6 +15,7 @@
  */
 
 import { queryKeys } from "@/api/query-keys";
+import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { Deployment } from "@/types/kubernetes";
 
@@ -25,4 +26,11 @@ export function useDeployments(namespace?: string, labelSelector?: string) {
   return useKubeList<Deployment>(queryKeys.deployments.list(namespace, labelSelector), path, {
     labelSelector,
   });
+}
+
+export function useDeployment(namespace: string, name: string) {
+  return useKubeGet<Deployment>(
+    queryKeys.deployments.detail(namespace, name),
+    `${BASE}/namespaces/${namespace}/deployments/${name}`,
+  );
 }

@@ -14,17 +14,126 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useDeployments } from "@/hooks/use-deployments";
+import type { Deployment } from "@/types/kubernetes";
+import { DataTable } from "@/components/common/data-table";
+import { StatusBadge } from "@/components/common/status-badge";
+import { formatAge } from "@/lib/format";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 export const Route = createFileRoute("/envoy-proxy/")({
   component: EnvoyProxy,
 });
 
+function getDeploymentStatus(deployment: Deployment) {
+  const available = deployment.status?.conditions?.find((c) => c.type === "Available");
+  if (available?.status === "True") return { label: "Available", status: "True" as const };
+
+  const progressing = deployment.status?.conditions?.find((c) => c.type === "Progressing");
+  if (progressing?.status === "True") return { label: "Progressing", status: "Unknown" as const };
+
+  return { label: "Unavailable", status: "False" as const };
+}
+
+const columns: ColumnDef<Deployment>[] = [
+  {
+    accessorFn: (row) => row.metadata.name,
+    id: "name",
+    header: "Name",
+    cell: ({ row }) => (
+      <Link
+        to="/envoy-proxy/$namespace/$name"
+        params={{
+          namespace: row.original.metadata.namespace ?? "default",
+          name: row.original.metadata.name,
+        }}
+        className="font-medium text-primary hover:underline"
+      >
+        {row.original.metadata.name}
+      </Link>
+    ),
+  },
+  {
+    accessorFn: (row) => row.metadata.namespace,
+    id: "namespace",
+    header: "Namespace",
+  },
+  {
+    id: "replicas",
+    header: "Replicas",
+    cell: ({ row }) => {
+      const ready = row.original.status?.readyReplicas ?? 0;
+      const desired = row.original.spec.replicas ?? 0;
+      return `${ready}/${desired}`;
+    },
+  },
+  {
+    id: "available",
+    header: "Available",
+    cell: ({ row }) => row.original.status?.availableReplicas ?? 0,
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const { label, status } = getDeploymentStatus(row.original);
+      return <StatusBadge label={label} status={status} />;
+    },
+  },
+  {
+    accessorFn: (row) => row.metadata.creationTimestamp,
+    id: "age",
+    header: "Age",
+    cell: ({ row }) => {
+      const ts = row.original.metadata.creationTimestamp;
+      return ts ? formatAge(ts) : "\u2014";
+    },
+  },
+];
+
 function EnvoyProxy() {
+  const { data, isLoading, isError, error } = useDeployments(
+    undefined,
+    "app.kubernetes.io/name=kubelb-envoy-proxy",
+  );
+  const [search, setSearch] = useState("");
+
+  const items = data?.items ?? [];
+  const filtered = search
+    ? items.filter((d) => d.metadata.name.toLowerCase().includes(search.toLowerCase()))
+    : items;
+
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Envoy Proxy</h1>
-      <p className="mt-2 text-muted-foreground">Inspect and configure Envoy proxy instances.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Envoy Proxy</h1>
+        <p className="mt-1 text-muted-foreground">Inspect and configure Envoy proxy instances.</p>
+      </div>
+
+      {isError && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          {error?.message ?? "Failed to load deployments"}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Filter by name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={filtered}
+        isLoading={isLoading}
+        emptyMessage="No envoy proxy instances found."
+      />
     </div>
   );
 }

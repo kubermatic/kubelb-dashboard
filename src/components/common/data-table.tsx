@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DataTableProps<T> {
@@ -40,6 +41,8 @@ interface DataTableProps<T> {
   data: T[];
   isLoading?: boolean;
   emptyMessage?: string;
+  searchPlaceholder?: string;
+  searchColumn?: string;
 }
 
 export function DataTable<T>({
@@ -47,22 +50,40 @@ export function DataTable<T>({
   data,
   isLoading,
   emptyMessage = "No results.",
+  searchPlaceholder,
+  searchColumn,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: searchColumn
+      ? (row, _columnId, filterValue: string) => {
+          const val = row.getValue<string>(searchColumn) ?? "";
+          return val.toLowerCase().includes(filterValue.toLowerCase());
+        }
+      : undefined,
   });
 
   return (
     <div className="space-y-4">
+      {searchPlaceholder && (
+        <Input
+          placeholder={searchPlaceholder}
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="max-w-sm"
+        />
+      )}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -72,18 +93,13 @@ export function DataTable<T>({
                   <TableHead
                     key={header.id}
                     className={
-                      header.column.getCanSort()
-                        ? "cursor-pointer select-none"
-                        : undefined
+                      header.column.getCanSort() ? "cursor-pointer select-none" : undefined
                     }
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                     {{
                       asc: " \u2191",
                       desc: " \u2193",
@@ -109,20 +125,14 @@ export function DataTable<T>({
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   {emptyMessage}
                 </TableCell>
               </TableRow>
@@ -133,6 +143,3 @@ export function DataTable<T>({
     </div>
   );
 }
-
-export { useReactTable };
-export type { DataTableProps };

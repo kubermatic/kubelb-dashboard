@@ -15,18 +15,131 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/common/data-table";
+import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
+import { useLoadBalancers } from "@/hooks/use-load-balancers";
+import { formatAge } from "@/lib/format";
+import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/")({
   component: LoadBalancers,
 });
 
+function formatPorts(lb: LoadBalancer): string {
+  return lb.spec.ports?.map((p) => `${String(p.port)}/${p.protocol ?? "TCP"}`).join(", ") ?? "";
+}
+
+function getExternalIP(lb: LoadBalancer): string {
+  const ingress = lb.status?.loadBalancer?.ingress;
+  if (!ingress?.length) return "\u2014";
+  return ingress[0].ip ?? ingress[0].hostname ?? "\u2014";
+}
+
+function getEndpointCount(lb: LoadBalancer): number {
+  return lb.spec.endpoints?.reduce((sum, ep) => sum + (ep.addresses?.length ?? 0), 0) ?? 0;
+}
+
+function isReady(lb: LoadBalancer): boolean {
+  return (lb.status?.loadBalancer?.ingress?.length ?? 0) > 0;
+}
+
+const columns: ColumnDef<LoadBalancer>[] = [
+  {
+    accessorFn: (row) => row.metadata.name,
+    id: "name",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+    cell: ({ row }) => {
+      const { name, namespace } = row.original.metadata;
+      return (
+        <a
+          href={`/load-balancers/${namespace ?? ""}.${name}`}
+          className="font-medium text-primary hover:underline"
+        >
+          {name}
+        </a>
+      );
+    },
+  },
+  {
+    accessorFn: (row) => row.metadata.namespace,
+    id: "namespace",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+  },
+  {
+    accessorFn: (row) => row.spec.type ?? "ClusterIP",
+    id: "type",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+  },
+  {
+    id: "ports",
+    accessorFn: formatPorts,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
+    cell: ({ row }) => (
+      <span className="font-mono text-xs">{formatPorts(row.original) || "\u2014"}</span>
+    ),
+  },
+  {
+    id: "externalIP",
+    accessorFn: getExternalIP,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="External IP" />,
+    cell: ({ row }) => <span className="font-mono text-xs">{getExternalIP(row.original)}</span>,
+  },
+  {
+    id: "endpoints",
+    accessorFn: getEndpointCount,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
+  },
+  {
+    id: "status",
+    accessorFn: (row) => (isReady(row) ? "Ready" : "Pending"),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    cell: ({ row }) => {
+      const ready = isReady(row.original);
+      return (
+        <Badge
+          className={
+            ready
+              ? "bg-success/10 text-success hover:bg-success/20"
+              : "bg-warning/10 text-warning hover:bg-warning/20"
+          }
+        >
+          {ready ? "Ready" : "Pending"}
+        </Badge>
+      );
+    },
+  },
+  {
+    id: "age",
+    accessorFn: (row) => row.metadata.creationTimestamp,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
+    cell: ({ row }) => {
+      const ts = row.original.metadata.creationTimestamp;
+      return ts ? formatAge(ts) : "\u2014";
+    },
+    sortingFn: "datetime",
+  },
+];
+
 function LoadBalancers() {
+  const { data, isLoading } = useLoadBalancers();
+
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Load Balancers</h1>
-      <p className="mt-2 text-muted-foreground">
-        View and manage load balancer services across tenants.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Load Balancers</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          View and manage load balancer services across tenants.
+        </p>
+      </div>
+      <DataTable
+        columns={columns}
+        data={data?.items ?? []}
+        isLoading={isLoading}
+        emptyMessage="No load balancers found"
+        searchPlaceholder="Search load balancers..."
+      />
     </div>
   );
 }
