@@ -28,7 +28,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Settings2 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -77,6 +77,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   searchColumn?: string;
   filterColumns?: FilterColumn[];
+  toolbarLeading?: ReactNode;
   onRowClick?: (row: Row<T>) => void;
 }
 
@@ -88,6 +89,7 @@ export function DataTable<T>({
   searchPlaceholder,
   searchColumn,
   filterColumns,
+  toolbarLeading,
   onRowClick,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -118,12 +120,13 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      {(searchPlaceholder || filterColumns) && (
+      {(searchPlaceholder || filterColumns || toolbarLeading) && (
         <DataTableToolbar
           table={table}
           searchColumn={searchColumn}
           searchPlaceholder={searchPlaceholder}
           filterColumns={filterColumns}
+          leading={toolbarLeading}
         >
           <DropdownMenu>
             <DropdownMenuTrigger

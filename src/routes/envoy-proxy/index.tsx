@@ -21,9 +21,11 @@ import { useDeployments } from "@/hooks/use-deployments";
 import type { Deployment } from "@/types/kubernetes";
 import { DataTable } from "@/components/common/data-table";
 import { EmptyState } from "@/components/common/empty-state";
+import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatAge } from "@/lib/format";
+import { useUIStore } from "@/stores/ui";
 
 export const Route = createFileRoute("/envoy-proxy/")({
   component: EnvoyProxy,
@@ -96,8 +98,9 @@ const columns: ColumnDef<Deployment>[] = [
 ];
 
 function EnvoyProxy() {
+  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
   const { data, isLoading, isError, error, refetch } = useDeployments(
-    undefined,
+    selectedNamespace ?? undefined,
     "app.kubernetes.io/name=kubelb-envoy-proxy",
   );
   const navigate = useNavigate();
@@ -120,6 +123,7 @@ function EnvoyProxy() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Filter by name..."
+          toolbarLeading={<NamespaceSelector />}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({

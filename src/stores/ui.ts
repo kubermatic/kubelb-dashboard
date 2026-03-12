@@ -23,6 +23,8 @@ interface UIState {
   mobileSidebarOpen: boolean;
   openMobileSidebar: () => void;
   closeMobileSidebar: () => void;
+  selectedNamespace: string | null;
+  setSelectedNamespace: (ns: string | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -33,10 +35,15 @@ export const useUIStore = create<UIState>()(
       mobileSidebarOpen: false,
       openMobileSidebar: () => set({ mobileSidebarOpen: true }),
       closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
+      selectedNamespace: null,
+      setSelectedNamespace: (ns) => set({ selectedNamespace: ns }),
     }),
     {
       name: "kubelb-ui",
-      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed }),
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        selectedNamespace: state.selectedNamespace,
+      }),
     },
   ),
 );

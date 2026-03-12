@@ -21,9 +21,11 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useRoutes } from "@/hooks/use-routes";
 import { formatAge } from "@/lib/format";
+import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
 
 export const Route = createFileRoute("/routes/")({
@@ -120,7 +122,8 @@ const columns: ColumnDef<RouteType>[] = [
 ];
 
 function Routes() {
-  const { data, isLoading, isError, error, refetch } = useRoutes();
+  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
+  const { data, isLoading, isError, error, refetch } = useRoutes(selectedNamespace ?? undefined);
   const navigate = useNavigate();
   const items = data?.items ?? [];
 
@@ -143,6 +146,7 @@ function Routes() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search routes..."
+          toolbarLeading={<NamespaceSelector />}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({

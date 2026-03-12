@@ -36,6 +36,7 @@ interface DataTableToolbarProps<T> {
   searchColumn?: string;
   searchPlaceholder?: string;
   filterColumns?: FilterColumn[];
+  leading?: ReactNode;
   children?: ReactNode;
 }
 
@@ -44,6 +45,7 @@ export function DataTableToolbar<T>({
   searchColumn,
   searchPlaceholder = "Search...",
   filterColumns,
+  leading,
   children,
 }: DataTableToolbarProps<T>) {
   const searchCol = searchColumn ? table.getColumn(searchColumn) : undefined;
@@ -51,6 +53,7 @@ export function DataTableToolbar<T>({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
+        {leading}
         {searchCol && (
           <Input
             placeholder={searchPlaceholder}

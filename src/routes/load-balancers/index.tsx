@@ -21,9 +21,11 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
+import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { formatAge } from "@/lib/format";
+import { useUIStore } from "@/stores/ui";
 import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/")({
@@ -127,7 +129,10 @@ const columns: ColumnDef<LoadBalancer>[] = [
 ];
 
 function LoadBalancers() {
-  const { data, isLoading, isError, error, refetch } = useLoadBalancers();
+  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
+  const { data, isLoading, isError, error, refetch } = useLoadBalancers(
+    selectedNamespace ?? undefined,
+  );
   const navigate = useNavigate();
   const items = data?.items ?? [];
 
@@ -150,6 +155,7 @@ function LoadBalancers() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search load balancers..."
+          toolbarLeading={<NamespaceSelector />}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({
