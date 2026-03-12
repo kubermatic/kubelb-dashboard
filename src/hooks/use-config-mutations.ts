@@ -21,12 +21,16 @@ import { kubeUpdate, type KubeApiError } from "@/api/kube";
 import { queryKeys } from "@/api/query-keys";
 import type { Config } from "@/types/kubelb";
 
-const BASE = "/apis/kubelb.k8c.io/v1alpha1/configs";
+const BASE = "/apis/kubelb.k8c.io/v1alpha1/namespaces";
 
 export function useUpdateConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (config: Config) => kubeUpdate<Config>(`${BASE}/${config.metadata.name}`, config),
+    mutationFn: (config: Config) =>
+      kubeUpdate<Config>(
+        `${BASE}/${config.metadata.namespace}/configs/${config.metadata.name}`,
+        config,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
       toast.success("Configuration updated");
