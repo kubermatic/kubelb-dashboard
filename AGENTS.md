@@ -81,48 +81,7 @@ GET /api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies → 200=EE, 404=CE
 
 ### CE/EE Field Reference
 
-**Source of truth:** Go API types at `~/go/src/k8c.io/kubelb-ee/api/{ce,ee}/kubelb.k8c.io/v1alpha1/`
-
-When adding or displaying resource fields, ALWAYS check whether the field exists in the CE types. EE-only fields MUST be gated with `{isEE && ...}` in JSX. The TypeScript types in `src/types/kubelb.ts` include both CE and EE fields (EE fields are optional `?`).
-
-#### TenantSpec
-
-| Field                                                                                               | CE  | EE  |
-| --------------------------------------------------------------------------------------------------- | --- | --- |
-| `loadBalancer.class`, `.disable`                                                                    | ✓   | ✓   |
-| `loadBalancer.limit`                                                                                |     | ✓   |
-| `ingress.class`, `.disable`                                                                         | ✓   | ✓   |
-| `gatewayAPI.class`, `.disable`, `.defaultGateway`                                                   | ✓   | ✓   |
-| `gatewayAPI.gatewaySettings.limit`                                                                  |     | ✓   |
-| `gatewayAPI.disable{HTTP,gRPC,TCP,UDP,TLS}Route`                                                    |     | ✓   |
-| `gatewayAPI.disable{Backend,Client}TrafficPolicy`                                                   |     | ✓   |
-| `dns.wildcardDomain`, `.allowExplicitHostnames`, `.useDNSAnnotations`, `.useCertificateAnnotations` | ✓   | ✓   |
-| `dns.disable`, `dns.allowedDomains`                                                                 |     | ✓   |
-| `certificates.defaultClusterIssuer`                                                                 | ✓   | ✓   |
-| `certificates.disable`, `certificates.allowedDomains`                                               |     | ✓   |
-| `tunnel`                                                                                            |     | ✓   |
-| `circuitBreaker`                                                                                    |     | ✓   |
-| `networkPolicy`                                                                                     |     | ✓   |
-| `loadBalancerPolicy`                                                                                |     | ✓   |
-| `allowedDomains` (top-level)                                                                        |     | ✓   |
-
-#### ConfigSpec
-
-| Field                                                                        | CE  | EE  |
-| ---------------------------------------------------------------------------- | --- | --- |
-| `envoyProxy`, `loadBalancer`, `ingress`, `gatewayAPI`, `dns`, `certificates` | ✓   | ✓   |
-| `propagatedAnnotations`, `propagateAllAnnotations`, `defaultAnnotations`     | ✓   | ✓   |
-| `tunnel`                                                                     |     | ✓   |
-| `circuitBreaker`                                                             |     | ✓   |
-| `loadBalancerPolicy`                                                         |     | ✓   |
-| `waf`                                                                        |     | ✓   |
-| `networkPolicy`                                                              |     | ✓   |
-
-#### EE-Only Resources
-
-| Resource  | Notes                           |
-| --------- | ------------------------------- |
-| WAFPolicy | Full CRUD, `/waf-policies` page |
+See [`docs/ce-ee-fields.md`](docs/ce-ee-fields.md) for the full per-resource CE/EE field tables. **Always** consult that file before adding or displaying resource fields — EE-only fields MUST be gated with `{isEE && ...}` in JSX. Update that file when adding new fields.
 
 ## Conventions
 

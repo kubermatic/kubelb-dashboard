@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
 
@@ -38,6 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEdition } from "@/hooks/use-edition";
 import { useLoadBalancer } from "@/hooks/use-load-balancers";
 import type { LoadBalancer } from "@/types/kubelb";
 
@@ -121,9 +122,23 @@ function LoadBalancerDetail() {
   );
 }
 
+const KUBELB_ANNOTATIONS: Record<string, string> = {
+  "kubelb.k8c.io/proxy-protocol": "Proxy Protocol",
+  "kubelb.k8c.io/lb-policy": "LB Policy",
+  "kubelb.k8c.io/request-wildcard-domain": "Wildcard Domain",
+  "kubelb.k8c.io/manage-dns": "Managed DNS",
+  "kubelb.k8c.io/manage-certificates": "Managed Certificates",
+  "kubelb.k8c.io/propagate-annotation": "Propagate Annotations",
+};
+
 function OverviewTab({ lb }: { lb: LoadBalancer }) {
+  const { isEE } = useEdition();
   const externalIPs =
     lb.status?.loadBalancer?.ingress?.map((i) => i.ip || i.hostname).filter(Boolean) ?? [];
+
+  const kubelbAnnotations = Object.entries(lb.metadata.annotations ?? {}).filter(
+    ([key]) => key in KUBELB_ANNOTATIONS,
+  );
 
   return (
     <>
@@ -132,7 +147,7 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
           <CardTitle>Spec</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
+          <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
             <span className="text-muted-foreground">Type</span>
             <span>{lb.spec.type ?? "ClusterIP"}</span>
             <span className="text-muted-foreground">Hostname</span>
@@ -142,6 +157,35 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
           </div>
         </CardContent>
       </Card>
+
+      {kubelbAnnotations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>KubeLB Configuration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+              {kubelbAnnotations.map(([key, value]) => (
+                <React.Fragment key={key}>
+                  <span className="text-muted-foreground">{KUBELB_ANNOTATIONS[key]}</span>
+                  <span className="font-mono text-xs">{value}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isEE && lb.spec.loadBalancerPolicy && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Load Balancer Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Badge variant="outline">{lb.spec.loadBalancerPolicy}</Badge>
+          </CardContent>
+        </Card>
+      )}
 
       {lb.spec.ports?.length ? (
         <Card>
@@ -204,6 +248,11 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
             {lb.spec.endpoints.map((ep, i) => (
               <div key={i} className="space-y-1">
                 {ep.name && <p className="text-sm font-medium">{ep.name}</p>}
+                {ep.addressesReference && (
+                  <Badge variant="outline" className="mr-1 text-xs">
+                    ref: {ep.addressesReference.name}
+                  </Badge>
+                )}
                 {ep.addresses?.map((addr, j) => (
                   <span key={j} className="mr-2 font-mono text-xs">
                     {addr.ip}

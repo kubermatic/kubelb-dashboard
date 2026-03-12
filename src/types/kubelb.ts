@@ -69,6 +69,7 @@ export interface LoadBalancerSpec {
   hostname?: string;
   type?: "ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName";
   externalTrafficPolicy?: "Cluster" | "Local";
+  loadBalancerPolicy?: LoadBalancerPolicy;
 }
 
 export interface LoadBalancer {

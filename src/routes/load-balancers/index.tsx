@@ -25,6 +25,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { CopyButton } from "@/components/common/copy-button";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
@@ -49,14 +50,32 @@ function formatPorts(lb: LoadBalancer): string {
   return lb.spec.ports?.map((p) => `${String(p.port)}/${p.protocol ?? "TCP"}`).join(", ") ?? "";
 }
 
-function getExternalIP(lb: LoadBalancer): string {
-  const ingress = lb.status?.loadBalancer?.ingress;
-  if (!ingress?.length) return "\u2014";
-  return ingress[0].ip ?? ingress[0].hostname ?? "\u2014";
+function getExternalIPs(lb: LoadBalancer): string[] {
+  return (
+    (lb.status?.loadBalancer?.ingress
+      ?.map((i) => i.ip || i.hostname)
+      .filter(Boolean) as string[]) ?? []
+  );
 }
 
-function getEndpointCount(lb: LoadBalancer): number {
-  return lb.spec.endpoints?.reduce((sum, ep) => sum + (ep.addresses?.length ?? 0), 0) ?? 0;
+function getEndpointsSummary(lb: LoadBalancer): string {
+  if (!lb.spec.endpoints?.length) return "\u2014";
+  const parts: string[] = [];
+  for (const ep of lb.spec.endpoints) {
+    if (ep.addressesReference) {
+      parts.push(ep.addressesReference.name ?? "ref");
+    } else if (ep.addresses?.length) {
+      const ports = ep.ports?.map((p) => p.port) ?? [];
+      for (const addr of ep.addresses) {
+        if (ports.length) {
+          parts.push(...ports.map((port) => `${addr.ip}:${String(port)}`));
+        } else {
+          parts.push(addr.ip);
+        }
+      }
+    }
+  }
+  return parts.length ? parts.join(", ") : "\u2014";
 }
 
 function isReady(lb: LoadBalancer): boolean {
@@ -96,11 +115,6 @@ function LoadBalancers() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
     },
     {
-      accessorFn: (row) => row.spec.type ?? "ClusterIP",
-      id: "type",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-    },
-    {
       id: "ports",
       accessorFn: formatPorts,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
@@ -110,14 +124,32 @@ function LoadBalancers() {
     },
     {
       id: "externalIP",
-      accessorFn: getExternalIP,
+      accessorFn: (row) => getExternalIPs(row).join(", "),
       header: ({ column }) => <DataTableColumnHeader column={column} title="External IP" />,
-      cell: ({ row }) => <span className="font-mono text-xs">{getExternalIP(row.original)}</span>,
+      cell: ({ row }) => {
+        const ips = getExternalIPs(row.original);
+        if (!ips.length) return <span className="text-sm text-muted-foreground">{"\u2014"}</span>;
+        return (
+          <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            {ips.map((ip) => (
+              <span key={ip} className="inline-flex items-center gap-0.5 font-mono text-xs">
+                {ip}
+                <CopyButton value={ip} />
+              </span>
+            ))}
+          </div>
+        );
+      },
     },
     {
       id: "endpoints",
-      accessorFn: getEndpointCount,
+      accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
+      cell: ({ row }) => (
+        <span className="max-w-48 truncate font-mono text-xs">
+          {getEndpointsSummary(row.original)}
+        </span>
+      ),
     },
     {
       id: "status",
