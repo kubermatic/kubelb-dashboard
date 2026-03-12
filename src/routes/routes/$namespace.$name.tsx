@@ -146,6 +146,11 @@ function OverviewTab({ route }: { route: RouteResource }) {
             {route.spec.endpoints.map((ep, i) => (
               <div key={i} className="space-y-1">
                 {ep.name && <p className="text-sm font-medium">{ep.name}</p>}
+                {ep.addressesReference && (
+                  <Badge variant="outline" className="mr-1 text-xs">
+                    ref: {ep.addressesReference.name}
+                  </Badge>
+                )}
                 {ep.addresses?.map((addr, j) => (
                   <span key={j} className="mr-2 font-mono text-xs">
                     {addr.ip}
