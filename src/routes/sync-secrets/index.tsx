@@ -26,11 +26,11 @@ import { KeyRound } from "lucide-react";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
-import { NamespaceSelector } from "@/components/common/namespace-selector";
+import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useUIStore } from "@/stores/ui";
-import { formatAge } from "@/lib/format";
+import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
 
@@ -92,10 +92,9 @@ const columns: ColumnDef<SyncSecret>[] = [
 ];
 
 function SyncSecrets() {
-  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
-  const { data, isLoading, isError, error, refetch } = useSyncSecrets(
-    selectedNamespace ?? undefined,
-  );
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const { data, isLoading, isError, error, refetch } = useSyncSecrets(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
@@ -124,7 +123,7 @@ function SyncSecrets() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search sync secrets..."
-          toolbarLeading={<NamespaceSelector />}
+          toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}

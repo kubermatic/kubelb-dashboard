@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from "./routes/index"
 import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
 import { Route as SyncSecretsIndexRouteImport } from "./routes/sync-secrets/index"
 import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
-import { Route as MetricsIndexRouteImport } from "./routes/metrics/index"
 import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
 import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
@@ -41,11 +40,6 @@ const SyncSecretsIndexRoute = SyncSecretsIndexRouteImport.update({
 const RoutesIndexRoute = RoutesIndexRouteImport.update({
   id: "/routes/",
   path: "/routes/",
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MetricsIndexRoute = MetricsIndexRouteImport.update({
-  id: "/metrics/",
-  path: "/metrics/",
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoadBalancersIndexRoute = LoadBalancersIndexRouteImport.update({
@@ -97,7 +91,6 @@ export interface FileRoutesByFullPath {
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
-  "/metrics/": typeof MetricsIndexRoute
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
@@ -112,7 +105,6 @@ export interface FileRoutesByTo {
   "/configuration": typeof ConfigurationIndexRoute
   "/envoy-proxy": typeof EnvoyProxyIndexRoute
   "/load-balancers": typeof LoadBalancersIndexRoute
-  "/metrics": typeof MetricsIndexRoute
   "/routes": typeof RoutesIndexRoute
   "/sync-secrets": typeof SyncSecretsIndexRoute
   "/tenants": typeof TenantsIndexRoute
@@ -128,7 +120,6 @@ export interface FileRoutesById {
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
-  "/metrics/": typeof MetricsIndexRoute
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
@@ -145,7 +136,6 @@ export interface FileRouteTypes {
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
-    | "/metrics/"
     | "/routes/"
     | "/sync-secrets/"
     | "/tenants/"
@@ -160,7 +150,6 @@ export interface FileRouteTypes {
     | "/configuration"
     | "/envoy-proxy"
     | "/load-balancers"
-    | "/metrics"
     | "/routes"
     | "/sync-secrets"
     | "/tenants"
@@ -175,7 +164,6 @@ export interface FileRouteTypes {
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
-    | "/metrics/"
     | "/routes/"
     | "/sync-secrets/"
     | "/tenants/"
@@ -191,7 +179,6 @@ export interface RootRouteChildren {
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
   EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
   LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
-  MetricsIndexRoute: typeof MetricsIndexRoute
   RoutesIndexRoute: typeof RoutesIndexRoute
   SyncSecretsIndexRoute: typeof SyncSecretsIndexRoute
   TenantsIndexRoute: typeof TenantsIndexRoute
@@ -229,13 +216,6 @@ declare module "@tanstack/react-router" {
       path: "/routes"
       fullPath: "/routes/"
       preLoaderRoute: typeof RoutesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    "/metrics/": {
-      id: "/metrics/"
-      path: "/metrics"
-      fullPath: "/metrics/"
-      preLoaderRoute: typeof MetricsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/load-balancers/": {
@@ -303,7 +283,6 @@ const rootRouteChildren: RootRouteChildren = {
   ConfigurationIndexRoute: ConfigurationIndexRoute,
   EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
   LoadBalancersIndexRoute: LoadBalancersIndexRoute,
-  MetricsIndexRoute: MetricsIndexRoute,
   RoutesIndexRoute: RoutesIndexRoute,
   SyncSecretsIndexRoute: SyncSecretsIndexRoute,
   TenantsIndexRoute: TenantsIndexRoute,

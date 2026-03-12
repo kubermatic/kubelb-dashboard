@@ -21,29 +21,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useNamespaces } from "@/hooks/use-namespaces";
+import { useTenants } from "@/hooks/use-tenants";
 import { useUIStore } from "@/stores/ui";
 
-export function NamespaceSelector() {
-  const { data } = useNamespaces();
-  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
-  const setSelectedNamespace = useUIStore((s) => s.setSelectedNamespace);
+export function TenantSelector() {
+  const { data } = useTenants();
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const setSelectedTenant = useUIStore((s) => s.setSelectedTenant);
 
-  const namespaces = data?.items.map((ns) => ns.metadata.name).sort() ?? [];
+  const tenants = data?.items.map((t) => t.metadata.name).sort() ?? [];
 
   return (
-    <Select
-      value={selectedNamespace ?? ""}
-      onValueChange={(val) => setSelectedNamespace(val || null)}
-    >
+    <Select value={selectedTenant ?? ""} onValueChange={(val) => setSelectedTenant(val || null)}>
       <SelectTrigger className="w-48">
-        <SelectValue placeholder="All Namespaces" />
+        <SelectValue placeholder="All Tenants" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">All Namespaces</SelectItem>
-        {namespaces.map((ns) => (
-          <SelectItem key={ns} value={ns}>
-            {ns}
+        <SelectItem value="">All Tenants</SelectItem>
+        {tenants.map((name) => (
+          <SelectItem key={name} value={name}>
+            {name}
           </SelectItem>
         ))}
       </SelectContent>

@@ -27,10 +27,10 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
-import { NamespaceSelector } from "@/components/common/namespace-selector";
+import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useRoutes } from "@/hooks/use-routes";
-import { formatAge } from "@/lib/format";
+import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
@@ -131,8 +131,9 @@ const columns: ColumnDef<RouteType>[] = [
 ];
 
 function Routes() {
-  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
-  const { data, isLoading, isError, error, refetch } = useRoutes(selectedNamespace ?? undefined);
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const { data, isLoading, isError, error, refetch } = useRoutes(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
   const items = data?.items ?? [];
@@ -163,7 +164,7 @@ function Routes() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search routes..."
-          toolbarLeading={<NamespaceSelector />}
+          toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}

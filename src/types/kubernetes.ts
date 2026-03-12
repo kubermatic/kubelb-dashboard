@@ -98,9 +98,3 @@ export interface Deployment {
   spec: DeploymentSpec;
   status?: DeploymentStatus;
 }
-
-export interface Namespace {
-  apiVersion: string;
-  kind: string;
-  metadata: ObjectMeta;
-}

@@ -27,10 +27,10 @@ import { useDeployments } from "@/hooks/use-deployments";
 import type { Deployment } from "@/types/kubernetes";
 import { DataTable } from "@/components/common/data-table";
 import { EmptyState } from "@/components/common/empty-state";
-import { NamespaceSelector } from "@/components/common/namespace-selector";
+import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
-import { formatAge } from "@/lib/format";
+import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 
@@ -107,9 +107,10 @@ const columns: ColumnDef<Deployment>[] = [
 ];
 
 function EnvoyProxy() {
-  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
   const { data, isLoading, isError, error, refetch } = useDeployments(
-    selectedNamespace ?? undefined,
+    namespace,
     "app.kubernetes.io/name=kubelb-envoy-proxy",
   );
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ function EnvoyProxy() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Filter by name..."
-          toolbarLeading={<NamespaceSelector />}
+          toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}

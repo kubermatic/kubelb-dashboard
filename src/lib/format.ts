@@ -33,3 +33,7 @@ export function formatAge(timestamp: string): string {
 export function formatTimestamp(timestamp: string): string {
   return new Date(timestamp).toLocaleString();
 }
+
+export function tenantToNamespace(tenant: string): string {
+  return `tenant-${tenant}`;
+}

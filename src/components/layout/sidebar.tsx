@@ -24,7 +24,6 @@ import {
   KeyRound,
   Shield,
   Settings,
-  BarChart3,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -47,7 +46,6 @@ const navItems: NavItem[] = [
   { label: "Sync Secrets", to: "/sync-secrets", icon: KeyRound },
   { label: "Envoy Proxy", to: "/envoy-proxy", icon: Shield },
   { label: "Configuration", to: "/configuration", icon: Settings },
-  { label: "Metrics", to: "/metrics", icon: BarChart3 },
 ];
 
 function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {

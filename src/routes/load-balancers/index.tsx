@@ -27,12 +27,13 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
-import { NamespaceSelector } from "@/components/common/namespace-selector";
+import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { formatAge } from "@/lib/format";
+import { formatAge, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
+
 import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/")({
@@ -138,10 +139,9 @@ const columns: ColumnDef<LoadBalancer>[] = [
 ];
 
 function LoadBalancers() {
-  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
-  const { data, isLoading, isError, error, refetch } = useLoadBalancers(
-    selectedNamespace ?? undefined,
-  );
+  const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const { data, isLoading, isError, error, refetch } = useLoadBalancers(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/load-balancers/" });
   const items = data?.items ?? [];
@@ -172,7 +172,7 @@ function LoadBalancers() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search load balancers..."
-          toolbarLeading={<NamespaceSelector />}
+          toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}
