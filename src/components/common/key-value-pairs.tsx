@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
+import { CopyButton } from "./copy-button";
+
 interface KeyValuePairsProps {
   data?: Record<string, string>;
   emptyMessage?: string;
+  copyable?: boolean;
 }
 
-export function KeyValuePairs({ data, emptyMessage = "None" }: KeyValuePairsProps) {
+export function KeyValuePairs({
+  data,
+  emptyMessage = "None",
+  copyable = false,
+}: KeyValuePairsProps) {
   const entries = Object.entries(data ?? {});
 
   if (!entries.length) {
@@ -31,7 +38,10 @@ export function KeyValuePairs({ data, emptyMessage = "None" }: KeyValuePairsProp
       {entries.map(([key, value]) => (
         <div key={key} className="contents">
           <span className="font-medium text-muted-foreground">{key}</span>
-          <span className="break-all">{value}</span>
+          <span className="inline-flex items-center gap-1 break-all">
+            {value}
+            {copyable && <CopyButton value={value} />}
+          </span>
         </div>
       ))}
     </div>
