@@ -19,3 +19,7 @@ npm-debug.log*
 
 bin/
 .worktrees/
+
+## AI generated files
+ai/
+pr-reviews/
