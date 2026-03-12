@@ -26,6 +26,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -150,15 +151,19 @@ function SyncSecrets() {
                 icon: FileText,
                 onClick: () => setYamlViewerResource(row.original),
               },
-              {
-                label: "Edit",
-                icon: Pencil,
-                onClick: () => setEditResource(row.original),
-              },
+              ...(EDITING_ENABLED
+                ? [
+                    {
+                      label: "Edit",
+                      icon: Pencil,
+                      onClick: () => setEditResource(row.original),
+                    },
+                  ]
+                : []),
               {
                 label: "Delete",
                 icon: Trash2,
-                variant: "destructive",
+                variant: "destructive" as const,
                 separator: true,
                 onClick: () => setDeleteResource(row.original),
               },
@@ -196,10 +201,12 @@ function SyncSecrets() {
           toolbarLeading={
             <>
               <TenantSelector />
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus />
-                Create
-              </Button>
+              {EDITING_ENABLED && (
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
+                  <Plus />
+                  Create
+                </Button>
+              )}
             </>
           }
           initialSearch={search}
@@ -218,39 +225,40 @@ function SyncSecrets() {
         />
       )}
 
-      {crdSchema ? (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Sync Secret"
-          schema={crdSchema}
-          uiSchema={createUiSchema}
-          formData={SYNCSECRET_TEMPLATE}
-          isPending={createSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void createSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setCreateOpen(false));
-          }}
-        />
-      ) : (
-        <YamlEditorDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Sync Secret"
-          resourceKind={RESOURCE_KIND}
-          apiVersion={API_VERSION}
-          initialYaml={yaml.dump(SYNCSECRET_TEMPLATE, { noRefs: true })}
-          isPending={createSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void createSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      {EDITING_ENABLED &&
+        (crdSchema ? (
+          <ResourceFormDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            mode="create"
+            title="Create Sync Secret"
+            schema={crdSchema}
+            uiSchema={createUiSchema}
+            formData={SYNCSECRET_TEMPLATE}
+            isPending={createSyncSecret.isPending}
+            onSubmit={(parsed) => {
+              void createSyncSecret
+                .mutateAsync(parsed as SyncSecret)
+                .then(() => setCreateOpen(false));
+            }}
+          />
+        ) : YAML_EDITOR_ENABLED ? (
+          <YamlEditorDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            mode="create"
+            title="Create Sync Secret"
+            resourceKind={RESOURCE_KIND}
+            apiVersion={API_VERSION}
+            initialYaml={yaml.dump(SYNCSECRET_TEMPLATE, { noRefs: true })}
+            isPending={createSyncSecret.isPending}
+            onSubmit={(parsed) => {
+              void createSyncSecret
+                .mutateAsync(parsed as SyncSecret)
+                .then(() => setCreateOpen(false));
+            }}
+          />
+        ) : null)}
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -259,50 +267,51 @@ function SyncSecrets() {
         title={yamlViewerResource ? `SyncSecret: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {crdSchema ? (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={
-            editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
-          }
-          schema={crdSchema}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setEditResource(null));
-          }}
-        />
-      ) : (
-        <YamlEditorDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={
-            editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
-          }
-          resourceKind={RESOURCE_KIND}
-          apiVersion={API_VERSION}
-          initialYaml={
-            editResource
-              ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
-              : ""
-          }
-          lockedFields={{ name: true }}
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setEditResource(null));
-          }}
-        />
-      )}
+      {EDITING_ENABLED &&
+        (crdSchema ? (
+          <ResourceFormDialog
+            open={!!editResource}
+            onOpenChange={(open) => !open && setEditResource(null)}
+            mode="edit"
+            title={
+              editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
+            }
+            schema={crdSchema}
+            uiSchema={editUiSchema}
+            formData={
+              editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+            }
+            isPending={updateSyncSecret.isPending}
+            onSubmit={(parsed) => {
+              void updateSyncSecret
+                .mutateAsync(parsed as SyncSecret)
+                .then(() => setEditResource(null));
+            }}
+          />
+        ) : YAML_EDITOR_ENABLED ? (
+          <YamlEditorDialog
+            open={!!editResource}
+            onOpenChange={(open) => !open && setEditResource(null)}
+            mode="edit"
+            title={
+              editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
+            }
+            resourceKind={RESOURCE_KIND}
+            apiVersion={API_VERSION}
+            initialYaml={
+              editResource
+                ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
+                : ""
+            }
+            lockedFields={{ name: true }}
+            isPending={updateSyncSecret.isPending}
+            onSubmit={(parsed) => {
+              void updateSyncSecret
+                .mutateAsync(parsed as SyncSecret)
+                .then(() => setEditResource(null));
+            }}
+          />
+        ) : null)}
 
       {deleteResource && (
         <DeleteDialog

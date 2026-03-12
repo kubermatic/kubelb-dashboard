@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { Download, FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
@@ -113,10 +114,12 @@ function TenantDetail() {
             <Download />
             Kubeconfig
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil />
-            Edit
-          </Button>
+          {EDITING_ENABLED && (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil />
+              Edit
+            </Button>
+          )}
           <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
             <Trash2 />
             Delete
@@ -151,36 +154,37 @@ function TenantDetail() {
         title={`Tenant: ${name}`}
       />
 
-      {crdSchema ? (
-        <ResourceFormDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title="Edit Tenant"
-          schema={crdSchema}
-          uiSchema={editUiSchema}
-          formData={sanitizeForEdit(tenant) as Record<string, unknown>}
-          isPending={updateTenant.isPending}
-          onSubmit={(parsed) => {
-            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
-          }}
-        />
-      ) : (
-        <YamlEditorDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title="Edit Tenant"
-          resourceKind="Tenant"
-          apiVersion="kubelb.k8c.io/v1alpha1"
-          initialYaml={editYaml}
-          lockedFields={{ name: true }}
-          isPending={updateTenant.isPending}
-          onSubmit={(parsed) => {
-            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
-          }}
-        />
-      )}
+      {EDITING_ENABLED &&
+        (crdSchema ? (
+          <ResourceFormDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            mode="edit"
+            title="Edit Tenant"
+            schema={crdSchema}
+            uiSchema={editUiSchema}
+            formData={sanitizeForEdit(tenant) as Record<string, unknown>}
+            isPending={updateTenant.isPending}
+            onSubmit={(parsed) => {
+              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+            }}
+          />
+        ) : YAML_EDITOR_ENABLED ? (
+          <YamlEditorDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            mode="edit"
+            title="Edit Tenant"
+            resourceKind="Tenant"
+            apiVersion="kubelb.k8c.io/v1alpha1"
+            initialYaml={editYaml}
+            lockedFields={{ name: true }}
+            isPending={updateTenant.isPending}
+            onSubmit={(parsed) => {
+              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+            }}
+          />
+        ) : null)}
 
       <DeleteDialog
         open={deleteOpen}
