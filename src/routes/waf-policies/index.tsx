@@ -142,9 +142,11 @@ function WAFPolicies() {
     {
       id: "kind",
       header: "Kind",
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.spec.targetRef?.kind ?? "\u2014"}</span>
-      ),
+      cell: ({ row }) => {
+        const { spec } = row.original;
+        const kind = spec.global ? "Global" : (spec.targetRef?.kind ?? "\u2014");
+        return <span className="text-sm">{kind}</span>;
+      },
     },
     {
       id: "failureMode",
