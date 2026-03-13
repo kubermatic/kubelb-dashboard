@@ -20,6 +20,12 @@ api:
   # -- API server CPU/memory resource requests and limits
   resources: {}
 
+kubeconfig:
+  # -- Existing Secret containing a kubeconfig file (for out-of-cluster access)
+  existingSecret: ""
+  # -- Key inside the Secret that holds the kubeconfig file
+  key: kubeconfig
+
 auth:
   # -- Enable OIDC authentication
   enabled: false
