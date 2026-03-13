@@ -46,6 +46,7 @@ import { useTenants } from "@/hooks/use-tenants";
 import { useWAFPolicies } from "@/hooks/use-waf-policies";
 import { useEdition } from "@/hooks/use-edition";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
+import { getLoadBalancerHealthStatus, getRouteHealthStatus } from "@/lib/status-mapper";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { Condition, Deployment } from "@/types/kubernetes";
@@ -427,31 +428,20 @@ function Overview() {
     syncSecretQuery.isError ||
     (isEE && wafQuery.isError);
 
-  const lbCounts = countByConditionStatus(
-    lbItems.map((lb) => ({
-      status: {
-        conditions: lb.status?.loadBalancer?.ingress
-          ? [
-              {
-                type: "Ready",
-                status: "True" as const,
-                lastTransitionTime: "",
-                reason: "",
-                message: "",
-              },
-            ]
-          : undefined,
-      },
-    })),
-    "Ready",
-  );
+  const lbCounts = { ready: 0, pending: 0, error: 0 };
+  for (const lb of lbItems) {
+    const { state } = getLoadBalancerHealthStatus(lb);
+    if (state === "Ready") lbCounts.ready++;
+    else lbCounts.pending++;
+  }
 
-  const routeCounts = countByConditionStatus(
-    routeItems.map((r) => ({
-      status: { conditions: r.status?.resources?.route?.conditions },
-    })),
-    "Ready",
-  );
+  const routeCounts = { ready: 0, pending: 0, error: 0 };
+  for (const r of routeItems) {
+    const { state } = getRouteHealthStatus(r);
+    if (state === "Ready") routeCounts.ready++;
+    else if (state === "Error") routeCounts.error++;
+    else routeCounts.pending++;
+  }
 
   const tenantCounts = { ready: tenantItems.length, pending: 0, error: 0 };
   const syncSecretCounts = { ready: syncSecretItems.length, pending: 0, error: 0 };

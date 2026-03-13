@@ -38,6 +38,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Network } from "lucide-react";
 import { useState } from "react";
+import { getLoadBalancerHealthStatus, type HealthState } from "@/lib/status-mapper";
 
 import type { LoadBalancer } from "@/types/kubelb";
 
@@ -79,9 +80,12 @@ function getEndpointsSummary(lb: LoadBalancer): string {
   return parts.length ? parts.join(", ") : "\u2014";
 }
 
-function isReady(lb: LoadBalancer): boolean {
-  return (lb.status?.loadBalancer?.ingress?.length ?? 0) > 0;
-}
+const statusStyles: Record<HealthState, string> = {
+  Ready: "bg-success/10 text-success hover:bg-success/20",
+  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
+  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
+  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
+};
 
 function LoadBalancers() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
@@ -165,21 +169,11 @@ function LoadBalancers() {
     },
     {
       id: "status",
-      accessorFn: (row) => (isReady(row) ? "Ready" : "Pending"),
+      accessorFn: (row) => getLoadBalancerHealthStatus(row).state,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => {
-        const ready = isReady(row.original);
-        return (
-          <Badge
-            className={
-              ready
-                ? "bg-success/10 text-success hover:bg-success/20"
-                : "bg-warning/10 text-warning hover:bg-warning/20"
-            }
-          >
-            {ready ? "Ready" : "Pending"}
-          </Badge>
-        );
+        const { state } = getLoadBalancerHealthStatus(row.original);
+        return <Badge className={statusStyles[state]}>{state}</Badge>;
       },
     },
     {

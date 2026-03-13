@@ -36,6 +36,7 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useRoutes } from "@/hooks/use-routes";
 import { AgeCell } from "@/components/common/age-cell";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { getRouteHealthStatus, type HealthState } from "@/lib/status-mapper";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { useUIStore } from "@/stores/ui";
@@ -92,22 +93,11 @@ function getSourceAnnotations(route: RouteType): Record<string, string> {
   return (meta?.["annotations"] as Record<string, string>) ?? {};
 }
 
-type RouteConditionStatus = "Ready" | "Error" | "Pending";
-
-function getRouteStatus(route: RouteType): RouteConditionStatus {
-  const conditions = route.status?.resources?.route?.conditions;
-  if (!conditions?.length) return "Pending";
-  const ready = conditions.find((c) => c.type === "Ready");
-  if (!ready) return "Pending";
-  if (ready.status === "True") return "Ready";
-  if (ready.status === "False") return "Error";
-  return "Pending";
-}
-
-const statusStyles: Record<RouteConditionStatus, string> = {
+const statusStyles: Record<HealthState, string> = {
   Ready: "bg-success/10 text-success hover:bg-success/20",
-  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
+  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
   Pending: "bg-warning/10 text-warning hover:bg-warning/20",
+  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
 };
 
 function Routes() {
@@ -209,11 +199,15 @@ function Routes() {
     },
     {
       id: "status",
-      accessorFn: getRouteStatus,
+      accessorFn: (row) => getRouteHealthStatus(row).state,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => {
-        const status = getRouteStatus(row.original);
-        return <Badge className={statusStyles[status]}>{status}</Badge>;
+        const { state, reason } = getRouteHealthStatus(row.original);
+        return (
+          <Badge className={statusStyles[state]} title={reason}>
+            {state}
+          </Badge>
+        );
       },
     },
     {
