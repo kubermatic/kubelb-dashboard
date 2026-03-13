@@ -14,20 +14,49 @@
  * limitations under the License.
  */
 
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Layout } from "@/components/layout/layout";
 import { ErrorBoundary } from "@/components/common/error-boundary";
 import { NotFound } from "@/components/common/not-found";
 
-export const Route = createRootRoute({
-  component: () => (
+function RootComponent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isLogin = pathname === "/login";
+
+  if (isLogin) {
+    return (
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
+    );
+  }
+
+  return (
     <ErrorBoundary>
       <Layout>
         <Outlet />
         <TanStackRouterDevtools position="bottom-right" />
       </Layout>
     </ErrorBoundary>
-  ),
+  );
+}
+
+export const Route = createRootRoute({
+  beforeLoad: async ({ location }) => {
+    if (location.pathname === "/login") return;
+
+    const response = await fetch("/auth/session", { credentials: "include" });
+    if (response.status === 404) return;
+
+    const data = (await response.json()) as { authenticated: boolean };
+    if (!data.authenticated) {
+      throw redirect({
+        to: "/login",
+        search: { return_to: location.pathname },
+      });
+    }
+  },
+  component: RootComponent,
   notFoundComponent: NotFound,
 });
