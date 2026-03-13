@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n fe,api -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:api\"",
+    "dev": "node hack/dev.mjs",
     "dev:frontend": "vite",
     "dev:mock": "VITE_MOCK=true vite",
     "dev:api": "npm run dev --prefix api",

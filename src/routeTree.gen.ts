@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as LoginRouteImport } from "./routes/login"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as WafPoliciesIndexRouteImport } from "./routes/waf-policies/index"
 import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
@@ -24,6 +25,11 @@ import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namesp
 import { Route as LoadBalancersNamespaceNameRouteImport } from "./routes/load-balancers/$namespace.$name"
 import { Route as EnvoyProxyNamespaceNameRouteImport } from "./routes/envoy-proxy/$namespace.$name"
 
+const LoginRoute = LoginRouteImport.update({
+  id: "/login",
+  path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
@@ -99,6 +105,7 @@ const EnvoyProxyNamespaceNameRoute = EnvoyProxyNamespaceNameRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/login": typeof LoginRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration/": typeof ConfigurationIndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/login": typeof LoginRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration": typeof ConfigurationIndexRoute
@@ -132,6 +140,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/login": typeof LoginRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration/": typeof ConfigurationIndexRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | "/"
+    | "/login"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/configuration/"
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
+    | "/login"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/configuration"
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
   id:
     | "__root__"
     | "/"
+    | "/login"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/configuration/"
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   TenantsNameRoute: typeof TenantsNameRoute
   WafPoliciesNameRoute: typeof WafPoliciesNameRoute
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
@@ -216,6 +229,13 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/login": {
+      id: "/login"
+      path: "/login"
+      fullPath: "/login"
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/": {
       id: "/"
       path: "/"
@@ -319,6 +339,7 @@ declare module "@tanstack/react-router" {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   TenantsNameRoute: TenantsNameRoute,
   WafPoliciesNameRoute: WafPoliciesNameRoute,
   ConfigurationIndexRoute: ConfigurationIndexRoute,

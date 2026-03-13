@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import { useEdition } from "@/hooks/use-edition";
+import { createFileRoute } from "@tanstack/react-router";
+import { LoginPage } from "@/pages/login";
 
-export function Footer() {
-  const { isEE } = useEdition();
-
-  return (
-    <footer className="border-t px-3 py-2 md:px-5">
-      <div className="flex items-center justify-center text-xs text-muted-foreground">
-        <span>{isEE ? "Enterprise Edition" : "Community Edition"}</span>
-      </div>
-    </footer>
-  );
+interface LoginSearch {
+  return_to?: string;
 }
+
+export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): LoginSearch => ({
+    return_to: typeof search.return_to === "string" ? search.return_to : undefined,
+  }),
+  component: LoginPage,
+});

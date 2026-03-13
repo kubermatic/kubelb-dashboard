@@ -345,6 +345,7 @@ function Overview() {
   const syncSecretQuery = useSyncSecrets();
   const wafQuery = useWAFPolicies();
 
+  const tenantItems = tenantQuery.data?.items ?? [];
   const lbItems = lbQuery.data?.items ?? [];
   const routeItems = routeQuery.data?.items ?? [];
   const deploymentItems = deploymentQuery.data?.items ?? [];
@@ -393,6 +394,8 @@ function Overview() {
     "Ready",
   );
 
+  const tenantCounts = { ready: tenantItems.length, pending: 0, error: 0 };
+  const syncSecretCounts = { ready: syncSecretItems.length, pending: 0, error: 0 };
   const envoyProxyCounts = countDeploymentReadiness(deploymentItems);
   const wafCounts = countByConditionStatus(wafItems, "Valid");
 
@@ -434,6 +437,7 @@ function Overview() {
           accent="primary"
           query={tenantQuery}
           href="/tenants"
+          healthSummary={formatHealthSummary(tenantCounts)}
         />
         <MetricCard
           icon={Network}
@@ -465,6 +469,7 @@ function Overview() {
           accent="warning"
           query={syncSecretQuery}
           href="/sync-secrets"
+          healthSummary={formatHealthSummary(syncSecretCounts)}
         />
         {isEE && (
           <MetricCard
@@ -473,6 +478,7 @@ function Overview() {
             accent="warning"
             query={wafQuery}
             href="/waf-policies"
+            healthSummary={formatHealthSummary(wafCounts)}
           />
         )}
       </div>
@@ -493,7 +499,8 @@ function Overview() {
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
               </div>
-            ) : lbItems.length +
+            ) : tenantItems.length +
+                lbItems.length +
                 routeItems.length +
                 deploymentItems.length +
                 syncSecretItems.length ===
@@ -504,6 +511,15 @@ function Overview() {
               </div>
             ) : (
               <>
+                {tenantItems.length > 0 && (
+                  <ResourceHealthRow
+                    icon={Users}
+                    label="Tenants"
+                    counts={tenantCounts}
+                    total={tenantItems.length}
+                    href="/tenants"
+                  />
+                )}
                 {lbItems.length > 0 && (
                   <ResourceHealthRow
                     icon={Network}

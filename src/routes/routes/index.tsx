@@ -23,17 +23,19 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Route as RouteIcon } from "lucide-react";
+import { FileText, Route as RouteIcon, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
+import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
+import { useDeleteRoute } from "@/hooks/use-route-mutations";
 import { useRoutes } from "@/hooks/use-routes";
-import { formatAge, tenantToNamespace } from "@/lib/format";
+import { formatAge, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
@@ -52,8 +54,34 @@ function deriveRouteType(route: RouteType): string {
   return kind ?? "Unknown";
 }
 
-function getEndpointCount(route: RouteType): number {
-  return route.spec.endpoints?.reduce((sum, ep) => sum + (ep.addresses?.length ?? 0), 0) ?? 0;
+function getSourceName(route: RouteType): string {
+  const resource = route.spec.source?.kubernetes?.resource;
+  if (!resource) return "\u2014";
+  const meta = resource["metadata"] as Record<string, unknown> | undefined;
+  const name = (meta?.["name"] as string) ?? (resource["name"] as string | undefined);
+  const ns = (meta?.["namespace"] as string) ?? (resource["namespace"] as string | undefined);
+  if (ns && name) return `${ns}/${name}`;
+  return name ?? "\u2014";
+}
+
+function getEndpointsSummary(route: RouteType): string {
+  if (!route.spec.endpoints?.length) return "\u2014";
+  const parts: string[] = [];
+  for (const ep of route.spec.endpoints) {
+    if (ep.addressesReference) {
+      parts.push(ep.addressesReference.name ?? "ref");
+    } else if (ep.addresses?.length) {
+      const ports = ep.ports?.map((p) => p.port) ?? [];
+      for (const addr of ep.addresses) {
+        if (ports.length) {
+          parts.push(...ports.map((port) => `${addr.ip}:${String(port)}`));
+        } else {
+          parts.push(addr.ip);
+        }
+      }
+    }
+  }
+  return parts.length ? parts.join(", ") : "\u2014";
 }
 
 type RouteConditionStatus = "Ready" | "Error" | "Pending";
@@ -78,10 +106,12 @@ function Routes() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
   const { data, isLoading, isError, error, refetch } = useRoutes(namespace);
+  const deleteRoute = useDeleteRoute();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
   const items = data?.items ?? [];
   const [yamlResource, setYamlResource] = useState<RouteType | null>(null);
+  const [deleteResource, setDeleteResource] = useState<RouteType | null>(null);
 
   const columns: ColumnDef<RouteType>[] = [
     {
@@ -102,9 +132,9 @@ function Routes() {
       },
     },
     {
-      accessorFn: (row) => row.metadata.namespace,
-      id: "namespace",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
+      id: "tenant",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
       id: "type",
@@ -113,13 +143,19 @@ function Routes() {
     },
     {
       id: "source",
-      accessorFn: (row) => row.status?.resources?.source ?? "\u2014",
+      accessorFn: getSourceName,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
+      cell: ({ row }) => <span className="font-mono text-xs">{getSourceName(row.original)}</span>,
     },
     {
       id: "endpoints",
-      accessorFn: getEndpointCount,
+      accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
+      cell: ({ row }) => (
+        <span className="max-w-48 truncate font-mono text-xs">
+          {getEndpointsSummary(row.original)}
+        </span>
+      ),
     },
     {
       id: "status",
@@ -145,13 +181,18 @@ function Routes() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={[
-              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-            ]}
-          />
-        </div>
+        <RowActions
+          actions={[
+            { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -209,6 +250,24 @@ function Routes() {
             : undefined
         }
       />
+
+      {deleteResource && (
+        <DeleteDialog
+          open={!!deleteResource}
+          onOpenChange={(open) => !open && setDeleteResource(null)}
+          resourceName={deleteResource.metadata.name}
+          resourceKind="Route"
+          isPending={deleteRoute.isPending}
+          onConfirm={() => {
+            void deleteRoute
+              .mutateAsync({
+                namespace: deleteResource.metadata.namespace ?? "",
+                name: deleteResource.metadata.name,
+              })
+              .then(() => setDeleteResource(null));
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -31,6 +31,17 @@ export class KubeApiError extends Error {
 }
 
 async function toKubeError(response: Response): Promise<KubeApiError> {
+  if (response.status === 401) {
+    window.location.href = "/login";
+    throw new KubeApiError({
+      kind: "Status",
+      apiVersion: "v1",
+      status: "Failure",
+      message: "Unauthorized",
+      reason: "Unauthorized",
+      code: 401,
+    });
+  }
   try {
     const body = (await response.json()) as KubeStatus;
     return new KubeApiError(body);
@@ -47,7 +58,7 @@ async function toKubeError(response: Response): Promise<KubeApiError> {
 }
 
 export async function kubeGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${KUBE_PREFIX}${path}`);
+  const response = await fetch(`${KUBE_PREFIX}${path}`, { credentials: "include" });
   if (!response.ok) {
     throw await toKubeError(response);
   }
@@ -69,7 +80,7 @@ export async function kubeList<T>(
   if (params?.limit) url.searchParams.set("limit", String(params.limit));
   if (params?.continue) url.searchParams.set("continue", params.continue);
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), { credentials: "include" });
   if (!response.ok) {
     throw await toKubeError(response);
   }
@@ -80,6 +91,7 @@ export async function kubeCreate<T>(path: string, body: T): Promise<T> {
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -92,6 +104,7 @@ export async function kubeUpdate<T>(path: string, body: T): Promise<T> {
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -103,6 +116,7 @@ export async function kubeUpdate<T>(path: string, body: T): Promise<T> {
 export async function kubeDelete(path: string): Promise<void> {
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "DELETE",
+    credentials: "include",
   });
   if (!response.ok) {
     throw await toKubeError(response);
@@ -113,6 +127,7 @@ export async function kubePatch<T>(path: string, patch: unknown): Promise<T> {
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/strategic-merge-patch+json" },
+    credentials: "include",
     body: JSON.stringify(patch),
   });
   if (!response.ok) {
@@ -133,7 +148,7 @@ export function kubeWatch<T>(
 
   void (async () => {
     try {
-      const response = await fetch(url, { signal: abortController.signal });
+      const response = await fetch(url, { signal: abortController.signal, credentials: "include" });
       if (!response.ok) {
         throw await toKubeError(response);
       }

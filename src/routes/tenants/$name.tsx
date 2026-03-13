@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { Fragment, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
@@ -27,7 +27,6 @@ import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
 import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
@@ -36,15 +35,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useEdition } from "@/hooks/use-edition";
 import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { Tenant } from "@/types/kubelb";
-
-const CRD_NAME = "tenants.kubelb.k8c.io";
 
 export const Route = createFileRoute("/tenants/$name")({
   component: TenantDetail,
@@ -65,10 +60,8 @@ function TenantDetail() {
   const { name } = Route.useParams();
   const navigate = useNavigate();
   const { data: tenant, isLoading, error, refetch } = useTenant(name);
-  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
-  const editUiSchema = useMemo(() => buildUiSchema("Tenant", "edit"), []);
 
   const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -155,37 +148,22 @@ function TenantDetail() {
         title={`Tenant: ${name}`}
       />
 
-      {EDITING_ENABLED &&
-        (crdSchema ? (
-          <ResourceFormDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            mode="edit"
-            title="Edit Tenant"
-            schema={crdSchema}
-            uiSchema={editUiSchema}
-            formData={sanitizeForEdit(tenant) as Record<string, unknown>}
-            isPending={updateTenant.isPending}
-            onSubmit={(parsed) => {
-              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
-            }}
-          />
-        ) : YAML_EDITOR_ENABLED ? (
-          <YamlEditorDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            mode="edit"
-            title="Edit Tenant"
-            resourceKind="Tenant"
-            apiVersion="kubelb.k8c.io/v1alpha1"
-            initialYaml={editYaml}
-            lockedFields={{ name: true }}
-            isPending={updateTenant.isPending}
-            onSubmit={(parsed) => {
-              void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
-            }}
-          />
-        ) : null)}
+      {EDITING_ENABLED && YAML_EDITOR_ENABLED && (
+        <YamlEditorDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit Tenant"
+          resourceKind="Tenant"
+          apiVersion="kubelb.k8c.io/v1alpha1"
+          initialYaml={editYaml}
+          lockedFields={{ name: true }}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditOpen(false));
+          }}
+        />
+      )}
 
       <DeleteDialog
         open={deleteOpen}
@@ -221,15 +199,64 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-            <span className="text-muted-foreground">L4</span>
+            <span className="text-muted-foreground">Layer 4</span>
             <FeatureBadge enabled={!spec.loadBalancer?.disable} />
+            {isEE && spec.loadBalancer?.limit != null && (
+              <>
+                <span className="text-muted-foreground">LB Limit</span>
+                <span>{spec.loadBalancer.limit}</span>
+              </>
+            )}
             <span className="text-muted-foreground">Ingress</span>
             <FeatureBadge enabled={!spec.ingress?.disable} />
-            <span className="text-muted-foreground">Gateway</span>
+            <span className="text-muted-foreground">Gateway API</span>
             <FeatureBadge enabled={!spec.gatewayAPI?.disable} />
+            {isEE && spec.gatewayAPI?.gatewaySettings?.limit != null && (
+              <>
+                <span className="text-muted-foreground">Gateway Limit</span>
+                <span>{spec.gatewayAPI.gatewaySettings.limit}</span>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {isEE &&
+        spec.gatewayAPI &&
+        (() => {
+          const routeFlags = [
+            { label: "HTTP Route", disabled: spec.gatewayAPI.disableHTTPRoute },
+            { label: "gRPC Route", disabled: spec.gatewayAPI.disableGRPCRoute },
+            { label: "TCP Route", disabled: spec.gatewayAPI.disableTCPRoute },
+            { label: "UDP Route", disabled: spec.gatewayAPI.disableUDPRoute },
+            { label: "TLS Route", disabled: spec.gatewayAPI.disableTLSRoute },
+            {
+              label: "Backend Traffic Policy",
+              disabled: spec.gatewayAPI.disableBackendTrafficPolicy,
+            },
+            {
+              label: "Client Traffic Policy",
+              disabled: spec.gatewayAPI.disableClientTrafficPolicy,
+            },
+          ].filter((f) => f.disabled);
+          return routeFlags.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Gateway API Routes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-[200px_1fr] gap-y-2 text-sm">
+                  {routeFlags.map((f) => (
+                    <Fragment key={f.label}>
+                      <span className="text-muted-foreground">{f.label}</span>
+                      <FeatureBadge enabled={false} />
+                    </Fragment>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null;
+        })()}
 
       <Card>
         <CardHeader>
@@ -237,6 +264,12 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+            {isEE && (
+              <>
+                <span className="text-muted-foreground">Status</span>
+                <FeatureBadge enabled={!spec.dns?.disable} />
+              </>
+            )}
             <span className="text-muted-foreground">Wildcard Domain</span>
             <span>{spec.dns?.wildcardDomain ?? "—"}</span>
             <span className="text-muted-foreground">Explicit Hostnames</span>
@@ -245,6 +278,18 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
             <FeatureBadge enabled={!!spec.dns?.useDNSAnnotations} />
             <span className="text-muted-foreground">Cert Annotations</span>
             <FeatureBadge enabled={!!spec.dns?.useCertificateAnnotations} />
+            {isEE && spec.dns?.allowedDomains && spec.dns.allowedDomains.length > 0 && (
+              <>
+                <span className="text-muted-foreground">Allowed Domains</span>
+                <div className="flex flex-wrap gap-1">
+                  {spec.dns.allowedDomains.map((d) => (
+                    <Badge key={d} variant="outline">
+                      {d}
+                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -255,8 +300,28 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+            {isEE && (
+              <>
+                <span className="text-muted-foreground">Status</span>
+                <FeatureBadge enabled={!spec.certificates?.disable} />
+              </>
+            )}
             <span className="text-muted-foreground">Default Cluster Issuer</span>
             <span>{spec.certificates?.defaultClusterIssuer ?? "—"}</span>
+            {isEE &&
+              spec.certificates?.allowedDomains &&
+              spec.certificates.allowedDomains.length > 0 && (
+                <>
+                  <span className="text-muted-foreground">Allowed Domains</span>
+                  <div className="flex flex-wrap gap-1">
+                    {spec.certificates.allowedDomains.map((d) => (
+                      <Badge key={d} variant="outline">
+                        {d}
+                      </Badge>
+                    ))}
+                  </div>
+                </>
+              )}
           </div>
         </CardContent>
       </Card>
@@ -405,11 +470,11 @@ function ConfigurationTab({ tenant }: { tenant: Tenant }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-            <span className="text-muted-foreground">LB Class</span>
+            <span className="text-muted-foreground">Layer 4 Class</span>
             <span>{spec.loadBalancer?.class ?? "—"}</span>
             <span className="text-muted-foreground">Ingress Class</span>
             <span>{spec.ingress?.class ?? "—"}</span>
-            <span className="text-muted-foreground">Gateway Class</span>
+            <span className="text-muted-foreground">Gateway API Class</span>
             <span>{spec.gatewayAPI?.class ?? "—"}</span>
           </div>
         </CardContent>

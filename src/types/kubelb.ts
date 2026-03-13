@@ -71,6 +71,7 @@ export interface LoadBalancerSpec {
   hostname?: string;
   type?: "ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName";
   externalTrafficPolicy?: "Cluster" | "Local";
+  loadBalancerPolicy?: LoadBalancerPolicy;
 }
 
 export interface LoadBalancer {
@@ -140,6 +141,7 @@ export interface Route {
 
 export interface LoadBalancerSettings {
   class?: string;
+  limit?: number;
   disable?: boolean;
   limit?: number;
 }
@@ -149,22 +151,35 @@ export interface IngressSettings {
   disable?: boolean;
 }
 
+export interface GatewaySettings {
+  limit?: number;
+}
+
 export interface GatewayAPISettings {
   class?: string;
   disable?: boolean;
   defaultGateway?: ObjectReference;
-  gateway?: Record<string, unknown>;
+  gatewaySettings?: GatewaySettings;
+  disableHTTPRoute?: boolean;
+  disableGRPCRoute?: boolean;
+  disableTCPRoute?: boolean;
+  disableUDPRoute?: boolean;
+  disableTLSRoute?: boolean;
+  disableBackendTrafficPolicy?: boolean;
+  disableClientTrafficPolicy?: boolean;
 }
 
 export interface DNSSettings {
+  disable?: boolean;
   wildcardDomain?: string;
+  allowedDomains?: string[];
   allowExplicitHostnames?: boolean;
   useDNSAnnotations?: boolean;
   useCertificateAnnotations?: boolean;
-  allowedDomains?: string[];
 }
 
 export interface CertificatesSettings {
+  disable?: boolean;
   defaultClusterIssuer?: string;
   allowedDomains?: string[];
 }

@@ -17,9 +17,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
-import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
+import { EDITING_ENABLED } from "@/lib/feature-flags";
 import { useConfigs } from "@/hooks/use-config";
 import { useEdition } from "@/hooks/use-edition";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
@@ -32,11 +31,9 @@ import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
-import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 
 const RESOURCE_KIND = "Config";
-const API_VERSION = "kubelb.k8c.io/v1alpha1";
 const CRD_NAME = "configs.kubelb.k8c.io";
 
 export const Route = createFileRoute("/configuration/")({
@@ -418,7 +415,7 @@ function ConfigView({ config }: { config: Config }) {
 
 function Configuration() {
   const { data, isLoading, isError, error, refetch } = useConfigs();
-  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateConfig = useUpdateConfig();
   const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
@@ -505,39 +502,22 @@ function Configuration() {
         title={`Config: ${config?.metadata?.name ?? ""}`}
       />
 
-      {EDITING_ENABLED &&
-        (crdSchema ? (
-          <ResourceFormDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            mode="edit"
-            title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
-            schema={crdSchema}
-            uiSchema={editUiSchema}
-            formData={config ? (sanitizeForEdit(config) as Record<string, unknown>) : undefined}
-            isPending={updateConfig.isPending}
-            onSubmit={(parsed) => {
-              void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
-            }}
-          />
-        ) : YAML_EDITOR_ENABLED ? (
-          <YamlEditorDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            mode="edit"
-            title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
-            resourceKind={RESOURCE_KIND}
-            apiVersion={API_VERSION}
-            initialYaml={
-              config ? yaml.dump(sanitizeForEdit(config), { noRefs: true, lineWidth: -1 }) : ""
-            }
-            lockedFields={{ name: true }}
-            isPending={updateConfig.isPending}
-            onSubmit={(parsed) => {
-              void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
-            }}
-          />
-        ) : null)}
+      {EDITING_ENABLED && (
+        <ResourceFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
+          schema={crdSchema}
+          isSchemaLoading={isSchemaLoading}
+          uiSchema={editUiSchema}
+          formData={config ? (sanitizeForEdit(config) as Record<string, unknown>) : undefined}
+          isPending={updateConfig.isPending}
+          onSubmit={(parsed) => {
+            void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
+          }}
+        />
+      )}
     </div>
   );
 }

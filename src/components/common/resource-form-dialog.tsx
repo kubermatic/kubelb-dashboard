@@ -20,6 +20,7 @@ import type { IChangeEvent } from "@rjsf/core";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import yaml from "js-yaml";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,8 +43,9 @@ interface ResourceFormDialogProps {
   onOpenChange: (open: boolean) => void;
   mode: "create" | "edit";
   title: string;
-  schema: RJSFSchema;
+  schema?: RJSFSchema;
   uiSchema: UiSchema;
+  isSchemaLoading?: boolean;
   formData?: Record<string, unknown>;
   onSubmit: (data: unknown) => void;
   isPending?: boolean;
@@ -56,6 +58,7 @@ export function ResourceFormDialog({
   title,
   schema,
   uiSchema,
+  isSchemaLoading,
   formData,
   onSubmit,
   isPending,
@@ -138,48 +141,58 @@ export function ResourceFormDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={handleTabChange} className="flex-1 flex flex-col min-h-0">
-          {FORM_EDITOR_ENABLED && YAML_EDITOR_ENABLED && (
-            <TabsList>
-              <TabsTrigger value="form">Form</TabsTrigger>
-              <TabsTrigger value="yaml">YAML</TabsTrigger>
-            </TabsList>
-          )}
+        {isSchemaLoading || !schema ? (
+          <div className="flex flex-1 items-center justify-center py-12">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Tabs
+            value={tab}
+            onValueChange={handleTabChange}
+            className="flex-1 flex flex-col min-h-0"
+          >
+            {FORM_EDITOR_ENABLED && YAML_EDITOR_ENABLED && (
+              <TabsList>
+                <TabsTrigger value="form">Form</TabsTrigger>
+                <TabsTrigger value="yaml">YAML</TabsTrigger>
+              </TabsList>
+            )}
 
-          {FORM_EDITOR_ENABLED && (
-            <TabsContent value="form" className="flex-1 overflow-y-auto mt-0 pt-4">
-              <Form
-                schema={schema}
-                uiSchema={formUiSchema}
-                formData={localFormData}
-                validator={validator}
-                onChange={handleFormChange}
-                onError={() => {}}
-              />
-            </TabsContent>
-          )}
+            {FORM_EDITOR_ENABLED && (
+              <TabsContent value="form" className="flex-1 overflow-y-auto mt-0 pt-4">
+                <Form
+                  schema={schema}
+                  uiSchema={formUiSchema}
+                  formData={localFormData}
+                  validator={validator}
+                  onChange={handleFormChange}
+                  onError={() => {}}
+                />
+              </TabsContent>
+            )}
 
-          {YAML_EDITOR_ENABLED && (
-            <TabsContent value="yaml" className="flex-1 flex flex-col min-h-0 mt-0 pt-4">
-              <Textarea
-                className="min-h-[200px] flex-1 resize-y font-mono text-sm"
-                value={yamlValue}
-                onChange={(e) => {
-                  setYamlValue(e.target.value);
-                  setYamlError(null);
-                }}
-                spellCheck={false}
-              />
-              {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
-            </TabsContent>
-          )}
-        </Tabs>
+            {YAML_EDITOR_ENABLED && (
+              <TabsContent value="yaml" className="flex-1 flex flex-col min-h-0 mt-0 pt-4">
+                <Textarea
+                  className="min-h-[200px] flex-1 resize-y font-mono text-sm"
+                  value={yamlValue}
+                  onChange={(e) => {
+                    setYamlValue(e.target.value);
+                    setYamlError(null);
+                  }}
+                  spellCheck={false}
+                />
+                {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
+              </TabsContent>
+            )}
+          </Tabs>
+        )}
 
         <DialogFooter>
           <DialogClose render={<Button variant="outline" disabled={isPending} />}>
             Cancel
           </DialogClose>
-          <Button onClick={handleSubmit} disabled={isPending}>
+          <Button onClick={handleSubmit} disabled={isPending || !schema}>
             {submitLabel}
           </Button>
         </DialogFooter>

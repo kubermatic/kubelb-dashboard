@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { ComponentType } from "react";
+import React, { type ComponentType } from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,27 +39,33 @@ interface RowActionsProps {
   actions: RowAction[];
 }
 
+function stopRowEvent(e: React.MouseEvent | React.PointerEvent) {
+  e.stopPropagation();
+}
+
 export function RowActions({ actions }: RowActionsProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
-            <MoreHorizontal data-icon />
-            <span className="sr-only">Open actions</span>
-          </Button>
-        }
-      />
+      <div role="presentation" onPointerDown={stopRowEvent} onClick={stopRowEvent}>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal data-icon />
+              <span className="sr-only">Open actions</span>
+            </Button>
+          }
+        />
+      </div>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
           {actions.map((action) => (
-            <span key={action.label}>
+            <React.Fragment key={action.label}>
               {action.separator && <DropdownMenuSeparator />}
               <DropdownMenuItem variant={action.variant} onClick={action.onClick}>
                 {action.icon && <action.icon data-icon />}
                 {action.label}
               </DropdownMenuItem>
-            </span>
+            </React.Fragment>
           ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>
