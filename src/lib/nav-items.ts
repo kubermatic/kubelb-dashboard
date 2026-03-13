@@ -23,6 +23,8 @@ import {
   Shield,
   ShieldAlert,
   Settings,
+  Server,
+  GitBranch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -31,13 +33,24 @@ export interface NavItem {
   to: string;
   icon: LucideIcon;
   ee?: boolean;
+  children?: NavItem[];
 }
 
 export const navItems: NavItem[] = [
   { label: "Overview", to: "/", icon: LayoutDashboard },
   { label: "Tenants", to: "/tenants", icon: Users },
-  { label: "Load Balancers", to: "/load-balancers", icon: Network },
-  { label: "Routes", to: "/routes", icon: Route },
+  {
+    label: "Load Balancers",
+    to: "/load-balancers",
+    icon: Network,
+    children: [{ label: "Services", to: "/load-balancers/services", icon: Server }],
+  },
+  {
+    label: "Routes",
+    to: "/routes",
+    icon: Route,
+    children: [{ label: "Downstream", to: "/routes/downstream", icon: GitBranch }],
+  },
   { label: "Sync Secrets", to: "/sync-secrets", icon: KeyRound },
   { label: "Envoy Proxy", to: "/envoy-proxy", icon: Shield },
   { label: "Configuration", to: "/configuration", icon: Settings },

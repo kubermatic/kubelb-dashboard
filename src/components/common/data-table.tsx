@@ -162,52 +162,6 @@ export function DataTable<T>({
 
   const hasSelection = Object.keys(rowSelection).length > 0;
 
-  const selectColumn: ColumnDef<T, unknown> = useMemo(
-    () => ({
-      id: "select",
-      enableSorting: false,
-      enableHiding: false,
-      header: ({ table: t }) => (
-        <div
-          className={cn(
-            "transition-opacity",
-            hasSelection ? "opacity-100" : "opacity-0 group-hover/row:opacity-100",
-          )}
-        >
-          <Checkbox
-            checked={t.getIsAllPageRowsSelected()}
-            indeterminate={t.getIsSomePageRowsSelected()}
-            onCheckedChange={(val) => t.toggleAllPageRowsSelected(!!val)}
-            aria-label="Select all"
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "transition-opacity",
-            row.getIsSelected() || hasSelection
-              ? "opacity-100"
-              : "opacity-0 group-hover/row:opacity-100",
-          )}
-        >
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(val) => row.toggleSelected(!!val)}
-            aria-label="Select row"
-          />
-        </div>
-      ),
-    }),
-    [hasSelection],
-  );
-
-  const allColumns = useMemo(
-    () => (enableRowSelection ? [selectColumn, ...columns] : columns),
-    [enableRowSelection, selectColumn, columns],
-  );
-
   const [pagination, setPagination] = useState({
     pageIndex: initialPage ?? 0,
     pageSize: initialPageSize ?? getStoredPageSize(),
@@ -215,7 +169,7 @@ export function DataTable<T>({
 
   const table = useReactTable({
     data,
-    columns: allColumns,
+    columns,
     state: { sorting, columnFilters, columnVisibility, pagination, rowSelection },
     onSortingChange: setSorting,
     enableRowSelection,
@@ -326,8 +280,28 @@ export function DataTable<T>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="group/row">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                {headerGroup.headers.map((header, headerIndex) => (
+                  <TableHead
+                    key={header.id}
+                    className={cn(headerIndex === 0 && "relative pl-8")}
+                  >
+                    {headerIndex === 0 && enableRowSelection && (
+                      <div
+                        className={cn(
+                          "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
+                          hasSelection
+                            ? "opacity-100"
+                            : "opacity-0 group-hover/row:opacity-100",
+                        )}
+                      >
+                        <Checkbox
+                          checked={table.getIsAllPageRowsSelected()}
+                          indeterminate={table.getIsSomePageRowsSelected()}
+                          onCheckedChange={(val) => table.toggleAllPageRowsSelected(!!val)}
+                          aria-label="Select all"
+                        />
+                      </div>
+                    )}
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -340,7 +314,7 @@ export function DataTable<T>({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {allColumns.map((_, j) => (
+                  {columns.map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-3/4" />
                     </TableCell>
@@ -354,8 +328,28 @@ export function DataTable<T>({
                   className={cn("group/row", onRowClick && "cursor-pointer")}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                  {row.getVisibleCells().map((cell, cellIndex) => (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(cellIndex === 0 && "relative pl-8")}
+                    >
+                      {cellIndex === 0 && enableRowSelection && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
+                            row.getIsSelected() || hasSelection
+                              ? "opacity-100"
+                              : "opacity-0 group-hover/row:opacity-100",
+                          )}
+                        >
+                          <Checkbox
+                            checked={row.getIsSelected()}
+                            onCheckedChange={(val) => row.toggleSelected(!!val)}
+                            aria-label="Select row"
+                          />
+                        </div>
+                      )}
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -363,7 +357,7 @@ export function DataTable<T>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={allColumns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   {emptyMessage}
                 </TableCell>
               </TableRow>

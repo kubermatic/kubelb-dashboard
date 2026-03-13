@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { useEffect } from "react";
-import { Link } from "@tanstack/react-router";
-import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { ChevronRight, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useEdition } from "@/hooks/use-edition";
 import { cn } from "@/lib/utils";
-import { navItems } from "@/lib/nav-items";
+import { navItems, type NavItem } from "@/lib/nav-items";
 
 function NavLinks({
   collapsed,
@@ -32,33 +32,114 @@ function NavLinks({
   ee?: boolean;
 }) {
   const filtered = navItems.filter((item) => !item.ee || ee);
-  return (
-    <nav className="flex-1 space-y-1 p-2">
-      {filtered.map((item) => (
-        <Link
-          key={item.to}
-          to={item.to}
-          activeOptions={{ exact: item.to === "/" }}
-          className={cn(
-            "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-hover",
-            collapsed && "justify-center px-0",
-          )}
-          activeProps={{
-            className: "bg-sidebar-accent text-sidebar-accent-foreground",
-          }}
-          onClick={onNavigate}
-        >
-          <item.icon className="size-5 shrink-0" />
-          {!collapsed && <span>{item.label}</span>}
-          {collapsed && (
-            <span className="pointer-events-none absolute left-full z-50 ml-2 hidden rounded-md bg-card px-2 py-1 text-xs text-card-foreground shadow-md group-hover:block">
-              {item.label}
-            </span>
-          )}
-        </Link>
-      ))}
-    </nav>
+  const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
+  const { pathname } = useLocation();
+
+  const autoExpanded = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of filtered) {
+      if (item.children?.some((child) => pathname.startsWith(child.to))) {
+        set.add(item.to);
+      }
+    }
+    return set;
+  }, [pathname, filtered]);
+
+  const expanded = useMemo(
+    () => new Set([...autoExpanded, ...manualExpanded]),
+    [autoExpanded, manualExpanded],
   );
+
+  const toggleExpanded = (to: string) => {
+    setManualExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(to)) next.delete(to);
+      else next.add(to);
+      return next;
+    });
+  };
+
+  const linkClass = (isCollapsed: boolean) =>
+    cn(
+      "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-hover",
+      isCollapsed && "justify-center px-0",
+    );
+
+  const renderItem = (item: NavItem) => {
+    const hasChildren = item.children && item.children.length > 0;
+    const isExpanded = expanded.has(item.to);
+
+    if (hasChildren && !collapsed) {
+      return (
+        <div key={item.to}>
+          <div className="flex items-center">
+            <Link
+              to={item.to}
+              activeOptions={{ exact: false }}
+              className={cn(linkClass(false), "flex-1")}
+              activeProps={{
+                className: "bg-sidebar-accent text-sidebar-accent-foreground",
+              }}
+              onClick={onNavigate}
+            >
+              <item.icon className="size-5 shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+            <button
+              onClick={() => toggleExpanded(item.to)}
+              className="rounded-md p-1.5 text-sidebar-foreground hover:bg-sidebar-hover"
+            >
+              <ChevronRight
+                className={cn("size-4 transition-transform", isExpanded && "rotate-90")}
+              />
+            </button>
+          </div>
+          {isExpanded && (
+            <div className="ml-4 space-y-1 border-l border-border/50 pl-2">
+              {item.children!.map((child) => (
+                <Link
+                  key={child.to}
+                  to={child.to}
+                  activeOptions={{ exact: false }}
+                  className={cn(linkClass(false), "gap-2 py-1.5 text-xs")}
+                  activeProps={{
+                    className: "bg-sidebar-accent text-sidebar-accent-foreground",
+                  }}
+                  onClick={onNavigate}
+                >
+                  <child.icon className="size-4 shrink-0" />
+                  <span>{child.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        activeOptions={{ exact: item.to === "/" }}
+        className={linkClass(collapsed)}
+        activeProps={{
+          className: "bg-sidebar-accent text-sidebar-accent-foreground",
+        }}
+        onClick={onNavigate}
+      >
+        <item.icon className="size-5 shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
+        {collapsed && (
+          <span className="pointer-events-none absolute left-full z-50 ml-2 hidden rounded-md bg-card px-2 py-1 text-xs text-card-foreground shadow-md group-hover:block">
+            {item.label}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  return <nav className="flex-1 space-y-1 p-2">{filtered.map(renderItem)}</nav>;
 }
 
 export function Sidebar() {
