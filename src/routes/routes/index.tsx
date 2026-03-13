@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -26,6 +26,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Route as RouteIcon, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -123,6 +124,22 @@ function Routes() {
   const items = data?.items ?? [];
   const [yamlResource, setYamlResource] = useState<RouteType | null>(null);
   const [deleteResource, setDeleteResource] = useState<RouteType | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<RouteType[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(
+      bulkDeleteItems.map((r) =>
+        deleteRoute.mutateAsync({
+          namespace: r.metadata.namespace ?? "",
+          name: r.metadata.name,
+        }),
+      ),
+    )
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteRoute]);
 
   const columns: ColumnDef<RouteType>[] = [
     {
@@ -295,6 +312,9 @@ function Routes() {
               params: { namespace: namespace ?? "default", name },
             });
           }}
+          enableRowSelection
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
@@ -307,6 +327,15 @@ function Routes() {
             ? `Route: ${yamlResource.metadata.namespace}/${yamlResource.metadata.name}`
             : undefined
         }
+      />
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind="Route"
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
       />
 
       {deleteResource && (

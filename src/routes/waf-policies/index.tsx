@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   createFileRoute,
@@ -26,6 +26,7 @@ import {
 import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
@@ -108,6 +109,15 @@ function WAFPolicies() {
   const [yamlViewerResource, setYamlViewerResource] = useState<WAFPolicy | null>(null);
   const [editResource, setEditResource] = useState<WAFPolicy | null>(null);
   const [deleteResource, setDeleteResource] = useState<WAFPolicy | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<WAFPolicy[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(bulkDeleteItems.map((p) => deleteWAFPolicy.mutateAsync(p.metadata.name)))
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteWAFPolicy]);
 
   const columns: ColumnDef<WAFPolicy>[] = [
     {
@@ -249,6 +259,9 @@ function WAFPolicies() {
               params: { name: row.original.metadata.name },
             });
           }}
+          enableRowSelection
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
@@ -289,6 +302,15 @@ function WAFPolicies() {
         onSubmit={(parsed) => {
           void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
         }}
+      />
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind={RESOURCE_KIND}
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
       />
 
       {deleteResource && (

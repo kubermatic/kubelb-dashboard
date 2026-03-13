@@ -37,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useCreateSyncSecret } from "@/hooks/use-sync-secret-mutations";
 import { useCreateTenant } from "@/hooks/use-tenant-mutations";
+import { useCreateWAFPolicy } from "@/hooks/use-waf-policy-mutations";
 import { useDeployments } from "@/hooks/use-deployments";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
@@ -48,7 +49,7 @@ import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { Condition, Deployment } from "@/types/kubernetes";
-import type { SyncSecret, Tenant } from "@/types/kubelb";
+import type { SyncSecret, Tenant, WAFPolicy } from "@/types/kubelb";
 
 export const Route = createFileRoute("/")({
   component: Overview,
@@ -359,6 +360,13 @@ const SYNCSECRET_TEMPLATE = {
   spec: {},
 };
 
+const WAF_POLICY_TEMPLATE = {
+  apiVersion: "kubelb.k8c.io/v1alpha1",
+  kind: "WAFPolicy",
+  metadata: { name: "" },
+  spec: {},
+};
+
 function Overview() {
   const { isEE } = useEdition();
   const tenantQuery = useTenants();
@@ -373,6 +381,7 @@ function Overview() {
 
   const [createTenantOpen, setCreateTenantOpen] = useState(false);
   const [createSyncSecretOpen, setCreateSyncSecretOpen] = useState(false);
+  const [createWafOpen, setCreateWafOpen] = useState(false);
 
   const { data: tenantCrdSchema, isLoading: isTenantSchemaLoading } = useCRDSchema(
     "tenants.kubelb.k8c.io",
@@ -382,12 +391,18 @@ function Overview() {
     "syncsecrets.kubelb.k8c.io",
     "v1alpha1",
   );
+  const { data: wafCrdSchema, isLoading: isWafSchemaLoading } = useCRDSchema(
+    "wafpolicies.kubelb.k8c.io",
+    "v1alpha1",
+  );
 
   const createTenant = useCreateTenant();
   const createSyncSecret = useCreateSyncSecret();
+  const createWafPolicy = useCreateWAFPolicy();
 
   const tenantUiSchema = useMemo(() => buildUiSchema("Tenant", "create"), []);
   const syncSecretUiSchema = useMemo(() => buildUiSchema("SyncSecret", "create"), []);
+  const wafUiSchema = useMemo(() => buildUiSchema("WAFPolicy", "create"), []);
 
   const tenantItems = tenantQuery.data?.items ?? [];
   const lbItems = lbQuery.data?.items ?? [];
@@ -621,7 +636,7 @@ function Overview() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2">
-            <div className="flex gap-2 px-4 py-3">
+            <div className="flex flex-wrap gap-2 px-4 py-3">
               <Button size="sm" onClick={() => setCreateTenantOpen(true)}>
                 <Plus className="size-4" />
                 Create Tenant
@@ -630,6 +645,12 @@ function Overview() {
                 <Plus className="size-4" />
                 Create Sync Secret
               </Button>
+              {isEE && (
+                <Button size="sm" variant="outline" onClick={() => setCreateWafOpen(true)}>
+                  <Plus className="size-4" />
+                  Create WAF Policy
+                </Button>
+              )}
             </div>
             {[
               {
@@ -710,6 +731,25 @@ function Overview() {
             .then(() => setCreateSyncSecretOpen(false));
         }}
       />
+
+      {isEE && (
+        <ResourceFormDialog
+          open={createWafOpen}
+          onOpenChange={setCreateWafOpen}
+          mode="create"
+          title="Create WAF Policy"
+          schema={wafCrdSchema}
+          isSchemaLoading={isWafSchemaLoading}
+          uiSchema={wafUiSchema}
+          formData={WAF_POLICY_TEMPLATE}
+          isPending={createWafPolicy.isPending}
+          onSubmit={(parsed) => {
+            void createWafPolicy
+              .mutateAsync(parsed as WAFPolicy)
+              .then(() => setCreateWafOpen(false));
+          }}
+        />
+      )}
     </div>
   );
 }

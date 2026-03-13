@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -159,21 +160,38 @@ export function DataTable<T>({
     [userVisibility, responsiveHidden],
   );
 
+  const hasSelection = Object.keys(rowSelection).length > 0;
+
   const selectColumn: ColumnDef<T, unknown> = useMemo(
     () => ({
       id: "select",
       enableSorting: false,
       enableHiding: false,
       header: ({ table: t }) => (
-        <Checkbox
-          checked={t.getIsAllPageRowsSelected()}
-          indeterminate={t.getIsSomePageRowsSelected()}
-          onCheckedChange={(val) => t.toggleAllPageRowsSelected(!!val)}
-          aria-label="Select all"
-        />
+        <div
+          className={cn(
+            "transition-opacity",
+            hasSelection ? "opacity-100" : "opacity-0 group-hover/row:opacity-100",
+          )}
+        >
+          <Checkbox
+            checked={t.getIsAllPageRowsSelected()}
+            indeterminate={t.getIsSomePageRowsSelected()}
+            onCheckedChange={(val) => t.toggleAllPageRowsSelected(!!val)}
+            aria-label="Select all"
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "transition-opacity",
+            row.getIsSelected() || hasSelection
+              ? "opacity-100"
+              : "opacity-0 group-hover/row:opacity-100",
+          )}
+        >
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(val) => row.toggleSelected(!!val)}
@@ -182,7 +200,7 @@ export function DataTable<T>({
         </div>
       ),
     }),
-    [],
+    [hasSelection],
   );
 
   const allColumns = useMemo(
@@ -307,7 +325,7 @@ export function DataTable<T>({
         <Table className="min-w-[600px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="group/row">
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
@@ -333,7 +351,7 @@ export function DataTable<T>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={onRowClick ? "cursor-pointer" : undefined}
+                  className={cn("group/row", onRowClick && "cursor-pointer")}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {row.getVisibleCells().map((cell) => (
