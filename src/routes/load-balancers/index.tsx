@@ -34,7 +34,7 @@ import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { formatAge, getOriginSource, tenantToNamespace } from "@/lib/format";
+import { formatAge, getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 
@@ -110,9 +110,9 @@ function LoadBalancers() {
       },
     },
     {
-      accessorFn: (row) => row.metadata.namespace,
-      id: "namespace",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
+      id: "tenant",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
       id: "source",
@@ -193,13 +193,11 @@ function LoadBalancers() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={[
-              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-            ]}
-          />
-        </div>
+        <RowActions
+          actions={[
+            { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+          ]}
+        />
       ),
     },
   ];

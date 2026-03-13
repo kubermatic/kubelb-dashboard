@@ -125,13 +125,11 @@ function EnvoyProxy() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={[
-              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-            ]}
-          />
-        </div>
+        <RowActions
+          actions={[
+            { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+          ]}
+        />
       ),
     },
   ];

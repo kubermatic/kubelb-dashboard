@@ -15,7 +15,9 @@
  */
 
 import { KubeConfig } from "@kubernetes/client-node";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+
+const SA_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
 
 export interface KubeProxyConfig {
   upstream: string;
@@ -24,11 +26,12 @@ export interface KubeProxyConfig {
   key?: string | Buffer;
   rejectUnauthorized: boolean;
   token?: string;
+  tokenFile?: string;
 }
 
-export function loadKubeProxyConfig(kubeconfigPath: string): KubeProxyConfig {
+export function loadKubeProxyConfig(): KubeProxyConfig {
   const kc = new KubeConfig();
-  kc.loadFromFile(kubeconfigPath);
+  kc.loadFromDefault();
 
   const cluster = kc.getCurrentCluster();
   if (!cluster) {
@@ -59,7 +62,17 @@ export function loadKubeProxyConfig(kubeconfigPath: string): KubeProxyConfig {
     config.key = Buffer.from(user.keyData, "base64");
   } else if (user.token) {
     config.token = user.token;
+    if (existsSync(SA_TOKEN_PATH)) {
+      config.tokenFile = SA_TOKEN_PATH;
+    }
   }
 
   return config;
+}
+
+export function getAuthToken(config: KubeProxyConfig): string | undefined {
+  if (config.tokenFile) {
+    return readFileSync(config.tokenFile, "utf-8").trim();
+  }
+  return config.token;
 }

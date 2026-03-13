@@ -24,9 +24,8 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
-import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
+import { EDITING_ENABLED } from "@/lib/feature-flags";
 
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -34,7 +33,6 @@ import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { RowActions, type RowAction } from "@/components/common/row-actions";
-import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,7 +96,7 @@ function WAFPolicies() {
   const { search, page, pageSize } = useSearch({ from: "/waf-policies/" });
   const items = data?.items ?? [];
 
-  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const createWAFPolicy = useCreateWAFPolicy();
   const updateWAFPolicy = useUpdateWAFPolicy();
   const deleteWAFPolicy = useDeleteWAFPolicy();
@@ -184,31 +182,29 @@ function WAFPolicies() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={
-              [
-                {
-                  label: "View YAML",
-                  icon: FileText,
-                  onClick: () => setYamlViewerResource(row.original),
-                },
-                EDITING_ENABLED && {
-                  label: "Edit",
-                  icon: Pencil,
-                  onClick: () => setEditResource(row.original),
-                },
-                {
-                  label: "Delete",
-                  icon: Trash2,
-                  variant: "destructive",
-                  separator: true,
-                  onClick: () => setDeleteResource(row.original),
-                },
-              ].filter(Boolean) as RowAction[]
-            }
-          />
-        </div>
+        <RowActions
+          actions={
+            [
+              {
+                label: "View YAML",
+                icon: FileText,
+                onClick: () => setYamlViewerResource(row.original),
+              },
+              EDITING_ENABLED && {
+                label: "Edit",
+                icon: Pencil,
+                onClick: () => setEditResource(row.original),
+              },
+              {
+                label: "Delete",
+                icon: Trash2,
+                variant: "destructive",
+                separator: true,
+                onClick: () => setDeleteResource(row.original),
+              },
+            ].filter(Boolean) as RowAction[]
+          }
+        />
       ),
     },
   ];
@@ -260,40 +256,22 @@ function WAFPolicies() {
         />
       )}
 
-      {EDITING_ENABLED &&
-        (crdSchema ? (
-          <ResourceFormDialog
-            open={createOpen}
-            onOpenChange={setCreateOpen}
-            mode="create"
-            title="Create WAF Policy"
-            schema={crdSchema}
-            uiSchema={createUiSchema}
-            formData={WAF_POLICY_TEMPLATE}
-            isPending={createWAFPolicy.isPending}
-            onSubmit={(parsed) => {
-              void createWAFPolicy
-                .mutateAsync(parsed as WAFPolicy)
-                .then(() => setCreateOpen(false));
-            }}
-          />
-        ) : YAML_EDITOR_ENABLED ? (
-          <YamlEditorDialog
-            open={createOpen}
-            onOpenChange={setCreateOpen}
-            mode="create"
-            title="Create WAF Policy"
-            resourceKind={RESOURCE_KIND}
-            apiVersion={API_VERSION}
-            initialYaml={yaml.dump(WAF_POLICY_TEMPLATE, { noRefs: true })}
-            isPending={createWAFPolicy.isPending}
-            onSubmit={(parsed) => {
-              void createWAFPolicy
-                .mutateAsync(parsed as WAFPolicy)
-                .then(() => setCreateOpen(false));
-            }}
-          />
-        ) : null)}
+      {EDITING_ENABLED && (
+        <ResourceFormDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          mode="create"
+          title="Create WAF Policy"
+          schema={crdSchema}
+          isSchemaLoading={isSchemaLoading}
+          uiSchema={createUiSchema}
+          formData={WAF_POLICY_TEMPLATE}
+          isPending={createWAFPolicy.isPending}
+          onSubmit={(parsed) => {
+            void createWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setCreateOpen(false));
+          }}
+        />
+      )}
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -302,51 +280,26 @@ function WAFPolicies() {
         title={yamlViewerResource ? `WAF Policy: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED &&
-        (crdSchema ? (
-          <ResourceFormDialog
-            open={!!editResource}
-            onOpenChange={(open) => !open && setEditResource(null)}
-            mode="edit"
-            title={
-              editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
-            }
-            schema={crdSchema}
-            uiSchema={editUiSchema}
-            formData={
-              editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-            }
-            isPending={updateWAFPolicy.isPending}
-            onSubmit={(parsed) => {
-              void updateWAFPolicy
-                .mutateAsync(parsed as WAFPolicy)
-                .then(() => setEditResource(null));
-            }}
-          />
-        ) : YAML_EDITOR_ENABLED ? (
-          <YamlEditorDialog
-            open={!!editResource}
-            onOpenChange={(open) => !open && setEditResource(null)}
-            mode="edit"
-            title={
-              editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
-            }
-            resourceKind={RESOURCE_KIND}
-            apiVersion={API_VERSION}
-            initialYaml={
-              editResource
-                ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
-                : ""
-            }
-            lockedFields={{ name: true }}
-            isPending={updateWAFPolicy.isPending}
-            onSubmit={(parsed) => {
-              void updateWAFPolicy
-                .mutateAsync(parsed as WAFPolicy)
-                .then(() => setEditResource(null));
-            }}
-          />
-        ) : null)}
+      {EDITING_ENABLED && (
+        <ResourceFormDialog
+          open={!!editResource}
+          onOpenChange={(open) => !open && setEditResource(null)}
+          mode="edit"
+          title={
+            editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
+          }
+          schema={crdSchema}
+          isSchemaLoading={isSchemaLoading}
+          uiSchema={editUiSchema}
+          formData={
+            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+          }
+          isPending={updateWAFPolicy.isPending}
+          onSubmit={(parsed) => {
+            void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
+          }}
+        />
+      )}
 
       {deleteResource && (
         <DeleteDialog

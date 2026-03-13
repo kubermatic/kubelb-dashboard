@@ -35,7 +35,7 @@ import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useDeleteRoute } from "@/hooks/use-route-mutations";
 import { useRoutes } from "@/hooks/use-routes";
-import { formatAge, tenantToNamespace } from "@/lib/format";
+import { formatAge, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
@@ -132,9 +132,9 @@ function Routes() {
       },
     },
     {
-      accessorFn: (row) => row.metadata.namespace,
-      id: "namespace",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
+      id: "tenant",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
       id: "type",
@@ -181,20 +181,18 @@ function Routes() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={[
-              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ]}
-          />
-        </div>
+        <RowActions
+          actions={[
+            { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
+        />
       ),
     },
   ];
