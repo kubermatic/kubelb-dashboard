@@ -103,6 +103,26 @@ function resolvePolicyHealth(status: Record<string, unknown>): HealthStatus {
   return { state: "Ready" };
 }
 
+export function resolveHealthByKind(kind: string, status: Record<string, unknown>): HealthStatus {
+  switch (kind) {
+    case "Gateway":
+      return resolveGatewayHealth(status);
+    case "HTTPRoute":
+    case "GRPCRoute":
+    case "TCPRoute":
+    case "UDPRoute":
+    case "TLSRoute":
+      return resolveGatewayRouteHealth(status);
+    case "Ingress":
+      return resolveIngressHealth(status);
+    case "BackendTrafficPolicy":
+    case "ClientTrafficPolicy":
+      return resolvePolicyHealth(status);
+    default:
+      return { state: "Pending" };
+  }
+}
+
 export function getRouteHealthStatus(route: Route): HealthStatus {
   const routeResource = route.status?.resources?.route;
   if (!routeResource) return { state: "Pending" };
@@ -115,23 +135,7 @@ export function getRouteHealthStatus(route: Route): HealthStatus {
 
   const upstreamStatus = routeResource.status ?? {};
 
-  switch (kind) {
-    case "Gateway":
-      return resolveGatewayHealth(upstreamStatus);
-    case "HTTPRoute":
-    case "GRPCRoute":
-    case "TCPRoute":
-    case "UDPRoute":
-    case "TLSRoute":
-      return resolveGatewayRouteHealth(upstreamStatus);
-    case "Ingress":
-      return resolveIngressHealth(upstreamStatus);
-    case "BackendTrafficPolicy":
-    case "ClientTrafficPolicy":
-      return resolvePolicyHealth(upstreamStatus);
-    default:
-      return { state: "Pending" };
-  }
+  return resolveHealthByKind(kind ?? "", upstreamStatus);
 }
 
 export function getLoadBalancerHealthStatus(lb: LoadBalancer): HealthStatus {

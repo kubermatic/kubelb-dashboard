@@ -15,7 +15,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getRouteHealthStatus, getLoadBalancerHealthStatus } from "../status-mapper";
+import {
+  getRouteHealthStatus,
+  getLoadBalancerHealthStatus,
+  resolveHealthByKind,
+} from "../status-mapper";
 import type { Route, LoadBalancer } from "@/types/kubelb";
 
 function makeRoute(kind: string, upstreamStatus: Record<string, unknown>): Route {
@@ -377,5 +381,39 @@ describe("getLoadBalancerHealthStatus", () => {
       spec: {},
     };
     expect(getLoadBalancerHealthStatus(lb).state).toBe("Pending");
+  });
+});
+
+describe("resolveHealthByKind", () => {
+  it("resolves Gateway health from raw status object", () => {
+    const status = {
+      conditions: [
+        { type: "Accepted", status: "True", reason: "Accepted", message: "" },
+        { type: "Programmed", status: "True", reason: "Programmed", message: "" },
+      ],
+    };
+    expect(resolveHealthByKind("Gateway", status).state).toBe("Ready");
+  });
+
+  it("resolves HTTPRoute health from raw status object", () => {
+    const status = {
+      parents: [
+        {
+          conditions: [
+            { type: "Accepted", status: "True", reason: "Accepted", message: "" },
+            { type: "ResolvedRefs", status: "True", reason: "ResolvedRefs", message: "" },
+          ],
+        },
+      ],
+    };
+    expect(resolveHealthByKind("HTTPRoute", status).state).toBe("Ready");
+  });
+
+  it("returns Pending for Service kind (no resolver)", () => {
+    expect(resolveHealthByKind("Service", {}).state).toBe("Pending");
+  });
+
+  it("returns Pending for unknown kind", () => {
+    expect(resolveHealthByKind("Unknown", {}).state).toBe("Pending");
   });
 });
