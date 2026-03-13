@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -26,6 +26,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { EDITING_ENABLED } from "@/lib/feature-flags";
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -88,6 +89,22 @@ function SyncSecrets() {
   const [yamlViewerResource, setYamlViewerResource] = useState<SyncSecret | null>(null);
   const [editResource, setEditResource] = useState<SyncSecret | null>(null);
   const [deleteResource, setDeleteResource] = useState<SyncSecret | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<SyncSecret[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(
+      bulkDeleteItems.map((s) =>
+        deleteSyncSecret.mutateAsync({
+          namespace: s.metadata.namespace ?? "",
+          name: s.metadata.name,
+        }),
+      ),
+    )
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteSyncSecret]);
 
   const columns: ColumnDef<SyncSecret>[] = [
     {
@@ -225,6 +242,9 @@ function SyncSecrets() {
               params: { namespace: namespace ?? "default", name },
             });
           }}
+          enableRowSelection={EDITING_ENABLED}
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
@@ -294,6 +314,15 @@ function SyncSecrets() {
           }}
         />
       )}
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind={RESOURCE_KIND}
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+      />
     </div>
   );
 }

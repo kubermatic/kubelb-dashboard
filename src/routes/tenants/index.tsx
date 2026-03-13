@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   createFileRoute,
@@ -27,6 +27,7 @@ import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lu
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { EDITING_ENABLED } from "@/lib/feature-flags";
 
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
@@ -92,6 +93,15 @@ function Tenants() {
   const [yamlViewerResource, setYamlViewerResource] = useState<Tenant | null>(null);
   const [editResource, setEditResource] = useState<Tenant | null>(null);
   const [deleteResource, setDeleteResource] = useState<Tenant | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<Tenant[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(bulkDeleteItems.map((t) => deleteTenant.mutateAsync(t.metadata.name)))
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteTenant]);
 
   const columns: ColumnDef<Tenant>[] = [
     {
@@ -251,6 +261,9 @@ function Tenants() {
               params: { name: row.original.metadata.name },
             });
           }}
+          enableRowSelection={EDITING_ENABLED}
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
@@ -317,6 +330,15 @@ function Tenants() {
           </p>
         </DeleteDialog>
       )}
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind={RESOURCE_KIND}
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+      />
     </div>
   );
 }
