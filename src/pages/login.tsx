@@ -24,7 +24,7 @@ import { Loader2 } from "lucide-react";
 export function LoginPage() {
   const { isAuthenticated, authEnabled, loading } = useAuth();
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as { return_to?: string };
+  const search: { return_to?: string } = useSearch({ strict: false });
 
   useEffect(() => {
     if (!loading && (!authEnabled || isAuthenticated)) {

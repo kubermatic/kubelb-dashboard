@@ -51,6 +51,7 @@ export const Route = createRootRoute({
 
     const data = (await response.json()) as { authenticated: boolean };
     if (!data.authenticated) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw redirect({
         to: "/login",
         search: { return_to: location.pathname },
