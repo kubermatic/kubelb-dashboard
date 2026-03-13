@@ -181,20 +181,18 @@ function Routes() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={[
-              { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ]}
-          />
-        </div>
+        <RowActions
+          actions={[
+            { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
+        />
       ),
     },
   ];

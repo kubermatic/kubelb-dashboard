@@ -135,33 +135,31 @@ function SyncSecrets() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <RowActions
-            actions={[
-              {
-                label: "View YAML",
-                icon: FileText,
-                onClick: () => setYamlViewerResource(row.original),
-              },
-              ...(EDITING_ENABLED
-                ? [
-                    {
-                      label: "Edit",
-                      icon: Pencil,
-                      onClick: () => setEditResource(row.original),
-                    },
-                  ]
-                : []),
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive" as const,
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ]}
-          />
-        </div>
+        <RowActions
+          actions={[
+            {
+              label: "View YAML",
+              icon: FileText,
+              onClick: () => setYamlViewerResource(row.original),
+            },
+            ...(EDITING_ENABLED
+              ? [
+                  {
+                    label: "Edit",
+                    icon: Pencil,
+                    onClick: () => setEditResource(row.original),
+                  },
+                ]
+              : []),
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive" as const,
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
+        />
       ),
     },
   ];
