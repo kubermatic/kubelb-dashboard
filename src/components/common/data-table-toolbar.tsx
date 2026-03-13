@@ -43,6 +43,7 @@ interface DataTableToolbarProps<T> {
   children?: ReactNode;
   onRefresh?: () => void;
   isRefetching?: boolean;
+  dataUpdatedAt?: number;
 }
 
 export function DataTableToolbar<T>({
@@ -54,6 +55,7 @@ export function DataTableToolbar<T>({
   children,
   onRefresh,
   isRefetching,
+  dataUpdatedAt,
 }: DataTableToolbarProps<T>) {
   const searchCol = searchColumn ? table.getColumn(searchColumn) : undefined;
 
@@ -94,6 +96,11 @@ export function DataTableToolbar<T>({
         })}
       </div>
       <div className="flex items-center gap-2">
+        {dataUpdatedAt && dataUpdatedAt > 0 && (
+          <span className="text-xs text-muted-foreground">
+            Last synced: {new Date(dataUpdatedAt).toLocaleTimeString()}
+          </span>
+        )}
         {onRefresh && (
           <Tooltip>
             <TooltipTrigger

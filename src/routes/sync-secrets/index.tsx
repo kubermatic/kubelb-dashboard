@@ -44,7 +44,8 @@ import {
   useDeleteSyncSecret,
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
-import { formatAge, getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
+import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
@@ -69,7 +70,8 @@ export const Route = createFileRoute("/sync-secrets/")({
 function SyncSecrets() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isRefetching, isError, error, refetch } = useSyncSecrets(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useSyncSecrets(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
@@ -122,10 +124,7 @@ function SyncSecrets() {
       id: "age",
       accessorFn: (row) => row.metadata.creationTimestamp,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
       sortingFn: "datetime",
     },
     {
@@ -205,6 +204,7 @@ function SyncSecrets() {
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({

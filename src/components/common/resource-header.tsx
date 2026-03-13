@@ -15,10 +15,10 @@
  */
 
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { formatAge } from "@/lib/format";
+import { useAge } from "@/hooks/use-age";
 
 interface ResourceHeaderProps {
   name: string;
@@ -27,6 +27,11 @@ interface ResourceHeaderProps {
   createdAt?: string;
   backHref: string;
   backLabel: string;
+}
+
+function CreatedAge({ timestamp }: { timestamp: string }) {
+  const age = useAge(timestamp);
+  return <span className="text-sm text-muted-foreground">Created {age} ago</span>;
 }
 
 export function ResourceHeader({
@@ -39,20 +44,18 @@ export function ResourceHeader({
 }: ResourceHeaderProps) {
   return (
     <div className="space-y-3">
-      <Link
-        to={backHref}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        {backLabel}
-      </Link>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm">
+        <Link to={backHref} className="text-muted-foreground hover:text-foreground">
+          {backLabel}
+        </Link>
+        <ChevronRight className="size-3.5 text-muted-foreground" />
+        <span className="text-foreground">{name}</span>
+      </nav>
       <div className="flex items-center gap-3">
         <Badge variant="outline">{kind}</Badge>
         <h1 className="text-2xl font-semibold">{name}</h1>
         {namespace && <Badge variant="secondary">{namespace}</Badge>}
-        {createdAt && (
-          <span className="text-sm text-muted-foreground">Created {formatAge(createdAt)} ago</span>
-        )}
+        {createdAt && <CreatedAge timestamp={createdAt} />}
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useTenants } from "@/hooks/use-tenants";
 import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
-import { formatAge } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
@@ -75,7 +75,7 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 }
 
 function Tenants() {
-  const { data, isLoading, isRefetching, isError, error, refetch } = useTenants();
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useTenants();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
@@ -150,12 +150,7 @@ function Tenants() {
           <ArrowUpDown className="ml-1 size-3" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return (
-          <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>
-        );
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
     },
     {
       id: "actions",
@@ -230,6 +225,7 @@ function Tenants() {
           }
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}

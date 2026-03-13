@@ -35,7 +35,8 @@ import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useDeleteRoute } from "@/hooks/use-route-mutations";
 import { useRoutes } from "@/hooks/use-routes";
-import { formatAge, namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
+import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
@@ -105,7 +106,8 @@ const statusStyles: Record<RouteConditionStatus, string> = {
 function Routes() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isRefetching, isError, error, refetch } = useRoutes(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useRoutes(namespace);
   const deleteRoute = useDeleteRoute();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
@@ -170,10 +172,7 @@ function Routes() {
       id: "age",
       accessorFn: (row) => row.metadata.creationTimestamp,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
       sortingFn: "datetime",
     },
     {
@@ -225,6 +224,7 @@ function Routes() {
           searchPlaceholder="Search routes..."
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}

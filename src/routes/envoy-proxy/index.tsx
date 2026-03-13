@@ -34,7 +34,8 @@ import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
 import { YamlViewer } from "@/components/common/yaml-viewer";
-import { formatAge, tenantToNamespace } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
+import { tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 
@@ -57,7 +58,7 @@ function getDeploymentStatus(deployment: Deployment) {
 function EnvoyProxy() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isRefetching, isError, error, refetch } = useDeployments(
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useDeployments(
     namespace,
     "app.kubernetes.io/managed-by=kubelb,app.kubernetes.io/name=kubelb-envoy-proxy",
   );
@@ -115,10 +116,7 @@ function EnvoyProxy() {
       accessorFn: (row) => row.metadata.creationTimestamp,
       id: "age",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
     },
     {
       id: "actions",
@@ -160,6 +158,7 @@ function EnvoyProxy() {
           searchPlaceholder="Filter by name..."
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}

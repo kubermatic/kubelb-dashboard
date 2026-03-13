@@ -43,7 +43,7 @@ import {
   useDeleteWAFPolicy,
   useUpdateWAFPolicy,
 } from "@/hooks/use-waf-policy-mutations";
-import { formatAge } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { WAFPolicy } from "@/types/kubelb";
@@ -91,7 +91,8 @@ function validConditionBadge(policy: WAFPolicy) {
 }
 
 function WAFPolicies() {
-  const { data, isLoading, isRefetching, isError, error, refetch } = useWAFPolicies();
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useWAFPolicies();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/waf-policies/" });
   const items = data?.items ?? [];
@@ -170,12 +171,7 @@ function WAFPolicies() {
           <ArrowUpDown className="ml-1 size-3" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return (
-          <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>
-        );
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
     },
     {
       id: "actions",
@@ -249,6 +245,7 @@ function WAFPolicies() {
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           onRowClick={(row) => {
             void navigate({
               to: "/waf-policies/$name",

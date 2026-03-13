@@ -24,7 +24,8 @@ import { TenantSelector } from "@/components/common/tenant-selector";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { formatAge, getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
+import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import {
@@ -85,7 +86,8 @@ function isReady(lb: LoadBalancer): boolean {
 function LoadBalancers() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isRefetching, isError, error, refetch } = useLoadBalancers(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useLoadBalancers(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/load-balancers/" });
   const items = data?.items ?? [];
@@ -182,10 +184,7 @@ function LoadBalancers() {
       id: "age",
       accessorFn: (row) => row.metadata.creationTimestamp,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
       sortingFn: "datetime",
     },
     {
@@ -230,6 +229,7 @@ function LoadBalancers() {
           searchPlaceholder="Search load balancers..."
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
