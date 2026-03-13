@@ -39,11 +39,19 @@ declare module "@tanstack/react-router" {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
-    </QueryClientProvider>
-  </StrictMode>,
-);
+async function enableMocking() {
+  if (import.meta.env.VITE_MOCK !== "true") return;
+  const { worker } = await import("./mocks/browser");
+  return worker.start({ onUnhandledRequest: "warn" });
+}
+
+void enableMocking().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <Toaster />
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+});

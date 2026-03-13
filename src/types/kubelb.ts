@@ -58,7 +58,9 @@ export interface HostnameStatus {
 }
 
 export interface LoadBalancerStatus {
-  loadBalancer?: { ingress?: Array<{ ip?: string; hostname?: string }> };
+  loadBalancer?: {
+    ingress?: Array<{ ip?: string; hostname?: string; ipMode?: string }>;
+  };
   service?: { ports?: ServicePort[] };
   hostname?: HostnameStatus;
 }
@@ -141,6 +143,7 @@ export interface LoadBalancerSettings {
   class?: string;
   limit?: number;
   disable?: boolean;
+  limit?: number;
 }
 
 export interface IngressSettings {

@@ -32,6 +32,7 @@ export interface ObjectMeta {
   annotations?: Record<string, string>;
   deletionTimestamp?: string;
   generation?: number;
+  finalizers?: string[];
   ownerReferences?: OwnerReference[];
 }
 
@@ -52,6 +53,7 @@ export interface Condition {
   type: string;
   status: "True" | "False" | "Unknown";
   lastTransitionTime: string;
+  lastUpdateTime?: string;
   reason: string;
   message: string;
   observedGeneration?: number;
@@ -82,12 +84,19 @@ export interface WatchEvent<T> {
 export interface DeploymentSpec {
   replicas?: number;
   selector?: { matchLabels?: Record<string, string> };
+  template?: Record<string, unknown>;
+  progressDeadlineSeconds?: number;
+  revisionHistoryLimit?: number;
+  strategy?: Record<string, unknown>;
 }
 
 export interface DeploymentStatus {
   replicas?: number;
   readyReplicas?: number;
   availableReplicas?: number;
+  updatedReplicas?: number;
+  observedGeneration?: number;
+  terminatingReplicas?: number;
   conditions?: Condition[];
 }
 
@@ -97,4 +106,12 @@ export interface Deployment {
   metadata: ObjectMeta;
   spec: DeploymentSpec;
   status?: DeploymentStatus;
+}
+
+export interface Namespace {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMeta;
+  spec: { finalizers?: string[] };
+  status?: { phase?: string };
 }
