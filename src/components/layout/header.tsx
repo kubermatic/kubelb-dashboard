@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Menu, Moon, Sun } from "lucide-react";
+import { Menu, Moon, Search, Sun } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -49,6 +49,29 @@ export function Header() {
       </div>
       <TooltipProvider>
         <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    document.dispatchEvent(
+                      new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                    )
+                  }
+                />
+              }
+            >
+              <Search className="size-5" />
+            </TooltipTrigger>
+            <TooltipContent>
+              Search{" "}
+              <kbd className="ml-1 rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
+                {navigator.platform.includes("Mac") ? "\u2318" : "Ctrl"}K
+              </kbd>
+            </TooltipContent>
+          </Tooltip>
           <HelpMenu />
           <UserMenu />
           <Tooltip>
