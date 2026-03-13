@@ -57,7 +57,7 @@ function getDeploymentStatus(deployment: Deployment) {
 function EnvoyProxy() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useDeployments(
+  const { data, isLoading, isRefetching, isError, error, refetch } = useDeployments(
     namespace,
     "app.kubernetes.io/managed-by=kubelb,app.kubernetes.io/name=kubelb-envoy-proxy",
   );
@@ -158,6 +158,8 @@ function EnvoyProxy() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Filter by name..."
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}

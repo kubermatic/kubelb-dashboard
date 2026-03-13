@@ -86,6 +86,8 @@ interface DataTableProps<T> {
   onSearchChange?: (value: string) => void;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
+  onRefresh?: () => void;
+  isRefetching?: boolean;
 }
 
 export function DataTable<T>({
@@ -104,6 +106,8 @@ export function DataTable<T>({
   onSearchChange,
   onPageChange,
   onPageSizeChange,
+  onRefresh,
+  isRefetching,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
@@ -163,6 +167,8 @@ export function DataTable<T>({
           searchPlaceholder={searchPlaceholder}
           filterColumns={filterColumns}
           leading={toolbarLeading}
+          onRefresh={onRefresh}
+          isRefetching={isRefetching}
         >
           <DropdownMenu>
             <DropdownMenuTrigger

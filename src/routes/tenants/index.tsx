@@ -75,7 +75,7 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 }
 
 function Tenants() {
-  const { data, isLoading, isError, error, refetch } = useTenants();
+  const { data, isLoading, isRefetching, isError, error, refetch } = useTenants();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
@@ -228,6 +228,8 @@ function Tenants() {
               </Button>
             ) : undefined
           }
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}

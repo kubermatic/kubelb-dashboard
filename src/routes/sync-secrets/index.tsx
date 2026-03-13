@@ -69,7 +69,7 @@ export const Route = createFileRoute("/sync-secrets/")({
 function SyncSecrets() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useSyncSecrets(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch } = useSyncSecrets(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
@@ -203,6 +203,8 @@ function SyncSecrets() {
           onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
           onPageChange={(p) => updateSearch({ page: p })}
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({

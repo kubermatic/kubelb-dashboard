@@ -16,6 +16,8 @@
 
 import type { ReactNode } from "react";
 import type { Table } from "@tanstack/react-table";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -24,6 +26,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FilterColumn {
   column: string;
@@ -38,6 +41,8 @@ interface DataTableToolbarProps<T> {
   filterColumns?: FilterColumn[];
   leading?: ReactNode;
   children?: ReactNode;
+  onRefresh?: () => void;
+  isRefetching?: boolean;
 }
 
 export function DataTableToolbar<T>({
@@ -47,6 +52,8 @@ export function DataTableToolbar<T>({
   filterColumns,
   leading,
   children,
+  onRefresh,
+  isRefetching,
 }: DataTableToolbarProps<T>) {
   const searchCol = searchColumn ? table.getColumn(searchColumn) : undefined;
 
@@ -86,7 +93,21 @@ export function DataTableToolbar<T>({
           );
         })}
       </div>
-      {children}
+      <div className="flex items-center gap-2">
+        {onRefresh && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button variant="ghost" size="icon" onClick={onRefresh}>
+                  <RefreshCw className={`size-4 ${isRefetching ? "animate-spin" : ""}`} />
+                </Button>
+              }
+            />
+            <TooltipContent>Refresh now</TooltipContent>
+          </Tooltip>
+        )}
+        {children}
+      </div>
     </div>
   );
 }

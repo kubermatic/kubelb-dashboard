@@ -105,7 +105,7 @@ const statusStyles: Record<RouteConditionStatus, string> = {
 function Routes() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useRoutes(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch } = useRoutes(namespace);
   const deleteRoute = useDeleteRoute();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
@@ -223,6 +223,8 @@ function Routes() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search routes..."
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}

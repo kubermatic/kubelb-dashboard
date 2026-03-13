@@ -91,7 +91,7 @@ function validConditionBadge(policy: WAFPolicy) {
 }
 
 function WAFPolicies() {
-  const { data, isLoading, isError, error, refetch } = useWAFPolicies();
+  const { data, isLoading, isRefetching, isError, error, refetch } = useWAFPolicies();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/waf-policies/" });
   const items = data?.items ?? [];
@@ -247,6 +247,8 @@ function WAFPolicies() {
           onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
           onPageChange={(p) => updateSearch({ page: p })}
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
           onRowClick={(row) => {
             void navigate({
               to: "/waf-policies/$name",
