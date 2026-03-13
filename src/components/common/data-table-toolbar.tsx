@@ -27,6 +27,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { WatchConnectionStatus } from "@/hooks/use-kube-watch";
+import { WatchStatusIndicator } from "@/components/common/watch-status-indicator";
 
 interface FilterColumn {
   column: string;
@@ -44,6 +46,7 @@ interface DataTableToolbarProps<T> {
   onRefresh?: () => void;
   isRefetching?: boolean;
   dataUpdatedAt?: number;
+  connectionStatus?: WatchConnectionStatus;
 }
 
 export function DataTableToolbar<T>({
@@ -56,6 +59,7 @@ export function DataTableToolbar<T>({
   onRefresh,
   isRefetching,
   dataUpdatedAt,
+  connectionStatus,
 }: DataTableToolbarProps<T>) {
   const searchCol = searchColumn ? table.getColumn(searchColumn) : undefined;
 
@@ -96,6 +100,7 @@ export function DataTableToolbar<T>({
         })}
       </div>
       <div className="flex items-center gap-2">
+        {connectionStatus && <WatchStatusIndicator status={connectionStatus} />}
         {dataUpdatedAt && dataUpdatedAt > 0 && (
           <span className="text-xs text-muted-foreground">
             Last synced: {new Date(dataUpdatedAt).toLocaleTimeString()}

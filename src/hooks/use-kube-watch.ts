@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { kubeList, kubeWatch } from "@/api/kube";
 import type { KubeList, ObjectMeta, WatchEvent } from "@/types/kubernetes";
+
+export type WatchConnectionStatus = "connecting" | "connected" | "reconnecting";
 
 const MAX_BACKOFF = 30_000;
 
@@ -29,6 +31,8 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
   const queryClient = useQueryClient();
   const backoffRef = useRef(1_000);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const hasConnectedRef = useRef(false);
+  const [connectionStatus, setConnectionStatus] = useState<WatchConnectionStatus>("connecting");
 
   const serializedKey = JSON.stringify(queryKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,6 +60,8 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
       const rv = data?.metadata.resourceVersion;
       if (!rv) return;
 
+      setConnectionStatus(hasConnectedRef.current ? "reconnecting" : "connecting");
+
       const watchPath = options?.labelSelector
         ? `${path}?labelSelector=${encodeURIComponent(options.labelSelector)}`
         : path;
@@ -66,10 +72,13 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
         rv,
         (event: WatchEvent<T>) => {
           backoffRef.current = 1_000;
+          hasConnectedRef.current = true;
+          setConnectionStatus("connected");
           handleEvent(queryClient, stableQueryKey, event);
         },
         () => {
           if (!mounted) return;
+          setConnectionStatus("reconnecting");
           const delay = backoffRef.current;
           backoffRef.current = Math.min(delay * 2, MAX_BACKOFF);
           reconnectTimer = setTimeout(connect, delay);
@@ -89,7 +98,7 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
     // and connect() reads the latest RV on each reconnect
   }, [enabled, path, options?.labelSelector, stableQueryKey, queryClient]);
 
-  return query;
+  return { ...query, connectionStatus };
 }
 
 function handleEvent<T extends { metadata: ObjectMeta }>(

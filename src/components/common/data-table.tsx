@@ -18,6 +18,7 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type Row,
+  type RowSelectionState,
   type SortingState,
   type VisibilityState,
   flexRender,
@@ -27,11 +28,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Settings2 } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { Settings2, Trash2 } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import "@/types/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -50,6 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { WatchConnectionStatus } from "@/hooks/use-kube-watch";
 import { DataTablePagination } from "./data-table-pagination";
 import { DataTableToolbar } from "./data-table-toolbar";
 
@@ -93,6 +96,10 @@ interface DataTableProps<T> {
   onRefresh?: () => void;
   isRefetching?: boolean;
   dataUpdatedAt?: number;
+  enableRowSelection?: boolean;
+  onDeleteSelected?: (rows: T[]) => void;
+  isDeletePending?: boolean;
+  connectionStatus?: WatchConnectionStatus;
 }
 
 export function DataTable<T>({
@@ -114,6 +121,10 @@ export function DataTable<T>({
   onRefresh,
   isRefetching,
   dataUpdatedAt,
+  enableRowSelection,
+  onDeleteSelected,
+  isDeletePending,
+  connectionStatus,
 }: DataTableProps<T>) {
   const isSm = useMediaQuery(`(min-width: ${String(BREAKPOINTS.sm)}px)`);
   const isMd = useMediaQuery(`(min-width: ${String(BREAKPOINTS.md)}px)`);
@@ -137,10 +148,45 @@ export function DataTable<T>({
     initialSearch && searchColumn ? [{ id: searchColumn, value: initialSearch }] : [],
   );
   const [userVisibility, setUserVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  useEffect(() => {
+    setRowSelection({});
+  }, [data]);
 
   const columnVisibility = useMemo(
     () => ({ ...userVisibility, ...responsiveHidden }),
     [userVisibility, responsiveHidden],
+  );
+
+  const selectColumn: ColumnDef<T, unknown> = useMemo(
+    () => ({
+      id: "select",
+      enableSorting: false,
+      enableHiding: false,
+      header: ({ table: t }) => (
+        <Checkbox
+          checked={t.getIsAllPageRowsSelected()}
+          indeterminate={t.getIsSomePageRowsSelected()}
+          onCheckedChange={(val) => t.toggleAllPageRowsSelected(!!val)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(val) => row.toggleSelected(!!val)}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Select row"
+        />
+      ),
+    }),
+    [],
+  );
+
+  const allColumns = useMemo(
+    () => (enableRowSelection ? [selectColumn, ...columns] : columns),
+    [enableRowSelection, selectColumn, columns],
   );
 
   const [pagination, setPagination] = useState({
@@ -150,9 +196,11 @@ export function DataTable<T>({
 
   const table = useReactTable({
     data,
-    columns,
-    state: { sorting, columnFilters, columnVisibility, pagination },
+    columns: allColumns,
+    state: { sorting, columnFilters, columnVisibility, pagination, rowSelection },
     onSortingChange: setSorting,
+    enableRowSelection,
+    onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: (updater) => {
       setColumnFilters(updater);
       const next = typeof updater === "function" ? updater(columnFilters) : updater;
@@ -189,16 +237,36 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      {(searchPlaceholder || filterColumns || toolbarLeading) && (
+      {(searchPlaceholder || filterColumns || toolbarLeading || enableRowSelection) && (
         <DataTableToolbar
           table={table}
           searchColumn={searchColumn}
           searchPlaceholder={searchPlaceholder}
           filterColumns={filterColumns}
-          leading={toolbarLeading}
+          leading={
+            <>
+              {toolbarLeading}
+              {table.getSelectedRowModel().rows.length > 0 && onDeleteSelected && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={isDeletePending}
+                  onClick={() =>
+                    onDeleteSelected(table.getSelectedRowModel().rows.map((r) => r.original))
+                  }
+                >
+                  <Trash2 className="size-4" />
+                  {isDeletePending
+                    ? "Deleting..."
+                    : `Delete ${String(table.getSelectedRowModel().rows.length)} selected`}
+                </Button>
+              )}
+            </>
+          }
           onRefresh={onRefresh}
           isRefetching={isRefetching}
           dataUpdatedAt={dataUpdatedAt}
+          connectionStatus={connectionStatus}
         >
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -253,7 +321,7 @@ export function DataTable<T>({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {columns.map((_, j) => (
+                  {allColumns.map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-3/4" />
                     </TableCell>
@@ -276,7 +344,7 @@ export function DataTable<T>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={allColumns.length} className="h-24 text-center">
                   {emptyMessage}
                 </TableCell>
               </TableRow>
