@@ -139,16 +139,6 @@ function WAFPolicies() {
       cell: ({ row }) => <span className="text-sm">{targetDisplay(row.original.spec)}</span>,
     },
     {
-      id: "kind",
-      meta: { hideBelow: "md" },
-      header: "Kind",
-      cell: ({ row }) => {
-        const { spec } = row.original;
-        const kind = spec.global ? "Global" : (spec.targetRef?.kind ?? "\u2014");
-        return <span className="text-sm">{kind}</span>;
-      },
-    },
-    {
       id: "failureMode",
       meta: { hideBelow: "md" },
       header: "Failure Mode",
