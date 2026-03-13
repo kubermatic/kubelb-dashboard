@@ -127,3 +127,19 @@
     @apply font-sans;
   }
 }
+
+.command-group [cmdk-group-heading] {
+  @apply px-2 py-1.5 text-xs font-medium text-muted-foreground;
+}
+
+.command-item {
+  @apply flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm outline-none select-none;
+}
+
+.command-item[data-selected="true"] {
+  @apply bg-surface-hover text-foreground;
+}
+
+.command-item:active {
+  @apply bg-muted;
+}

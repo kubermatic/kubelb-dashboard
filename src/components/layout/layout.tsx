@@ -18,6 +18,7 @@ import type { ReactNode } from "react";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { MobileSidebar, Sidebar } from "@/components/layout/sidebar";
+import { CommandPalette } from "@/components/common/command-palette";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -31,6 +32,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </div>
       <MobileSidebar />
+      <CommandPalette />
     </div>
   );
 }
