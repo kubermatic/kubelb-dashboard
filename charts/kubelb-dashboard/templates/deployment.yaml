@@ -88,6 +88,35 @@ spec:
               port: api
             initialDelaySeconds: 3
             periodSeconds: 5
+          {{- if .Values.auth.enabled }}
+          env:
+            - name: OIDC_ISSUER
+              value: {{ required "auth.oidc.issuerUrl is required when auth.enabled=true" .Values.auth.oidc.issuerUrl | quote }}
+            - name: OIDC_CLIENT_ID
+              value: {{ required "auth.oidc.clientId is required when auth.enabled=true" .Values.auth.oidc.clientId | quote }}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret | default (printf "%s-auth" (include "kubelb-dashboard.fullname" .)) }}
+                  key: clientSecret
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret | default (printf "%s-auth" (include "kubelb-dashboard.fullname" .)) }}
+                  key: sessionSecret
+            {{- if .Values.auth.oidc.redirectUri }}
+            - name: OIDC_REDIRECT_URI
+              value: {{ .Values.auth.oidc.redirectUri | quote }}
+            {{- end }}
+            {{- if ne .Values.auth.oidc.scopes "openid email profile groups" }}
+            - name: OIDC_SCOPES
+              value: {{ .Values.auth.oidc.scopes | quote }}
+            {{- end }}
+            {{- if ne (int .Values.auth.session.maxAge) 86400 }}
+            - name: SESSION_MAX_AGE
+              value: {{ .Values.auth.session.maxAge | quote }}
+            {{- end }}
+          {{- end }}
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
           volumeMounts:

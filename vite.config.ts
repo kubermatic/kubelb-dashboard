@@ -34,6 +34,10 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      "/auth/": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
       "/healthz": {
         target: `http://localhost:${process.env.API_PORT || "3001"}`,
         changeOrigin: true,

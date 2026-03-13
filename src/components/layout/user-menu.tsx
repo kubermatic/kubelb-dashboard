@@ -20,11 +20,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/use-auth";
 
 export function UserMenu() {
+  const { user, authEnabled, logout } = useAuth();
+
   return (
     <DropdownMenu>
       <Tooltip>
@@ -36,7 +41,26 @@ export function UserMenu() {
         <TooltipContent>Account</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem disabled>
+        {authEnabled && user && (
+          <>
+            <DropdownMenuLabel>{user.name || user.email}</DropdownMenuLabel>
+            {user.name && (
+              <DropdownMenuLabel className="font-normal text-muted-foreground">
+                {user.email}
+              </DropdownMenuLabel>
+            )}
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {!authEnabled && (
+          <>
+            <DropdownMenuLabel className="text-muted-foreground">
+              Authentication disabled
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <DropdownMenuItem disabled={!authEnabled} onClick={() => void logout()}>
           <LogOut />
           Sign out
         </DropdownMenuItem>

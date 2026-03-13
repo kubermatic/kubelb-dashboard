@@ -18,12 +18,18 @@ const BASE_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ??
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...init?.headers,
     },
     ...init,
   });
+
+  if (response.status === 401) {
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status.toString()} ${response.statusText}`);
