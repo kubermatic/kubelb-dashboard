@@ -114,6 +114,7 @@ function SyncSecrets() {
     },
     {
       id: "source",
+      meta: { hideBelow: "md" },
       accessorFn: (row) => getOriginSource(row.metadata.labels),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
       cell: ({ row }) => (

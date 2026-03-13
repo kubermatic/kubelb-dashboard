@@ -136,10 +136,12 @@ function Routes() {
     {
       accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
       id: "tenant",
+      meta: { hideBelow: "md" },
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
       id: "type",
+      meta: { hideBelow: "md" },
       accessorFn: deriveRouteType,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
     },

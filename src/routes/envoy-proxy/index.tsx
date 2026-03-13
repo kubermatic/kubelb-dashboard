@@ -88,6 +88,7 @@ function EnvoyProxy() {
     {
       accessorFn: (row) => row.metadata.namespace,
       id: "namespace",
+      meta: { hideBelow: "md" },
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
     },
     {

@@ -114,6 +114,7 @@ function LoadBalancers() {
     {
       accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
       id: "tenant",
+      meta: { hideBelow: "md" },
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
@@ -153,6 +154,7 @@ function LoadBalancers() {
     },
     {
       id: "endpoints",
+      meta: { hideBelow: "md" },
       accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
       cell: ({ row }) => (

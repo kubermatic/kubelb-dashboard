@@ -133,6 +133,7 @@ function Tenants() {
     },
     {
       id: "dnsDomain",
+      meta: { hideBelow: "md" },
       header: "DNS Domain",
       cell: ({ row }) => (
         <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>

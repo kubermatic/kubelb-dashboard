@@ -28,7 +28,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Settings2 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import "@/types/table";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -50,6 +52,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "./data-table-pagination";
 import { DataTableToolbar } from "./data-table-toolbar";
+
+const BREAKPOINTS = { sm: 640, md: 768, lg: 1024 } as const;
 
 const PAGE_SIZE_KEY = "kubelb-page-size";
 const DEFAULT_PAGE_SIZE = 10;
@@ -111,11 +115,34 @@ export function DataTable<T>({
   isRefetching,
   dataUpdatedAt,
 }: DataTableProps<T>) {
+  const isSm = useMediaQuery(`(min-width: ${String(BREAKPOINTS.sm)}px)`);
+  const isMd = useMediaQuery(`(min-width: ${String(BREAKPOINTS.md)}px)`);
+  const isLg = useMediaQuery(`(min-width: ${String(BREAKPOINTS.lg)}px)`);
+
+  const responsiveHidden = useMemo(() => {
+    const hidden: VisibilityState = {};
+    for (const col of columns) {
+      const id = "id" in col ? col.id : undefined;
+      const breakpoint = col.meta?.hideBelow;
+      if (!id || !breakpoint) continue;
+      const visible =
+        breakpoint === "sm" ? isSm : breakpoint === "md" ? isMd : breakpoint === "lg" ? isLg : true;
+      if (!visible) hidden[id] = false;
+    }
+    return hidden;
+  }, [columns, isSm, isMd, isLg]);
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
     initialSearch && searchColumn ? [{ id: searchColumn, value: initialSearch }] : [],
   );
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [userVisibility, setUserVisibility] = useState<VisibilityState>({});
+
+  const columnVisibility = useMemo(
+    () => ({ ...userVisibility, ...responsiveHidden }),
+    [userVisibility, responsiveHidden],
+  );
+
   const [pagination, setPagination] = useState({
     pageIndex: initialPage ?? 0,
     pageSize: initialPageSize ?? getStoredPageSize(),
@@ -136,7 +163,7 @@ export function DataTable<T>({
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
       onPageChange?.(0);
     },
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: setUserVisibility,
     onPaginationChange: (updater) => {
       setPagination((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;

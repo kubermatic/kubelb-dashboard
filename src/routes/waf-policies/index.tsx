@@ -140,6 +140,7 @@ function WAFPolicies() {
     },
     {
       id: "kind",
+      meta: { hideBelow: "md" },
       header: "Kind",
       cell: ({ row }) => {
         const { spec } = row.original;
@@ -149,6 +150,7 @@ function WAFPolicies() {
     },
     {
       id: "failureMode",
+      meta: { hideBelow: "md" },
       header: "Failure Mode",
       cell: ({ row }) => (
         <Badge variant="outline">{row.original.spec.failureMode ?? "Closed"}</Badge>
