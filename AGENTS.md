@@ -75,9 +75,13 @@ GET /api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies → 200=EE, 404=CE
 
 - **`useEdition()` hook** (`src/hooks/use-edition.ts`) — returns `{ edition, isEE, loading }`. Cached forever (`staleTime: Infinity`). Edition can't change during pod lifetime.
 - **Sidebar** — `NavItem.ee?: boolean` flag. Items with `ee: true` hidden on CE.
-- **Shared types** — `TenantSpec`/`ConfigSpec` in `src/types/kubelb.ts` have optional EE fields (tunnel, circuitBreaker, networkPolicy, loadBalancerPolicy, allowedDomains, waf). Undefined on CE.
-- **Detail pages** — EE sections wrapped in `{isEE && <Section />}`.
+- **Shared types** — `TenantSpec`/`ConfigSpec` in `src/types/kubelb.ts` have optional EE fields. Undefined on CE.
+- **Detail pages** — EE fields/sections MUST be wrapped in `{isEE && <Section />}`.
 - **EE-only pages** — WAF Policies (`/waf-policies`) with full CRUD.
+
+### CE/EE Field Reference
+
+See [`docs/ce-ee-fields.md`](docs/ce-ee-fields.md) for the full per-resource CE/EE field tables. **Always** consult that file before adding or displaying resource fields — EE-only fields MUST be gated with `{isEE && ...}` in JSX. Update that file when adding new fields.
 
 ## Conventions
 

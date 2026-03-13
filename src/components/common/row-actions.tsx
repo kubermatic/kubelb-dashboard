@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { ComponentType } from "react";
+import React, { type ComponentType } from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,13 +53,13 @@ export function RowActions({ actions }: RowActionsProps) {
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
           {actions.map((action) => (
-            <span key={action.label}>
+            <React.Fragment key={action.label}>
               {action.separator && <DropdownMenuSeparator />}
               <DropdownMenuItem variant={action.variant} onClick={action.onClick}>
                 {action.icon && <action.icon data-icon />}
                 {action.label}
               </DropdownMenuItem>
-            </span>
+            </React.Fragment>
           ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>

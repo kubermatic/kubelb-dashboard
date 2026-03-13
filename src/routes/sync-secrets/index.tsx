@@ -46,7 +46,7 @@ import {
   useDeleteSyncSecret,
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
-import { formatAge, tenantToNamespace } from "@/lib/format";
+import { formatAge, getOriginSource, tenantToNamespace } from "@/lib/format";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
@@ -67,16 +67,6 @@ export const Route = createFileRoute("/sync-secrets/")({
   search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   component: SyncSecrets,
 });
-
-function getSourceSecret(s: SyncSecret): string {
-  const annotations = s.metadata.annotations;
-  if (!annotations) return "\u2014";
-  const ns = annotations["kubelb.k8c.io/origin-namespace"] ?? "";
-  const name = annotations["kubelb.k8c.io/origin-name"] ?? "";
-  if (ns && name) return `${ns}/${name}`;
-  if (name) return name;
-  return "\u2014";
-}
 
 function SyncSecrets() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
@@ -123,10 +113,12 @@ function SyncSecrets() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
     },
     {
-      id: "sourceSecret",
-      accessorFn: getSourceSecret,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Source Secret" />,
-      cell: ({ row }) => <span className="font-mono text-xs">{getSourceSecret(row.original)}</span>,
+      id: "source",
+      accessorFn: (row) => getOriginSource(row.metadata.labels),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{getOriginSource(row.original.metadata.labels)}</span>
+      ),
     },
     {
       id: "age",

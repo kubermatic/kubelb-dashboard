@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { KUBELB_LABELS } from "./constants";
+
 export function formatAge(timestamp: string): string {
   const diff = Date.now() - new Date(timestamp).getTime();
   const seconds = Math.floor(diff / 1000);
@@ -36,4 +38,13 @@ export function formatTimestamp(timestamp: string): string {
 
 export function tenantToNamespace(tenant: string): string {
   return `tenant-${tenant}`;
+}
+
+export function getOriginSource(labels: Record<string, string> | undefined): string {
+  if (!labels) return "\u2014";
+  const ns = labels[KUBELB_LABELS.ORIGIN_NS] ?? "";
+  const name = labels[KUBELB_LABELS.ORIGIN_NAME] ?? "";
+  if (ns && name) return `${ns}/${name}`;
+  if (name) return name;
+  return "\u2014";
 }

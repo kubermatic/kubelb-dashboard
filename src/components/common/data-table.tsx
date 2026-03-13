@@ -186,7 +186,11 @@ export function DataTable<T>({
                       checked={col.getIsVisible()}
                       onCheckedChange={(val) => col.toggleVisibility(!!val)}
                     >
-                      {typeof col.columnDef.header === "string" ? col.columnDef.header : col.id}
+                      {typeof col.columnDef.header === "string"
+                        ? col.columnDef.header
+                        : col.id
+                            .replace(/([a-z])([A-Z])/g, "$1 $2")
+                            .replace(/^./, (c) => c.toUpperCase())}
                     </DropdownMenuCheckboxItem>
                   ))}
               </DropdownMenuGroup>

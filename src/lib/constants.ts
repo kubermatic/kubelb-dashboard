@@ -16,3 +16,22 @@
 
 // TODO: We probably want to reduce this to 5 seconds and also make this configurable via env vars.
 export const POLL_INTERVAL = 10_000;
+
+export const API_GROUP = "kubelb.k8c.io";
+export const API_VERSION = `${API_GROUP}/v1alpha1`;
+
+export const KUBELB_LABELS = {
+  ORIGIN_NAME: `${API_GROUP}/origin-name`,
+  ORIGIN_NS: `${API_GROUP}/origin-ns`,
+  MANAGED_BY: `${API_GROUP}/managed-by`,
+  TENANT: `${API_GROUP}/tenant`,
+} as const;
+
+export const KUBELB_ANNOTATIONS = {
+  PROXY_PROTOCOL: `${API_GROUP}/proxy-protocol`,
+  LB_POLICY: `${API_GROUP}/lb-policy`,
+  WILDCARD_DOMAIN: `${API_GROUP}/request-wildcard-domain`,
+  MANAGE_DNS: `${API_GROUP}/manage-dns`,
+  MANAGE_CERTIFICATES: `${API_GROUP}/manage-certificates`,
+  PROPAGATE_ANNOTATION: `${API_GROUP}/propagate-annotation`,
+} as const;
