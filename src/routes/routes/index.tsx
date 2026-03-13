@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -23,19 +23,16 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Route as RouteIcon, Trash2 } from "lucide-react";
+import { FileText, Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
-import { useDeleteRoute } from "@/hooks/use-route-mutations";
 import { useRoutes } from "@/hooks/use-routes";
 import { AgeCell } from "@/components/common/age-cell";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
@@ -118,28 +115,10 @@ function Routes() {
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
   const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
     useRoutes(namespace);
-  const deleteRoute = useDeleteRoute();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
   const items = data?.items ?? [];
   const [yamlResource, setYamlResource] = useState<RouteType | null>(null);
-  const [deleteResource, setDeleteResource] = useState<RouteType | null>(null);
-  const [bulkDeleteItems, setBulkDeleteItems] = useState<RouteType[]>([]);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
-  const handleBulkDelete = useCallback(() => {
-    setIsBulkDeleting(true);
-    void Promise.all(
-      bulkDeleteItems.map((r) =>
-        deleteRoute.mutateAsync({
-          namespace: r.metadata.namespace ?? "",
-          name: r.metadata.name,
-        }),
-      ),
-    )
-      .then(() => setBulkDeleteItems([]))
-      .finally(() => setIsBulkDeleting(false));
-  }, [bulkDeleteItems, deleteRoute]);
 
   const columns: ColumnDef<RouteType>[] = [
     {
@@ -252,13 +231,6 @@ function Routes() {
         <RowActions
           actions={[
             { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-            {
-              label: "Delete",
-              icon: Trash2,
-              variant: "destructive",
-              separator: true,
-              onClick: () => setDeleteResource(row.original),
-            },
           ]}
         />
       ),
@@ -312,9 +284,6 @@ function Routes() {
               params: { namespace: namespace ?? "default", name },
             });
           }}
-          enableRowSelection
-          onDeleteSelected={setBulkDeleteItems}
-          isDeletePending={isBulkDeleting}
         />
       )}
 
@@ -328,33 +297,6 @@ function Routes() {
             : undefined
         }
       />
-
-      <BulkDeleteDialog
-        open={bulkDeleteItems.length > 0}
-        onOpenChange={(open) => !open && setBulkDeleteItems([])}
-        count={bulkDeleteItems.length}
-        resourceKind="Route"
-        isPending={isBulkDeleting}
-        onConfirm={handleBulkDelete}
-      />
-
-      {deleteResource && (
-        <DeleteDialog
-          open={!!deleteResource}
-          onOpenChange={(open) => !open && setDeleteResource(null)}
-          resourceName={deleteResource.metadata.name}
-          resourceKind="Route"
-          isPending={deleteRoute.isPending}
-          onConfirm={() => {
-            void deleteRoute
-              .mutateAsync({
-                namespace: deleteResource.metadata.namespace ?? "",
-                name: deleteResource.metadata.name,
-              })
-              .then(() => setDeleteResource(null));
-          }}
-        />
-      )}
     </div>
   );
 }
