@@ -281,17 +281,12 @@ export function DataTable<T>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="group/row">
                 {headerGroup.headers.map((header, headerIndex) => (
-                  <TableHead
-                    key={header.id}
-                    className={cn(headerIndex === 0 && "relative pl-8")}
-                  >
+                  <TableHead key={header.id} className={cn(headerIndex === 0 && "relative pl-8")}>
                     {headerIndex === 0 && enableRowSelection && (
                       <div
                         className={cn(
                           "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
-                          hasSelection
-                            ? "opacity-100"
-                            : "opacity-0 group-hover/row:opacity-100",
+                          hasSelection ? "opacity-100" : "opacity-0 group-hover/row:opacity-100",
                         )}
                       >
                         <Checkbox
@@ -329,10 +324,7 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {row.getVisibleCells().map((cell, cellIndex) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(cellIndex === 0 && "relative pl-8")}
-                    >
+                    <TableCell key={cell.id} className={cn(cellIndex === 0 && "relative pl-8")}>
                       {cellIndex === 0 && enableRowSelection && (
                         <div
                           onClick={(e) => e.stopPropagation()}
