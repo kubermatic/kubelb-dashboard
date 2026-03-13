@@ -15,11 +15,20 @@
  */
 
 import { Fragment, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
-import { Download, FileCode, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  Download,
+  FileCode,
+  KeyRound,
+  Network,
+  Pencil,
+  Route as RouteIcon,
+  Trash2,
+} from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -36,9 +45,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEdition } from "@/hooks/use-edition";
+import { useLoadBalancers } from "@/hooks/use-load-balancers";
+import { useRoutes } from "@/hooks/use-routes";
+import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
+import { tenantToNamespace } from "@/lib/format";
+import { useUIStore } from "@/stores/ui";
 import type { Tenant } from "@/types/kubelb";
 
 export const Route = createFileRoute("/tenants/$name")({
@@ -124,12 +138,17 @@ function TenantDetail() {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <OverviewTab tenant={tenant} />
+        </TabsContent>
+
+        <TabsContent value="resources" className="space-y-4">
+          <ResourcesTab tenantName={name} />
         </TabsContent>
 
         <TabsContent value="configuration" className="space-y-4">
@@ -183,6 +202,52 @@ function TenantDetail() {
           Deleting this tenant will also delete its namespace and all resources within it.
         </p>
       </DeleteDialog>
+    </div>
+  );
+}
+
+const RESOURCE_CARDS = [
+  { label: "Load Balancers", icon: Network, href: "/load-balancers" as const },
+  { label: "Routes", icon: RouteIcon, href: "/routes" as const },
+  { label: "Sync Secrets", icon: KeyRound, href: "/sync-secrets" as const },
+] as const;
+
+function ResourcesTab({ tenantName }: { tenantName: string }) {
+  const namespace = tenantToNamespace(tenantName);
+  const setSelectedTenant = useUIStore((s) => s.setSelectedTenant);
+
+  const queries = [useLoadBalancers(namespace), useRoutes(namespace), useSyncSecrets(namespace)];
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {RESOURCE_CARDS.map((card, i) => {
+        const { data, isLoading } = queries[i];
+        const count = data?.items?.length ?? 0;
+
+        return (
+          <Card key={card.label}>
+            <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+              <card.icon className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">{card.label}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-end justify-between">
+              {isLoading ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <span className="text-3xl font-bold">{count}</span>
+              )}
+              <Link
+                to={card.href}
+                search={{ search: "", page: 0, pageSize: 10 }}
+                onClick={() => setSelectedTenant(tenantName)}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                View all <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
