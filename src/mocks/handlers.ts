@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import { backendTrafficPolicyHandlers } from "./handlers/backend-traffic-policies";
+import { clientTrafficPolicyHandlers } from "./handlers/client-traffic-policies";
 import { configHandlers } from "./handlers/configs";
 import { deploymentHandlers } from "./handlers/deployments";
+import { gatewayHandlers } from "./handlers/gateways";
+import { grpcRouteHandlers } from "./handlers/grpcroutes";
+import { httpRouteHandlers } from "./handlers/httproutes";
+import { ingressHandlers } from "./handlers/ingresses";
 import { loadBalancerHandlers } from "./handlers/load-balancers";
 import { namespaceHandlers } from "./handlers/namespaces";
 import { routeHandlers } from "./handlers/routes";
+import { serviceHandlers } from "./handlers/services";
 import { syncSecretHandlers } from "./handlers/sync-secrets";
+import { tcpRouteHandlers } from "./handlers/tcproutes";
 import { tenantHandlers } from "./handlers/tenants";
+import { tlsRouteHandlers } from "./handlers/tlsroutes";
+import { udpRouteHandlers } from "./handlers/udproutes";
 import { wafPolicyHandlers } from "./handlers/waf-policies";
 
 export const handlers = [
@@ -32,4 +42,14 @@ export const handlers = [
   ...deploymentHandlers,
   ...namespaceHandlers,
   ...wafPolicyHandlers,
+  ...gatewayHandlers,
+  ...httpRouteHandlers,
+  ...tcpRouteHandlers,
+  ...grpcRouteHandlers,
+  ...tlsRouteHandlers,
+  ...udpRouteHandlers,
+  ...ingressHandlers,
+  ...serviceHandlers,
+  ...backendTrafficPolicyHandlers,
+  ...clientTrafficPolicyHandlers,
 ];
