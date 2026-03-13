@@ -83,6 +83,7 @@ export interface WatchEvent<T> {
 export interface DeploymentSpec {
   replicas?: number;
   selector?: { matchLabels?: Record<string, string> };
+  template?: Record<string, unknown>;
 }
 
 export interface DeploymentStatus {

@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
+export type { GenericResource } from "./types";
+export { backendTrafficPolicies } from "./backend-traffic-policies";
+export { clientTrafficPolicies } from "./client-traffic-policies";
 export { configs } from "./configs";
 export { deployments } from "./deployments";
+export { gateways } from "./gateways";
+export { grpcRoutes } from "./grpcroutes";
+export { httpRoutes } from "./httproutes";
+export { ingresses } from "./ingresses";
 export { loadBalancers } from "./load-balancers";
 export { namespaces } from "./namespaces";
 export { routes } from "./routes";
+export { services } from "./services";
 export { syncSecrets } from "./sync-secrets";
+export { tcpRoutes } from "./tcproutes";
 export { tenants } from "./tenants";
+export { tlsRoutes } from "./tlsroutes";
+export { udpRoutes } from "./udproutes";
 export { wafPolicies } from "./waf-policies";
