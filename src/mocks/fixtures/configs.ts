@@ -18,41 +18,41 @@ import type { Config } from "@/types/kubelb";
 
 export const configs: Config[] = [
   {
-    "apiVersion": "kubelb.k8c.io/v1alpha1",
-    "kind": "Config",
-    "metadata": {
-      "creationTimestamp": "2026-03-13T07:49:19Z",
-      "generation": 1,
-      "name": "default",
-      "namespace": "kubelb",
-      "resourceVersion": "1164",
-      "uid": "be5e0333-be8e-4e01-b572-b0fea3a186f2"
+    apiVersion: "kubelb.k8c.io/v1alpha1",
+    kind: "Config",
+    metadata: {
+      creationTimestamp: "2026-03-13T07:49:19Z",
+      generation: 1,
+      name: "default",
+      namespace: "kubelb",
+      resourceVersion: "1164",
+      uid: "be5e0333-be8e-4e01-b572-b0fea3a186f2",
     },
-    "spec": {
-      "certificates": {
-        "defaultClusterIssuer": "issuer-self-signed"
+    spec: {
+      certificates: {
+        defaultClusterIssuer: "issuer-self-signed",
       },
-      "defaultAnnotations": {
-        "service": {
-          "load-balancer.hetzner.cloud/location": "fsn1"
-        }
+      defaultAnnotations: {
+        service: {
+          "load-balancer.hetzner.cloud/location": "fsn1",
+        },
       },
-      "envoyProxy": {
-        "replicas": 1,
-        "topology": "shared"
+      envoyProxy: {
+        replicas: 1,
+        topology: "shared",
       },
-      "gatewayAPI": {
-        "class": "eg"
+      gatewayAPI: {
+        class: "eg",
       },
-      "ingress": {
-        "class": "nginx"
+      ingress: {
+        class: "nginx",
       },
-      "loadBalancer": {
-        "limit": 15
+      loadBalancer: {
+        limit: 15,
       },
-      "networkPolicy": {
-        "enable": true
-      }
-    }
-  }
+      networkPolicy: {
+        enable: true,
+      },
+    },
+  },
 ];

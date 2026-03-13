@@ -25,10 +25,7 @@ import { MockStore } from "../store";
 const store = new MockStore<Deployment>(seed);
 const API = "/api/kube/apis/apps/v1";
 
-function filterByLabelSelector(
-  items: Deployment[],
-  request: Request,
-): Deployment[] {
+function filterByLabelSelector(items: Deployment[], request: Request): Deployment[] {
   const url = new URL(request.url);
   const labelSelector = url.searchParams.get("labelSelector");
   if (!labelSelector) return items;
@@ -45,39 +42,22 @@ function filterByLabelSelector(
 export const deploymentHandlers = [
   http.get(`${API}/deployments`, ({ request }) => {
     const items = filterByLabelSelector(store.list(), request);
-    return HttpResponse.json(
-      kubeListEnvelope("apps/v1", "DeploymentList", items),
-    );
+    return HttpResponse.json(kubeListEnvelope("apps/v1", "DeploymentList", items));
   }),
 
   http.get(`${API}/namespaces/:namespace/deployments`, ({ params, request }) => {
-    const items = filterByLabelSelector(
-      store.list(params.namespace as string),
-      request,
-    );
-    return HttpResponse.json(
-      kubeListEnvelope("apps/v1", "DeploymentList", items),
-    );
+    const items = filterByLabelSelector(store.list(params.namespace as string), request);
+    return HttpResponse.json(kubeListEnvelope("apps/v1", "DeploymentList", items));
   }),
 
-  http.get(
-    `${API}/namespaces/:namespace/deployments/:name`,
-    ({ params }) => {
-      const item = store.get(
-        params.name as string,
-        params.namespace as string,
+  http.get(`${API}/namespaces/:namespace/deployments/:name`, ({ params }) => {
+    const item = store.get(params.name as string, params.namespace as string);
+    if (!item) {
+      return HttpResponse.json(
+        kubeStatus(404, "NotFound", `deployments "${params.name as string}" not found`),
+        { status: 404 },
       );
-      if (!item) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `deployments "${params.name as string}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(item);
-    },
-  ),
+    }
+    return HttpResponse.json(item);
+  }),
 ];

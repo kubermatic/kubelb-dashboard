@@ -27,11 +27,7 @@ const API = "/api/kube/apis/gateway.networking.k8s.io/v1alpha2";
 export const tcpRouteHandlers = [
   http.get(`${API}/tcproutes`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "gateway.networking.k8s.io/v1alpha2",
-        "TCPRouteList",
-        store.list(),
-      ),
+      kubeListEnvelope("gateway.networking.k8s.io/v1alpha2", "TCPRouteList", store.list()),
     );
   }),
 
@@ -49,11 +45,7 @@ export const tcpRouteHandlers = [
     const item = store.get(params.name as string, params.namespace as string);
     if (!item) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `tcproutes "${params.name as string}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `tcproutes "${params.name as string}" not found`),
         { status: 404 },
       );
     }

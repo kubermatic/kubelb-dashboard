@@ -16,14 +16,14 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeWatch } from "@/hooks/use-kube-watch";
+import { useKubeList } from "@/hooks/use-kube-list";
 import type { Route } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
 export function useRoutes(namespace?: string) {
   const path = namespace ? `${BASE}/namespaces/${namespace}/routes` : `${BASE}/routes`;
-  return useKubeWatch<Route>(queryKeys.routes.list(namespace), path);
+  return useKubeList<Route>(queryKeys.routes.list(namespace), path);
 }
 
 export function useRoute(namespace: string, name: string) {

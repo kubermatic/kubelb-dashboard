@@ -27,11 +27,7 @@ const API = "/api/kube/apis/gateway.networking.k8s.io/v1";
 export const httpRouteHandlers = [
   http.get(`${API}/httproutes`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "gateway.networking.k8s.io/v1",
-        "HTTPRouteList",
-        store.list(),
-      ),
+      kubeListEnvelope("gateway.networking.k8s.io/v1", "HTTPRouteList", store.list()),
     );
   }),
 
@@ -49,11 +45,7 @@ export const httpRouteHandlers = [
     const item = store.get(params.name as string, params.namespace as string);
     if (!item) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `httproutes "${params.name as string}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `httproutes "${params.name as string}" not found`),
         { status: 404 },
       );
     }

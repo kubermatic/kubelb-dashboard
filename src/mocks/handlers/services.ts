@@ -26,18 +26,12 @@ const API = "/api/kube/api/v1";
 
 export const serviceHandlers = [
   http.get(`${API}/services`, () => {
-    return HttpResponse.json(
-      kubeListEnvelope("v1", "ServiceList", store.list()),
-    );
+    return HttpResponse.json(kubeListEnvelope("v1", "ServiceList", store.list()));
   }),
 
   http.get(`${API}/namespaces/:namespace/services`, ({ params }) => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "v1",
-        "ServiceList",
-        store.list(params.namespace as string),
-      ),
+      kubeListEnvelope("v1", "ServiceList", store.list(params.namespace as string)),
     );
   }),
 
@@ -45,11 +39,7 @@ export const serviceHandlers = [
     const item = store.get(params.name as string, params.namespace as string);
     if (!item) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `services "${params.name as string}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `services "${params.name as string}" not found`),
         { status: 404 },
       );
     }

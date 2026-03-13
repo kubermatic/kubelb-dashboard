@@ -35,7 +35,7 @@ auth:
     # -- Space-separated OIDC scopes
     scopes: "openid email profile groups offline_access"
   session:
-    # -- Session cookie encryption secret, 32+ chars (ignored if existingSecret is set)
+    # -- Session cookie encryption secret, 32+ chars (auto-generated if empty, ignored if existingSecret is set)
     secret: ""
     # -- Session cookie max age in seconds
     maxAge: 86400

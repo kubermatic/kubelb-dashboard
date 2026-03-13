@@ -19,7 +19,6 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 
 export function LoginPage() {
   const { isAuthenticated, authEnabled, loading } = useAuth();
@@ -27,18 +26,13 @@ export function LoginPage() {
   const search: { return_to?: string } = useSearch({ strict: false });
 
   useEffect(() => {
-    if (!loading && (!authEnabled || isAuthenticated)) {
+    if (!loading && !authEnabled) {
       void navigate({ to: "/" });
     }
-  }, [loading, authEnabled, isAuthenticated, navigate]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+    if (!loading && authEnabled && isAuthenticated) {
+      void navigate({ to: search.return_to ?? "/" });
+    }
+  }, [loading, authEnabled, isAuthenticated, navigate, search.return_to]);
 
   const handleLogin = () => {
     const params = search.return_to ? `?return_to=${encodeURIComponent(search.return_to)}` : "";

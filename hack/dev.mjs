@@ -28,10 +28,7 @@ const apiCmd = envFlag
   ? `node ${envFlag} ./api/node_modules/.bin/tsx watch api/src/server.ts`
   : "npm:dev:api";
 
-execSync(
-  `npx concurrently -n fe,api -c cyan,magenta "npm:dev:frontend" "${apiCmd}"`,
-  {
-    stdio: "inherit",
-    env: { ...process.env, API_PORT: String(apiPort), PORT: String(apiPort) },
-  },
-);
+execSync(`npx concurrently -n fe,api -c cyan,magenta "npm:dev:frontend" "${apiCmd}"`, {
+  stdio: "inherit",
+  env: { ...process.env, API_PORT: String(apiPort), PORT: String(apiPort) },
+});

@@ -16,13 +16,13 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeWatch } from "@/hooks/use-kube-watch";
+import { useKubeList } from "@/hooks/use-kube-list";
 import type { Tenant } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
 export function useTenants() {
-  return useKubeWatch<Tenant>(queryKeys.tenants.list(), `${BASE}/tenants`);
+  return useKubeList<Tenant>(queryKeys.tenants.list(), `${BASE}/tenants`);
 }
 
 export function useTenant(name: string) {

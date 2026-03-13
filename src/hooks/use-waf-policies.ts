@@ -16,13 +16,13 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeWatch } from "@/hooks/use-kube-watch";
+import { useKubeList } from "@/hooks/use-kube-list";
 import type { WAFPolicy } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
 export function useWAFPolicies() {
-  return useKubeWatch<WAFPolicy>(queryKeys.wafPolicies.list(), `${BASE}/wafpolicies`);
+  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), `${BASE}/wafpolicies`);
 }
 
 export function useWAFPolicy(name: string) {

@@ -27,11 +27,7 @@ const API = "/api/kube/apis/gateway.networking.k8s.io/v1alpha2";
 export const udpRouteHandlers = [
   http.get(`${API}/udproutes`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "gateway.networking.k8s.io/v1alpha2",
-        "UDPRouteList",
-        store.list(),
-      ),
+      kubeListEnvelope("gateway.networking.k8s.io/v1alpha2", "UDPRouteList", store.list()),
     );
   }),
 
@@ -49,11 +45,7 @@ export const udpRouteHandlers = [
     const item = store.get(params.name as string, params.namespace as string);
     if (!item) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `udproutes "${params.name as string}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `udproutes "${params.name as string}" not found`),
         { status: 404 },
       );
     }

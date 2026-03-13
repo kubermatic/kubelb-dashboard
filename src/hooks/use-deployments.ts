@@ -16,14 +16,14 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeWatch } from "@/hooks/use-kube-watch";
+import { useKubeList } from "@/hooks/use-kube-list";
 import type { Deployment } from "@/types/kubernetes";
 
 const BASE = "/apis/apps/v1";
 
 export function useDeployments(namespace?: string, labelSelector?: string) {
   const path = namespace ? `${BASE}/namespaces/${namespace}/deployments` : `${BASE}/deployments`;
-  return useKubeWatch<Deployment>(queryKeys.deployments.list(namespace, labelSelector), path, {
+  return useKubeList<Deployment>(queryKeys.deployments.list(namespace, labelSelector), path, {
     labelSelector,
   });
 }

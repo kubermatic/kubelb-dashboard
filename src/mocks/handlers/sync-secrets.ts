@@ -28,11 +28,7 @@ const API = "/api/kube/apis/kubelb.k8c.io/v1alpha1";
 export const syncSecretHandlers = [
   http.get(`${API}/syncsecrets`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "kubelb.k8c.io/v1alpha1",
-        "SyncSecretList",
-        store.list(),
-      ),
+      kubeListEnvelope("kubelb.k8c.io/v1alpha1", "SyncSecretList", store.list()),
     );
   }),
 
@@ -46,70 +42,44 @@ export const syncSecretHandlers = [
     );
   }),
 
-  http.get(
-    `${API}/namespaces/:namespace/syncsecrets/:name`,
-    ({ params }) => {
-      const item = store.get(
-        params.name as string,
-        params.namespace as string,
-      );
-      if (!item) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `syncsecrets "${params.name as string}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(item);
-    },
-  ),
-
-  http.post(
-    `${API}/namespaces/:namespace/syncsecrets`,
-    async ({ request }) => {
-      const body = (await request.json()) as SyncSecret;
-      const created = store.create(body);
-      return HttpResponse.json(created, { status: 201 });
-    },
-  ),
-
-  http.put(
-    `${API}/namespaces/:namespace/syncsecrets/:name`,
-    async ({ request }) => {
-      const body = (await request.json()) as SyncSecret;
-      const updated = store.update(body);
-      if (!updated) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `syncsecrets "${body.metadata.name}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(updated);
-    },
-  ),
-
-  http.delete(
-    `${API}/namespaces/:namespace/syncsecrets/:name`,
-    ({ params }) => {
-      const name = params.name as string;
-      const ns = params.namespace as string;
-      const deleted = store.delete(name, ns);
-      if (!deleted) {
-        return HttpResponse.json(
-          kubeStatus(404, "NotFound", `syncsecrets "${name}" not found`),
-          { status: 404 },
-        );
-      }
+  http.get(`${API}/namespaces/:namespace/syncsecrets/:name`, ({ params }) => {
+    const item = store.get(params.name as string, params.namespace as string);
+    if (!item) {
       return HttpResponse.json(
-        kubeStatus(200, "OK", `syncsecret "${name}" deleted`),
+        kubeStatus(404, "NotFound", `syncsecrets "${params.name as string}" not found`),
+        { status: 404 },
       );
-    },
-  ),
+    }
+    return HttpResponse.json(item);
+  }),
+
+  http.post(`${API}/namespaces/:namespace/syncsecrets`, async ({ request }) => {
+    const body = (await request.json()) as SyncSecret;
+    const created = store.create(body);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(`${API}/namespaces/:namespace/syncsecrets/:name`, async ({ request }) => {
+    const body = (await request.json()) as SyncSecret;
+    const updated = store.update(body);
+    if (!updated) {
+      return HttpResponse.json(
+        kubeStatus(404, "NotFound", `syncsecrets "${body.metadata.name}" not found`),
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete(`${API}/namespaces/:namespace/syncsecrets/:name`, ({ params }) => {
+    const name = params.name as string;
+    const ns = params.namespace as string;
+    const deleted = store.delete(name, ns);
+    if (!deleted) {
+      return HttpResponse.json(kubeStatus(404, "NotFound", `syncsecrets "${name}" not found`), {
+        status: 404,
+      });
+    }
+    return HttpResponse.json(kubeStatus(200, "OK", `syncsecret "${name}" deleted`));
+  }),
 ];

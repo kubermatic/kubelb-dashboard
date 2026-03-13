@@ -60,17 +60,17 @@ npm run dev
 
 ## Scripts
 
-| Command                | Description                          |
-| ---------------------- | ------------------------------------ |
-| `npm run dev`          | Start dev server                     |
-| `npm run dev:mock`     | Start with mock data (no cluster)    |
-| `npm run build`        | Type check + build                   |
-| `npm run preview`      | Preview production build             |
-| `npm run lint`         | Run ESLint                           |
-| `npm run lint:fix`     | Run ESLint with autofix              |
-| `npm run format`       | Format with Prettier                 |
-| `npm run format:check` | Check formatting                     |
-| `npm run typecheck`    | Run TypeScript checker               |
+| Command                    | Description                                |
+| -------------------------- | ------------------------------------------ |
+| `npm run dev`              | Start dev server                           |
+| `npm run dev:mock`         | Start with mock data (no cluster)          |
+| `npm run build`            | Type check + build                         |
+| `npm run preview`          | Preview production build                   |
+| `npm run lint`             | Run ESLint                                 |
+| `npm run lint:fix`         | Run ESLint with autofix                    |
+| `npm run format`           | Format with Prettier                       |
+| `npm run format:check`     | Check formatting                           |
+| `npm run typecheck`        | Run TypeScript checker                     |
 | `npm run fixtures:capture` | Re-capture mock fixtures from live cluster |
 
 ## Adding shadcn/ui Components

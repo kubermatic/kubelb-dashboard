@@ -36,10 +36,9 @@ export const tenantHandlers = [
     const name = params.name as string;
     const item = store.get(name);
     if (!item) {
-      return HttpResponse.json(
-        kubeStatus(404, "NotFound", `tenants "${name}" not found`),
-        { status: 404 },
-      );
+      return HttpResponse.json(kubeStatus(404, "NotFound", `tenants "${name}" not found`), {
+        status: 404,
+      });
     }
     return HttpResponse.json(item);
   }),
@@ -66,13 +65,10 @@ export const tenantHandlers = [
     const name = params.name as string;
     const deleted = store.delete(name);
     if (!deleted) {
-      return HttpResponse.json(
-        kubeStatus(404, "NotFound", `tenants "${name}" not found`),
-        { status: 404 },
-      );
+      return HttpResponse.json(kubeStatus(404, "NotFound", `tenants "${name}" not found`), {
+        status: 404,
+      });
     }
-    return HttpResponse.json(
-      kubeStatus(200, "OK", `tenant "${name}" deleted`),
-    );
+    return HttpResponse.json(kubeStatus(200, "OK", `tenant "${name}" deleted`));
   }),
 ];

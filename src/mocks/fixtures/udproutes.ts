@@ -18,83 +18,83 @@ import type { GenericResource } from "./types";
 
 export const udpRoutes: GenericResource[] = [
   {
-    "apiVersion": "gateway.networking.k8s.io/v1alpha2",
-    "kind": "UDPRoute",
-    "metadata": {
-      "creationTimestamp": "2026-03-13T07:53:23Z",
-      "generation": 1,
-      "labels": {
+    apiVersion: "gateway.networking.k8s.io/v1alpha2",
+    kind: "UDPRoute",
+    metadata: {
+      creationTimestamp: "2026-03-13T07:53:23Z",
+      generation: 1,
+      labels: {
         "kubelb.k8c.io/managed-by": "kubelb",
         "kubelb.k8c.io/origin-name": "udp-dns-route",
-        "kubelb.k8c.io/origin-ns": "default"
+        "kubelb.k8c.io/origin-ns": "default",
       },
-      "name": "default-udp-dns-route",
-      "namespace": "tenant-primary",
-      "ownerReferences": [
+      name: "default-udp-dns-route",
+      namespace: "tenant-primary",
+      ownerReferences: [
         {
-          "apiVersion": "kubelb.k8c.io/v1alpha1",
-          "controller": true,
-          "kind": "Route",
-          "name": "4fa7ccdf-c444-4567-8845-65fab022683c",
-          "uid": "d3b9ab1a-0ac1-4fde-a12c-1692a67425f7"
-        }
+          apiVersion: "kubelb.k8c.io/v1alpha1",
+          controller: true,
+          kind: "Route",
+          name: "4fa7ccdf-c444-4567-8845-65fab022683c",
+          uid: "d3b9ab1a-0ac1-4fde-a12c-1692a67425f7",
+        },
       ],
-      "resourceVersion": "2215",
-      "uid": "7c87421c-829e-4319-bc33-9cf53fd28724"
+      resourceVersion: "2215",
+      uid: "7c87421c-829e-4319-bc33-9cf53fd28724",
     },
-    "spec": {
-      "parentRefs": [
+    spec: {
+      parentRefs: [
         {
-          "group": "gateway.networking.k8s.io",
-          "kind": "Gateway",
-          "name": "default-udp-gw",
-          "sectionName": "udp"
-        }
+          group: "gateway.networking.k8s.io",
+          kind: "Gateway",
+          name: "default-udp-gw",
+          sectionName: "udp",
+        },
       ],
-      "rules": [
+      rules: [
         {
-          "backendRefs": [
+          backendRefs: [
             {
-              "group": "",
-              "kind": "Service",
-              "name": "default-udp-dns-route-udp-coredns",
-              "port": 53,
-              "weight": 1
-            }
-          ]
-        }
-      ]
+              group: "",
+              kind: "Service",
+              name: "default-udp-dns-route-udp-coredns",
+              port: 53,
+              weight: 1,
+            },
+          ],
+        },
+      ],
     },
-    "status": {
-      "parents": [
+    status: {
+      parents: [
         {
-          "conditions": [
+          conditions: [
             {
-              "lastTransitionTime": "2026-03-13T07:53:23Z",
-              "message": "Route is accepted",
-              "observedGeneration": 1,
-              "reason": "Accepted",
-              "status": "True",
-              "type": "Accepted"
+              lastTransitionTime: "2026-03-13T07:53:23Z",
+              message: "Route is accepted",
+              observedGeneration: 1,
+              reason: "Accepted",
+              status: "True",
+              type: "Accepted",
             },
             {
-              "lastTransitionTime": "2026-03-13T07:53:23Z",
-              "message": "Resolved all the Object references for the Route",
-              "observedGeneration": 1,
-              "reason": "ResolvedRefs",
-              "status": "True",
-              "type": "ResolvedRefs"
-            }
+              lastTransitionTime: "2026-03-13T07:53:23Z",
+              message: "Resolved all the Object references for the Route",
+              observedGeneration: 1,
+              reason: "ResolvedRefs",
+              status: "True",
+              type: "ResolvedRefs",
+            },
           ],
-          "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
-          "parentRef": {
-            "group": "gateway.networking.k8s.io",
-            "kind": "Gateway",
-            "name": "default-udp-gw",
-            "sectionName": "udp"
-          }
-        }
-      ]
-    }
-  }
+          controllerName: "gateway.envoyproxy.io/gatewayclass-controller",
+          parentRef: {
+            group: "gateway.networking.k8s.io",
+            kind: "Gateway",
+            name: "default-udp-gw",
+            sectionName: "udp",
+          },
+        },
+      ],
+    },
+  },
 ];

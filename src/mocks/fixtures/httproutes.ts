@@ -18,101 +18,100 @@ import type { GenericResource } from "./types";
 
 export const httpRoutes: GenericResource[] = [
   {
-    "apiVersion": "gateway.networking.k8s.io/v1",
-    "kind": "HTTPRoute",
-    "metadata": {
-      "creationTimestamp": "2026-03-13T07:53:30Z",
-      "generation": 1,
-      "labels": {
+    apiVersion: "gateway.networking.k8s.io/v1",
+    kind: "HTTPRoute",
+    metadata: {
+      creationTimestamp: "2026-03-13T07:53:30Z",
+      generation: 1,
+      labels: {
         "kubelb.k8c.io/managed-by": "kubelb",
         "kubelb.k8c.io/origin-name": "staging-app",
         "kubelb.k8c.io/origin-ns": "default",
-        "kubelb.k8c.io/source-ingress": "staging-app.default"
+        "kubelb.k8c.io/source-ingress": "staging-app.default",
       },
-      "name": "default-staging-app",
-      "namespace": "tenant-secondary",
-      "ownerReferences": [
+      name: "default-staging-app",
+      namespace: "tenant-secondary",
+      ownerReferences: [
         {
-          "apiVersion": "kubelb.k8c.io/v1alpha1",
-          "controller": true,
-          "kind": "Route",
-          "name": "f8acc75b-b2b5-43c7-9b17-23bc4227526d",
-          "uid": "6c3d3d88-4bfd-48f8-ab92-51834e54069f"
-        }
+          apiVersion: "kubelb.k8c.io/v1alpha1",
+          controller: true,
+          kind: "Route",
+          name: "f8acc75b-b2b5-43c7-9b17-23bc4227526d",
+          uid: "6c3d3d88-4bfd-48f8-ab92-51834e54069f",
+        },
       ],
-      "resourceVersion": "313061",
-      "uid": "6eb4cf2a-0cdb-4724-9e20-72ee93e2f67b"
+      resourceVersion: "313061",
+      uid: "6eb4cf2a-0cdb-4724-9e20-72ee93e2f67b",
     },
-    "spec": {
-      "hostnames": [
-        "staging.example.nip.io"
-      ],
-      "parentRefs": [
+    spec: {
+      hostnames: ["staging.example.nip.io"],
+      parentRefs: [
         {
-          "group": "gateway.networking.k8s.io",
-          "kind": "Gateway",
-          "name": "default-kubelb-int-conv"
-        }
+          group: "gateway.networking.k8s.io",
+          kind: "Gateway",
+          name: "default-kubelb-int-conv",
+        },
       ],
-      "rules": [
+      rules: [
         {
-          "backendRefs": [
+          backendRefs: [
             {
-              "group": "",
-              "kind": "Service",
-              "name": "default-staging-app-staging-web",
-              "port": 80,
-              "weight": 1
-            }
+              group: "",
+              kind: "Service",
+              name: "default-staging-app-staging-web",
+              port: 80,
+              weight: 1,
+            },
           ],
-          "matches": [
+          matches: [
             {
-              "path": {
-                "type": "PathPrefix",
-                "value": "/"
-              }
-            }
-          ]
-        }
-      ]
+              path: {
+                type: "PathPrefix",
+                value: "/",
+              },
+            },
+          ],
+        },
+      ],
     },
-    "status": {
-      "parents": [
+    status: {
+      parents: [
         {
-          "conditions": [
+          conditions: [
             {
-              "lastTransitionTime": "2026-03-13T09:07:00Z",
-              "message": "Route is accepted",
-              "observedGeneration": 1,
-              "reason": "Accepted",
-              "status": "True",
-              "type": "Accepted"
+              lastTransitionTime: "2026-03-13T09:07:00Z",
+              message: "Route is accepted",
+              observedGeneration: 1,
+              reason: "Accepted",
+              status: "True",
+              type: "Accepted",
             },
             {
-              "lastTransitionTime": "2026-03-13T09:07:00Z",
-              "message": "Failed to find endpoints: no ready endpoints for the related Service tenant-secondary/default-staging-app-staging-web.",
-              "observedGeneration": 1,
-              "reason": "EndpointsNotFound",
-              "status": "False",
-              "type": "BackendsAvailable"
+              lastTransitionTime: "2026-03-13T09:07:00Z",
+              message:
+                "Failed to find endpoints: no ready endpoints for the related Service tenant-secondary/default-staging-app-staging-web.",
+              observedGeneration: 1,
+              reason: "EndpointsNotFound",
+              status: "False",
+              type: "BackendsAvailable",
             },
             {
-              "lastTransitionTime": "2026-03-13T09:07:00Z",
-              "message": "Resolved all the Object references for the Route",
-              "observedGeneration": 1,
-              "reason": "ResolvedRefs",
-              "status": "True",
-              "type": "ResolvedRefs"
-            }
+              lastTransitionTime: "2026-03-13T09:07:00Z",
+              message: "Resolved all the Object references for the Route",
+              observedGeneration: 1,
+              reason: "ResolvedRefs",
+              status: "True",
+              type: "ResolvedRefs",
+            },
           ],
-          "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
-          "parentRef": {
-            "group": "gateway.networking.k8s.io",
-            "kind": "Gateway",
-            "name": "default-kubelb-int-conv"
-          }
-        }
-      ]
-    }
-  }
+          controllerName: "gateway.envoyproxy.io/gatewayclass-controller",
+          parentRef: {
+            group: "gateway.networking.k8s.io",
+            kind: "Gateway",
+            name: "default-kubelb-int-conv",
+          },
+        },
+      ],
+    },
+  },
 ];

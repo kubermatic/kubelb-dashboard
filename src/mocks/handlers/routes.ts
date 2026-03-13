@@ -27,9 +27,7 @@ const API = "/api/kube/apis/kubelb.k8c.io/v1alpha1";
 
 export const routeHandlers = [
   http.get(`${API}/routes`, () => {
-    return HttpResponse.json(
-      kubeListEnvelope("kubelb.k8c.io/v1alpha1", "RouteList", store.list()),
-    );
+    return HttpResponse.json(kubeListEnvelope("kubelb.k8c.io/v1alpha1", "RouteList", store.list()));
   }),
 
   http.get(`${API}/namespaces/:namespace/routes`, ({ params }) => {
