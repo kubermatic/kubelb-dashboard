@@ -33,7 +33,7 @@ auth:
     # -- Override redirect URI (auto-derived from ingress if empty)
     redirectUri: ""
     # -- Space-separated OIDC scopes
-    scopes: "openid email profile groups"
+    scopes: "openid email profile groups offline_access"
   session:
     # -- Session cookie encryption secret, 32+ chars (ignored if existingSecret is set)
     secret: ""

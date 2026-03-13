@@ -22,10 +22,7 @@ import { loadKubeProxyConfig, getAuthToken } from "./kube-config.js";
 import { initOidc } from "./auth/oidc.js";
 import { initSession } from "./auth/session.js";
 import { authRoutes } from "./auth/routes.js";
-import {
-  initAuthMiddleware,
-  authMiddleware,
-} from "./auth/middleware.js";
+import { initAuthMiddleware, authMiddleware } from "./auth/middleware.js";
 
 const port = parseInt(process.env["PORT"] ?? "3001", 10);
 
@@ -36,7 +33,12 @@ const oidcClientId = process.env["OIDC_CLIENT_ID"];
 const oidcClientSecret = process.env["OIDC_CLIENT_SECRET"];
 const sessionSecret = process.env["SESSION_SECRET"];
 
-const requiredOidcVars = { OIDC_ISSUER: oidcIssuer, OIDC_CLIENT_ID: oidcClientId, OIDC_CLIENT_SECRET: oidcClientSecret, SESSION_SECRET: sessionSecret };
+const requiredOidcVars = {
+  OIDC_ISSUER: oidcIssuer,
+  OIDC_CLIENT_ID: oidcClientId,
+  OIDC_CLIENT_SECRET: oidcClientSecret,
+  SESSION_SECRET: sessionSecret,
+};
 const setVars = Object.entries(requiredOidcVars).filter(([, v]) => v);
 const missingVars = Object.entries(requiredOidcVars).filter(([, v]) => !v);
 
@@ -49,14 +51,9 @@ if (setVars.length > 0 && missingVars.length > 0) {
 
 const authEnabled = setVars.length === 4;
 
-const redirectUri =
-  process.env["OIDC_REDIRECT_URI"] ??
-  `http://localhost:${port}/auth/callback`;
-const scopes = process.env["OIDC_SCOPES"] ?? "openid email profile groups";
-const sessionMaxAge = parseInt(
-  process.env["SESSION_MAX_AGE"] ?? "86400",
-  10,
-);
+const redirectUri = process.env["OIDC_REDIRECT_URI"] ?? `http://localhost:${port}/auth/callback`;
+const scopes = process.env["OIDC_SCOPES"] ?? "openid email profile groups offline_access";
+const sessionMaxAge = parseInt(process.env["SESSION_MAX_AGE"] ?? "86400", 10);
 const secureCookies = !redirectUri.startsWith("http://localhost");
 
 const app = Fastify({ logger: true });
@@ -91,9 +88,7 @@ if (authEnabled) {
 
   app.log.info(`OIDC authentication enabled (issuer: ${oidcIssuer})`);
 } else {
-  app.log.warn(
-    "No OIDC configuration — running without authentication",
-  );
+  app.log.warn("No OIDC configuration — running without authentication");
 }
 
 await app.register(proxy, {
