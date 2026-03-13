@@ -107,7 +107,8 @@ export function LoginPage() {
 
         {/* Value proposition */}
         <p className="mx-auto mb-7 max-w-[360px] text-center text-[15px] leading-relaxed text-[#a0aec0]">
-          Unified load balancer management across your multi-cluster and Kubernetes environments.
+          Unified data plane management across your multi-cluster and multi-tenant Kubernetes
+          environments.
         </p>
 
         {/* Feature pills */}
@@ -165,7 +166,7 @@ export function LoginPage() {
         </a>
         <span className="text-[#2d3748]">&middot;</span>
         <a
-          href="https://www.kubermatic.com/support"
+          href="https://www.kubermatic.com/contact-us"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs text-[#718096] no-underline"
