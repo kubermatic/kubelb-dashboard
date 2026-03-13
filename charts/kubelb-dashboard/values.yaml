@@ -20,6 +20,28 @@ api:
   # -- API server CPU/memory resource requests and limits
   resources: {}
 
+auth:
+  # -- Enable OIDC authentication
+  enabled: false
+  oidc:
+    # -- OIDC provider issuer URL (e.g. https://dex.example.com)
+    issuerUrl: ""
+    # -- OIDC client ID
+    clientId: ""
+    # -- OIDC client secret (ignored if existingSecret is set)
+    clientSecret: ""
+    # -- Override redirect URI (auto-derived from ingress if empty)
+    redirectUri: ""
+    # -- Space-separated OIDC scopes
+    scopes: "openid email profile groups"
+  session:
+    # -- Session cookie encryption secret, 32+ chars (ignored if existingSecret is set)
+    secret: ""
+    # -- Session cookie max age in seconds
+    maxAge: 86400
+  # -- Use existing Secret for clientSecret and sessionSecret keys
+  existingSecret: ""
+
 # -- Image pull secrets
 imagePullSecrets: []
 # -- Override release name
