@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently -n fe,api -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:api\"",
     "dev:frontend": "vite",
+    "dev:mock": "VITE_MOCK=true vite",
     "dev:api": "npm run dev --prefix api",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
