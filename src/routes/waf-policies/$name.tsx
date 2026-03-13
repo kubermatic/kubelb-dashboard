@@ -16,9 +16,8 @@
 
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
+import { EDITING_ENABLED } from "@/lib/feature-flags";
 import { FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
@@ -29,7 +28,6 @@ import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
-import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +50,7 @@ function WAFPolicyDetail() {
   const { name } = Route.useParams();
   const navigate = useNavigate();
   const { data: policy, isLoading, error, refetch } = useWAFPolicy(name);
-  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateWAFPolicy = useUpdateWAFPolicy();
   const deleteWAFPolicy = useDeleteWAFPolicy();
   const editUiSchema = useMemo(() => buildUiSchema("WAFPolicy", "edit"), []);
@@ -85,8 +83,6 @@ function WAFPolicyDetail() {
   }
 
   if (!policy) return null;
-
-  const editYaml = yaml.dump(sanitizeForEdit(policy), { noRefs: true, lineWidth: -1 });
 
   return (
     <div className="space-y-6">
@@ -139,37 +135,22 @@ function WAFPolicyDetail() {
         title={`WAF Policy: ${name}`}
       />
 
-      {EDITING_ENABLED &&
-        (crdSchema ? (
-          <ResourceFormDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            mode="edit"
-            title="Edit WAF Policy"
-            schema={crdSchema}
-            uiSchema={editUiSchema}
-            formData={sanitizeForEdit(policy) as Record<string, unknown>}
-            isPending={updateWAFPolicy.isPending}
-            onSubmit={(parsed) => {
-              void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditOpen(false));
-            }}
-          />
-        ) : YAML_EDITOR_ENABLED ? (
-          <YamlEditorDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            mode="edit"
-            title="Edit WAF Policy"
-            resourceKind="WAFPolicy"
-            apiVersion="kubelb.k8c.io/v1alpha1"
-            initialYaml={editYaml}
-            lockedFields={{ name: true }}
-            isPending={updateWAFPolicy.isPending}
-            onSubmit={(parsed) => {
-              void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditOpen(false));
-            }}
-          />
-        ) : null)}
+      {EDITING_ENABLED && (
+        <ResourceFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title="Edit WAF Policy"
+          schema={crdSchema}
+          isSchemaLoading={isSchemaLoading}
+          uiSchema={editUiSchema}
+          formData={sanitizeForEdit(policy) as Record<string, unknown>}
+          isPending={updateWAFPolicy.isPending}
+          onSubmit={(parsed) => {
+            void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditOpen(false));
+          }}
+        />
+      )}
 
       <DeleteDialog
         open={deleteOpen}

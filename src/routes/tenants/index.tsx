@@ -24,9 +24,8 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
-import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
+import { EDITING_ENABLED } from "@/lib/feature-flags";
 
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -34,7 +33,6 @@ import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { RowActions, type RowAction } from "@/components/common/row-actions";
-import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,12 +80,13 @@ function Tenants() {
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
 
-  const { data: crdSchema } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const createTenant = useCreateTenant();
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
 
   const createUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "create"), []);
+  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [yamlViewerResource, setYamlViewerResource] = useState<Tenant | null>(null);
@@ -244,36 +243,22 @@ function Tenants() {
         />
       )}
 
-      {EDITING_ENABLED &&
-        (crdSchema ? (
-          <ResourceFormDialog
-            open={createOpen}
-            onOpenChange={setCreateOpen}
-            mode="create"
-            title="Create Tenant"
-            schema={crdSchema}
-            uiSchema={createUiSchema}
-            formData={TENANT_TEMPLATE}
-            isPending={createTenant.isPending}
-            onSubmit={(parsed) => {
-              void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
-            }}
-          />
-        ) : YAML_EDITOR_ENABLED ? (
-          <YamlEditorDialog
-            open={createOpen}
-            onOpenChange={setCreateOpen}
-            mode="create"
-            title="Create Tenant"
-            resourceKind={RESOURCE_KIND}
-            apiVersion={API_VERSION}
-            initialYaml={yaml.dump(TENANT_TEMPLATE, { noRefs: true })}
-            isPending={createTenant.isPending}
-            onSubmit={(parsed) => {
-              void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
-            }}
-          />
-        ) : null)}
+      {EDITING_ENABLED && (
+        <ResourceFormDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          mode="create"
+          title="Create Tenant"
+          schema={crdSchema}
+          isSchemaLoading={isSchemaLoading}
+          uiSchema={createUiSchema}
+          formData={TENANT_TEMPLATE}
+          isPending={createTenant.isPending}
+          onSubmit={(parsed) => {
+            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+          }}
+        />
+      )}
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -282,20 +267,18 @@ function Tenants() {
         title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && YAML_EDITOR_ENABLED && (
-        <YamlEditorDialog
+      {EDITING_ENABLED && (
+        <ResourceFormDialog
           open={!!editResource}
           onOpenChange={(open) => !open && setEditResource(null)}
           mode="edit"
           title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
-          resourceKind={RESOURCE_KIND}
-          apiVersion={API_VERSION}
-          initialYaml={
-            editResource
-              ? yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })
-              : ""
+          schema={crdSchema}
+          isSchemaLoading={isSchemaLoading}
+          uiSchema={editUiSchema}
+          formData={
+            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
           }
-          lockedFields={{ name: true }}
           isPending={updateTenant.isPending}
           onSubmit={(parsed) => {
             void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
