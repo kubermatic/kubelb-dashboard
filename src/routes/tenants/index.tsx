@@ -38,6 +38,7 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useEdition } from "@/hooks/use-edition";
 import { useTenants } from "@/hooks/use-tenants";
 import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
@@ -76,6 +77,7 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 }
 
 function Tenants() {
+  const { isEE } = useEdition();
   const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useTenants();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
@@ -149,6 +151,45 @@ function Tenants() {
         <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>
       ),
     },
+    ...(isEE
+      ? [
+          {
+            id: "lbLimit",
+            meta: { hideBelow: "lg" as const },
+            header: "LB Limit",
+            cell: ({ row }: { row: { original: Tenant } }) => {
+              const limit = row.original.spec.loadBalancer?.limit;
+              return <span className="text-sm">{limit ?? "∞"}</span>;
+            },
+          },
+          {
+            id: "gwLimit",
+            meta: { hideBelow: "lg" as const },
+            header: "GW Limit",
+            cell: ({ row }: { row: { original: Tenant } }) => {
+              const limit = row.original.spec.gatewayAPI?.gatewaySettings?.limit;
+              return <span className="text-sm">{limit ?? "∞"}</span>;
+            },
+          },
+          {
+            id: "tunnel",
+            meta: { hideBelow: "lg" as const },
+            header: "Tunnel",
+            cell: ({ row }: { row: { original: Tenant } }) => (
+              <FeatureBadge enabled={!row.original.spec.tunnel?.disable} />
+            ),
+          },
+          {
+            id: "allowedDomains",
+            meta: { hideBelow: "lg" as const },
+            header: "Allowed Domains",
+            cell: ({ row }: { row: { original: Tenant } }) => {
+              const count = row.original.spec.allowedDomains?.length;
+              return <span className="text-sm">{count ? String(count) : "—"}</span>;
+            },
+          },
+        ]
+      : []),
     {
       accessorKey: "metadata.creationTimestamp",
       id: "age",
