@@ -81,14 +81,14 @@ export function DataTableToolbar<T>({
           return (
             <Select
               key={column}
-              value={(col.getFilterValue() as string) ?? ""}
-              onValueChange={(val) => col.setFilterValue(val || undefined)}
+              value={(col.getFilterValue() as string) ?? "__all__"}
+              onValueChange={(val) => col.setFilterValue(val === "__all__" ? undefined : val)}
             >
               <SelectTrigger className="w-36">
                 <SelectValue placeholder={title} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="__all__">All</SelectItem>
                 {options.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}

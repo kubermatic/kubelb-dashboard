@@ -36,7 +36,8 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useRoutes } from "@/hooks/use-routes";
 import { AgeCell } from "@/components/common/age-cell";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
-import { getRouteHealthStatus, type HealthState } from "@/lib/status-mapper";
+import { getRouteHealthStatus } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { useUIStore } from "@/stores/ui";
@@ -92,13 +93,6 @@ function getSourceAnnotations(route: RouteType): Record<string, string> {
   const meta = resource["metadata"] as Record<string, unknown> | undefined;
   return (meta?.["annotations"] as Record<string, string>) ?? {};
 }
-
-const statusStyles: Record<HealthState, string> = {
-  Ready: "bg-success/10 text-success hover:bg-success/20",
-  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
-  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
-  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-};
 
 function Routes() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);

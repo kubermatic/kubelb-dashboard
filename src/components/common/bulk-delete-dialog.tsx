@@ -58,7 +58,9 @@ export function BulkDeleteDialog({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction variant="destructive" disabled={isPending} onClick={onConfirm}>
-            {isPending ? "Deleting..." : `Delete ${count} item${count !== 1 ? "s" : ""}`}
+            {isPending
+              ? "Deleting..."
+              : `Delete ${count} ${resourceKind.toLowerCase()}${count !== 1 ? "s" : ""}`}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

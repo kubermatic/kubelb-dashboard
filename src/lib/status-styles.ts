@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { fetchCRDSchema } from "@/api/crd-schema";
+import type { HealthState } from "@/lib/status-mapper";
 
-export function useCRDSchema(crdName: string, version?: string, enabled?: boolean) {
-  return useQuery({
-    queryKey: ["crd-schema", crdName, version] as const,
-    queryFn: () => fetchCRDSchema(crdName, version),
-    staleTime: Infinity,
-    gcTime: 1000 * 60 * 60,
-    enabled,
-  });
-}
+export const statusStyles: Record<HealthState, string> = {
+  Ready: "bg-success/10 text-success hover:bg-success/20",
+  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
+  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
+  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
+};

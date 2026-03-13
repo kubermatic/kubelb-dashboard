@@ -207,8 +207,6 @@ export function DataTable<T>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handlePageSizeChange = (_size: number) => {};
-
   return (
     <div className="space-y-4">
       {(searchPlaceholder || filterColumns || toolbarLeading || enableRowSelection) && (
@@ -277,7 +275,7 @@ export function DataTable<T>({
         </DataTableToolbar>
       )}
       <div className="overflow-x-auto rounded-md border">
-        <Table className="min-w-[600px]">
+        <Table className="min-w-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="group/row">
@@ -309,10 +307,10 @@ export function DataTable<T>({
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
+                <TableRow key={i} style={{ animationDelay: `${i * 75}ms` }}>
                   {columns.map((_, j) => (
                     <TableCell key={j}>
-                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-3/4" style={{ animationDelay: `${i * 75}ms` }} />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -358,7 +356,7 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} onPageSizeChange={handlePageSizeChange} />
+      <DataTablePagination table={table} />
     </div>
   );
 }

@@ -16,6 +16,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ManagedToggleProps {
   checked: boolean;
@@ -24,11 +25,20 @@ interface ManagedToggleProps {
 
 export function ManagedToggle({ checked, onCheckedChange }: ManagedToggleProps) {
   return (
-    <div className="flex items-center gap-2">
-      <Switch id="managed-toggle" checked={checked} onCheckedChange={onCheckedChange} />
-      <Label htmlFor="managed-toggle" className="text-sm text-muted-foreground">
-        Managed by KubeLB
-      </Label>
-    </div>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <div className="flex items-center gap-2">
+            <Switch id="managed-toggle" checked={checked} onCheckedChange={onCheckedChange} />
+            <Label htmlFor="managed-toggle" className="text-sm text-muted-foreground">
+              Managed by KubeLB
+            </Label>
+          </div>
+        }
+      />
+      <TooltipContent>
+        Show only resources managed by KubeLB. Disable to see all Kubernetes resources.
+      </TooltipContent>
+    </Tooltip>
   );
 }

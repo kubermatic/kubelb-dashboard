@@ -26,19 +26,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  type HealthState,
-  getLoadBalancerHealthStatus,
-  getRouteHealthStatus,
-} from "@/lib/status-mapper";
+import { getLoadBalancerHealthStatus, getRouteHealthStatus } from "@/lib/status-mapper";
+import type { HealthState } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 import type { LoadBalancer, Route } from "@/types/kubelb";
-
-const statusStyles: Record<HealthState, string> = {
-  Ready: "bg-success/10 text-success hover:bg-success/20",
-  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
-  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
-  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-};
 
 function HealthBadge({ state }: { state: HealthState }) {
   return (

@@ -41,7 +41,12 @@ export function LoginPage() {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") handleLogin();
+      if (
+        e.key === "Enter" &&
+        !(e.target instanceof HTMLAnchorElement) &&
+        !(e.target instanceof HTMLButtonElement)
+      )
+        handleLogin();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [search.return_to],

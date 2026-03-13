@@ -21,6 +21,7 @@ import { useUIStore } from "@/stores/ui";
 import { useEdition } from "@/hooks/use-edition";
 import { cn } from "@/lib/utils";
 import { navItems, type NavItem } from "@/lib/nav-items";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function NavLinks({
   collapsed,
@@ -117,29 +118,51 @@ function NavLinks({
       );
     }
 
+    if (collapsed) {
+      return (
+        <Tooltip key={item.to}>
+          <TooltipTrigger
+            render={
+              <Link
+                to={item.to}
+                activeOptions={{ exact: item.to === "/" }}
+                className={linkClass(true)}
+                activeProps={{
+                  className: "bg-sidebar-accent text-sidebar-accent-foreground",
+                }}
+                onClick={onNavigate}
+              />
+            }
+          >
+            <item.icon className="size-5 shrink-0" />
+          </TooltipTrigger>
+          <TooltipContent side="right">{item.label}</TooltipContent>
+        </Tooltip>
+      );
+    }
+
     return (
       <Link
         key={item.to}
         to={item.to}
         activeOptions={{ exact: item.to === "/" }}
-        className={linkClass(collapsed)}
+        className={linkClass(false)}
         activeProps={{
           className: "bg-sidebar-accent text-sidebar-accent-foreground",
         }}
         onClick={onNavigate}
       >
         <item.icon className="size-5 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
-        {collapsed && (
-          <span className="pointer-events-none absolute left-full z-50 ml-2 hidden rounded-md bg-card px-2 py-1 text-xs text-card-foreground shadow-md group-hover:block">
-            {item.label}
-          </span>
-        )}
+        <span>{item.label}</span>
       </Link>
     );
   };
 
-  return <nav className="flex-1 space-y-1 p-2">{filtered.map(renderItem)}</nav>;
+  return (
+    <TooltipProvider>
+      <nav className="flex-1 space-y-1 p-2">{filtered.map(renderItem)}</nav>
+    </TooltipProvider>
+  );
 }
 
 export function Sidebar() {
@@ -158,6 +181,7 @@ export function Sidebar() {
       <div className="border-t border-border p-2">
         <button
           onClick={toggleSidebar}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="flex w-full items-center justify-center rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-hover"
         >
           {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
@@ -191,6 +215,7 @@ export function MobileSidebar() {
           <span className="text-lg font-semibold text-sidebar-foreground">KubeLB</span>
           <button
             onClick={close}
+            aria-label="Close navigation"
             className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-hover"
           >
             <X className="size-5" />

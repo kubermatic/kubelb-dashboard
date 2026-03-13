@@ -58,7 +58,7 @@ function ConfigField({
   return (
     <div className="text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <p>{display}</p>
+      <p className="break-all">{display}</p>
     </div>
   );
 }

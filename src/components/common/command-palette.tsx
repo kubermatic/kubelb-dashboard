@@ -57,7 +57,9 @@ export function CommandPalette() {
     [navigate],
   );
 
-  const filteredPages = navItems.filter((p) => !p.ee || isEE);
+  const filteredPages = navItems
+    .filter((p) => !p.ee || isEE)
+    .flatMap((p) => (p.children ? [p, ...p.children] : [p]));
 
   if (!open) return null;
 

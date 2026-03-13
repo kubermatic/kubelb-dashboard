@@ -33,6 +33,7 @@ import {
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useCreateSyncSecret } from "@/hooks/use-sync-secret-mutations";
@@ -240,7 +241,11 @@ function HealthBar({
   const errorPct = (counts.error / total) * 100;
 
   return (
-    <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+    <div
+      role="img"
+      aria-label={`${String(counts.ready)} ready, ${String(counts.pending)} pending, ${String(counts.error)} error`}
+      className="flex h-2 w-full overflow-hidden rounded-full bg-muted"
+    >
       {readyPct > 0 && (
         <div
           className="bg-success transition-all duration-500"
@@ -387,14 +392,17 @@ function Overview() {
   const { data: tenantCrdSchema, isLoading: isTenantSchemaLoading } = useCRDSchema(
     "tenants.kubelb.k8c.io",
     "v1alpha1",
+    createTenantOpen,
   );
   const { data: syncSecretCrdSchema, isLoading: isSyncSecretSchemaLoading } = useCRDSchema(
     "syncsecrets.kubelb.k8c.io",
     "v1alpha1",
+    createSyncSecretOpen,
   );
   const { data: wafCrdSchema, isLoading: isWafSchemaLoading } = useCRDSchema(
     "wafpolicies.kubelb.k8c.io",
     "v1alpha1",
+    createWafOpen,
   );
 
   const createTenant = useCreateTenant();
@@ -432,6 +440,7 @@ function Overview() {
   for (const lb of lbItems) {
     const { state } = getLoadBalancerHealthStatus(lb);
     if (state === "Ready") lbCounts.ready++;
+    else if (state === "Error") lbCounts.error++;
     else lbCounts.pending++;
   }
 
@@ -471,13 +480,13 @@ function Overview() {
             KubeLB cluster overview and health summary.
           </p>
         </div>
-        {allLoaded && <ClusterStatus isHealthy={!anyError} />}
+        {(allLoaded || anyError) && <ClusterStatus isHealthy={!anyError} />}
       </div>
 
       <div
         className={cn(
           "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3",
-          isEE ? "xl:grid-cols-6" : "xl:grid-cols-5",
+          isEE ? "xl:grid-cols-3 2xl:grid-cols-6" : "xl:grid-cols-3 2xl:grid-cols-5",
         )}
       >
         <MetricCard
@@ -642,6 +651,7 @@ function Overview() {
                 </Button>
               )}
             </div>
+            <Separator />
             {[
               {
                 label: "Tenants",

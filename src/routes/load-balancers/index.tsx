@@ -38,7 +38,8 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Network } from "lucide-react";
 import { useState } from "react";
-import { getLoadBalancerHealthStatus, type HealthState } from "@/lib/status-mapper";
+import { getLoadBalancerHealthStatus } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 
 import type { LoadBalancer } from "@/types/kubelb";
 
@@ -79,13 +80,6 @@ function getEndpointsSummary(lb: LoadBalancer): string {
   }
   return parts.length ? parts.join(", ") : "\u2014";
 }
-
-const statusStyles: Record<HealthState, string> = {
-  Ready: "bg-success/10 text-success hover:bg-success/20",
-  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
-  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
-  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-};
 
 function LoadBalancers() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
