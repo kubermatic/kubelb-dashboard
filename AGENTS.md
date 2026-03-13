@@ -30,6 +30,7 @@ src/
 │   └── common/           # Shared app components
 ├── hooks/                # Custom hooks
 ├── lib/                  # Utilities (cn, etc.)
+├── mocks/                # MSW mock data (fixtures, handlers, store)
 ├── pages/                # Non-route page components
 ├── routes/               # TanStack Router file-based routes
 ├── stores/               # Zustand stores
@@ -37,6 +38,17 @@ src/
 ├── main.tsx              # Entry point
 └── index.css             # Tailwind import
 ```
+
+## Mock Mode
+
+`npm run dev:mock` starts the dashboard with MSW v2 intercepting `fetch()` in the browser. No cluster needed.
+
+- Fixtures in `src/mocks/fixtures/` — live-captured data (2 tenants, 3 LBs, 4 routes, 3 secrets, 3 WAF policies, 2 envoy deployments)
+- In-memory CRUD via `MockStore` in `src/mocks/store.ts` — persists within session, resets on refresh
+- Handlers in `src/mocks/handlers/` — one file per resource type, composed in `src/mocks/handlers.ts`
+- Gated by `VITE_MOCK=true` env var — dynamic import ensures MSW is tree-shaken from prod builds
+- Defaults to EE mode (WAF discovery returns 200)
+- Watch not mocked — hooks fall back to polling via `refetchInterval`
 
 ## Getting Started
 
@@ -47,16 +59,17 @@ npm run dev
 
 ## Scripts
 
-| Command                | Description              |
-| ---------------------- | ------------------------ |
-| `npm run dev`          | Start dev server         |
-| `npm run build`        | Type check + build       |
-| `npm run preview`      | Preview production build |
-| `npm run lint`         | Run ESLint               |
-| `npm run lint:fix`     | Run ESLint with autofix  |
-| `npm run format`       | Format with Prettier     |
-| `npm run format:check` | Check formatting         |
-| `npm run typecheck`    | Run TypeScript checker   |
+| Command                | Description                          |
+| ---------------------- | ------------------------------------ |
+| `npm run dev`          | Start dev server                     |
+| `npm run dev:mock`     | Start with mock data (no cluster)    |
+| `npm run build`        | Type check + build                   |
+| `npm run preview`      | Preview production build             |
+| `npm run lint`         | Run ESLint                           |
+| `npm run lint:fix`     | Run ESLint with autofix              |
+| `npm run format`       | Format with Prettier                 |
+| `npm run format:check` | Check formatting                     |
+| `npm run typecheck`    | Run TypeScript checker               |
 
 ## Adding shadcn/ui Components
 
@@ -90,3 +103,9 @@ GET /api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies → 200=EE, 404=CE
 ## Discussion rules
 
 For each task, query, question from my side please weigh out the pros and cons. If an action has significant downsides, please mention them and ask for confirmation before proceeding. If you are unsure about the best approach, outline the options and ask for guidance. Always prioritize correctness, security, and maintainability over speed.
+
+## Commits, PR title and description rules
+
+Use github template for PR description and populate fields that you think are required. Keep the description concise but informative.
+
+For commits, always use meaningful signed commits and follow the conventional commit format. We don't want excessive commits that don't add value to the history. Each commit should represent a logical unit of work that can be easily understood and reviewed.
