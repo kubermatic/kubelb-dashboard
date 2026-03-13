@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { Route } from "@/types/kubelb";
+import type { LoadBalancer, Route } from "@/types/kubelb";
 
 export type HealthState = "Ready" | "Degraded" | "Pending" | "Error";
 
@@ -77,11 +77,42 @@ function resolveGatewayRouteHealth(status: Record<string, unknown>): HealthStatu
   return { state: "Ready" };
 }
 
+function resolveIngressHealth(status: Record<string, unknown>): HealthStatus {
+  const lb = status["loadBalancer"] as Record<string, unknown> | undefined;
+  const ingress = lb?.["ingress"] as unknown[] | undefined;
+  if (ingress?.length) return { state: "Ready" };
+  return { state: "Pending" };
+}
+
+interface AncestorStatus {
+  conditions?: unknown[];
+}
+
+function resolvePolicyHealth(status: Record<string, unknown>): HealthStatus {
+  const ancestors = status["ancestors"] as AncestorStatus[] | undefined;
+  if (!ancestors?.length) return { state: "Pending" };
+
+  for (const ancestor of ancestors) {
+    const accepted = findCondition(ancestor.conditions, "Accepted");
+    if (accepted?.status === "False") return { state: "Error", reason: accepted.reason };
+
+    const overridden = findCondition(ancestor.conditions, "Overridden");
+    if (overridden?.status === "True") return { state: "Degraded", reason: overridden.reason };
+  }
+
+  return { state: "Ready" };
+}
+
 export function getRouteHealthStatus(route: Route): HealthStatus {
   const routeResource = route.status?.resources?.route;
   if (!routeResource) return { state: "Pending" };
 
-  const kind = routeResource.kind;
+  let kind = routeResource.kind;
+  if (!kind) {
+    const label = route.metadata.labels?.["kubelb.k8c.io/origin-resource-kind"];
+    if (label) kind = label.split(".")[0];
+  }
+
   const upstreamStatus = routeResource.status ?? {};
 
   switch (kind) {
@@ -93,7 +124,18 @@ export function getRouteHealthStatus(route: Route): HealthStatus {
     case "UDPRoute":
     case "TLSRoute":
       return resolveGatewayRouteHealth(upstreamStatus);
+    case "Ingress":
+      return resolveIngressHealth(upstreamStatus);
+    case "BackendTrafficPolicy":
+    case "ClientTrafficPolicy":
+      return resolvePolicyHealth(upstreamStatus);
     default:
       return { state: "Pending" };
   }
+}
+
+export function getLoadBalancerHealthStatus(lb: LoadBalancer): HealthStatus {
+  const ingress = lb.status?.loadBalancer?.ingress;
+  if (ingress?.length) return { state: "Ready" };
+  return { state: "Pending" };
 }

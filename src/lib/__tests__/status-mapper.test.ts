@@ -15,8 +15,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getRouteHealthStatus } from "../status-mapper";
-import type { Route } from "@/types/kubelb";
+import { getRouteHealthStatus, getLoadBalancerHealthStatus } from "../status-mapper";
+import type { Route, LoadBalancer } from "@/types/kubelb";
 
 function makeRoute(kind: string, upstreamStatus: Record<string, unknown>): Route {
   return {
@@ -247,5 +247,135 @@ describe("getRouteHealthStatus", () => {
       });
       expect(getRouteHealthStatus(route).state).toBe("Ready");
     });
+  });
+
+  describe("Ingress", () => {
+    it("returns Ready when loadBalancer.ingress has entries", () => {
+      const route = makeRoute("Ingress", {
+        loadBalancer: { ingress: [{ ip: "1.2.3.4" }] },
+      });
+      expect(getRouteHealthStatus(route).state).toBe("Ready");
+    });
+
+    it("returns Pending when loadBalancer.ingress is empty", () => {
+      const route = makeRoute("Ingress", {
+        loadBalancer: { ingress: [] },
+      });
+      expect(getRouteHealthStatus(route).state).toBe("Pending");
+    });
+
+    it("returns Pending when loadBalancer is empty object", () => {
+      const route = makeRoute("Ingress", { loadBalancer: {} });
+      expect(getRouteHealthStatus(route).state).toBe("Pending");
+    });
+  });
+
+  describe("BackendTrafficPolicy / ClientTrafficPolicy", () => {
+    it("returns Ready when Accepted=True", () => {
+      const route = makeRoute("BackendTrafficPolicy", {
+        ancestors: [
+          {
+            conditions: [
+              {
+                type: "Accepted",
+                status: "True",
+                reason: "Accepted",
+                message: "Policy has been accepted.",
+              },
+            ],
+          },
+        ],
+      });
+      expect(getRouteHealthStatus(route).state).toBe("Ready");
+    });
+
+    it("returns Degraded when Overridden=True", () => {
+      const route = makeRoute("BackendTrafficPolicy", {
+        ancestors: [
+          {
+            conditions: [
+              { type: "Accepted", status: "True", reason: "Accepted", message: "" },
+              {
+                type: "Overridden",
+                status: "True",
+                reason: "Overridden",
+                message: "overridden by route-level",
+              },
+            ],
+          },
+        ],
+      });
+      expect(getRouteHealthStatus(route).state).toBe("Degraded");
+    });
+
+    it("returns Error when Accepted=False", () => {
+      const route = makeRoute("ClientTrafficPolicy", {
+        ancestors: [
+          {
+            conditions: [
+              { type: "Accepted", status: "False", reason: "TargetNotFound", message: "" },
+            ],
+          },
+        ],
+      });
+      expect(getRouteHealthStatus(route).state).toBe("Error");
+    });
+
+    it("returns Pending when ancestors is empty", () => {
+      const route = makeRoute("BackendTrafficPolicy", {});
+      expect(getRouteHealthStatus(route).state).toBe("Pending");
+    });
+  });
+
+  describe("kind fallback from labels", () => {
+    it("uses origin-resource-kind label when route.kind is undefined", () => {
+      const route: Route = {
+        apiVersion: "kubelb.k8c.io/v1alpha1",
+        kind: "Route",
+        metadata: {
+          name: "test",
+          creationTimestamp: "",
+          labels: { "kubelb.k8c.io/origin-resource-kind": "Gateway.gateway.networking.k8s.io" },
+        },
+        spec: {},
+        status: {
+          resources: {
+            route: {
+              name: "test",
+              status: {
+                conditions: [
+                  { type: "Accepted", status: "True", reason: "Accepted", message: "" },
+                  { type: "Programmed", status: "True", reason: "Programmed", message: "" },
+                ],
+              },
+            },
+          },
+        },
+      };
+      expect(getRouteHealthStatus(route).state).toBe("Ready");
+    });
+  });
+});
+
+describe("getLoadBalancerHealthStatus", () => {
+  it("returns Ready when ingress has entries", () => {
+    const lb: LoadBalancer = {
+      apiVersion: "kubelb.k8c.io/v1alpha1",
+      kind: "LoadBalancer",
+      metadata: { name: "test", creationTimestamp: "" },
+      spec: {},
+      status: { loadBalancer: { ingress: [{ ip: "1.2.3.4" }] } },
+    };
+    expect(getLoadBalancerHealthStatus(lb).state).toBe("Ready");
+  });
+
+  it("returns Pending when no ingress", () => {
+    const lb: LoadBalancer = {
+      apiVersion: "kubelb.k8c.io/v1alpha1",
+      kind: "LoadBalancer",
+      metadata: { name: "test", creationTimestamp: "" },
+      spec: {},
+    };
+    expect(getLoadBalancerHealthStatus(lb).state).toBe("Pending");
   });
 });
