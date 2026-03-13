@@ -67,7 +67,7 @@ export function LoginPage() {
       <div className="pointer-events-none absolute -top-15 left-1/2 h-[300px] w-[400px] -translate-x-1/2 bg-[radial-gradient(ellipse,rgba(79,209,197,0.08)_0%,transparent_70%)]" />
 
       {/* Main content */}
-      <div className="mx-auto mt-24 max-w-[420px] px-6">
+      <div className="flex min-h-screen flex-col items-center justify-center pb-16 mx-auto max-w-[420px] px-6">
         {/* Logo */}
         <div className="mb-8 text-center">
           <div className="kubermatic-hero-logo mx-auto mb-4 flex h-20 w-20 items-center justify-center">
