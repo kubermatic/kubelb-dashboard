@@ -25,6 +25,8 @@ interface UIState {
   closeMobileSidebar: () => void;
   selectedTenant: string | null;
   setSelectedTenant: (tenant: string | null) => void;
+  selectedNamespace: string | null;
+  setSelectedNamespace: (namespace: string | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -37,12 +39,15 @@ export const useUIStore = create<UIState>()(
       closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
       selectedTenant: null,
       setSelectedTenant: (tenant) => set({ selectedTenant: tenant }),
+      selectedNamespace: null,
+      setSelectedNamespace: (namespace) => set({ selectedNamespace: namespace }),
     }),
     {
       name: "kubelb-ui",
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         selectedTenant: state.selectedTenant,
+        selectedNamespace: state.selectedNamespace,
       }),
     },
   ),

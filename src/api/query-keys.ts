@@ -120,4 +120,8 @@ export const queryKeys = {
     list: (ns?: string, labels?: string) =>
       ns ? (["services", "list", ns, labels] as const) : (["services", "list", labels] as const),
   },
+  namespaces: {
+    all: ["namespaces"] as const,
+    list: () => ["namespaces", "list"] as const,
+  },
 } as const;

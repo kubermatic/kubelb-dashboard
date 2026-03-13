@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
-import { createFileRoute, stripSearchParams, useNavigate, useSearch } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, GitBranch } from "lucide-react";
+import { ArrowLeft, FileText, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -31,6 +37,7 @@ import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { ManagedToggle } from "@/components/common/managed-toggle";
+import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
@@ -44,7 +51,8 @@ import { useTLSRoutes } from "@/hooks/use-tlsroutes";
 import { useIngresses } from "@/hooks/use-ingresses";
 import { useBackendTrafficPolicies } from "@/hooks/use-backend-traffic-policies";
 import { useClientTrafficPolicies } from "@/hooks/use-client-traffic-policies";
-import { resolveHealthByKind, type HealthState } from "@/lib/status-mapper";
+import { resolveHealthByKind } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
@@ -59,7 +67,7 @@ export const Route = createFileRoute("/routes/downstream")({
 const MANAGED_LABEL = "kubelb.k8c.io/managed-by=kubelb";
 
 const KIND_OPTIONS = [
-  { value: "", label: "All Kinds" },
+  { value: "__all__", label: "All Kinds" },
   { value: "Gateway", label: "Gateway" },
   { value: "HTTPRoute", label: "HTTPRoute" },
   { value: "GRPCRoute", label: "GRPCRoute" },
@@ -71,19 +79,17 @@ const KIND_OPTIONS = [
   { value: "ClientTrafficPolicy", label: "CTP" },
 ];
 
-const statusStyles: Record<HealthState, string> = {
-  Ready: "bg-success/10 text-success hover:bg-success/20",
-  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
-  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
-  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-};
-
 function DownstreamResources() {
   const [managedOnly, setManagedOnly] = useState(true);
-  const [kindFilter, setKindFilter] = useState<string>("");
+  const [kindFilter, setKindFilter] = useState<string>("__all__");
   const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
 
-  const namespace = managedOnly && selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const namespace = managedOnly
+    ? selectedTenant
+      ? tenantToNamespace(selectedTenant)
+      : undefined
+    : (selectedNamespace ?? undefined);
   const labelSelector = managedOnly ? MANAGED_LABEL : undefined;
 
   const gatewayQ = useGateways(namespace, labelSelector);
@@ -114,8 +120,38 @@ function DownstreamResources() {
   const dataUpdatedAt = Math.max(...queries.map((q) => q.dataUpdatedAt));
   const refetch = () => queries.forEach((q) => void q.refetch());
 
-  const allItems: GenericResource[] = queries.flatMap((q) => q.data?.items ?? []);
-  const items = kindFilter ? allItems.filter((r) => r.kind === kindFilter) : allItems;
+  const tagKind = (items: GenericResource[], kind: string): GenericResource[] =>
+    items.map((item) => (item.kind ? item : { ...item, kind }));
+
+  const allItems = useMemo(
+    () => [
+      ...tagKind(gatewayQ.data?.items ?? [], "Gateway"),
+      ...tagKind(httpRouteQ.data?.items ?? [], "HTTPRoute"),
+      ...tagKind(grpcRouteQ.data?.items ?? [], "GRPCRoute"),
+      ...tagKind(tcpRouteQ.data?.items ?? [], "TCPRoute"),
+      ...tagKind(udpRouteQ.data?.items ?? [], "UDPRoute"),
+      ...tagKind(tlsRouteQ.data?.items ?? [], "TLSRoute"),
+      ...tagKind(ingressQ.data?.items ?? [], "Ingress"),
+      ...tagKind(btpQ.data?.items ?? [], "BackendTrafficPolicy"),
+      ...tagKind(ctpQ.data?.items ?? [], "ClientTrafficPolicy"),
+    ],
+
+    [
+      gatewayQ.data,
+      httpRouteQ.data,
+      grpcRouteQ.data,
+      tcpRouteQ.data,
+      udpRouteQ.data,
+      tlsRouteQ.data,
+      ingressQ.data,
+      btpQ.data,
+      ctpQ.data,
+    ],
+  );
+  const items =
+    kindFilter && kindFilter !== "__all__"
+      ? allItems.filter((r) => r.kind === kindFilter)
+      : allItems;
 
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/downstream" });
@@ -126,7 +162,9 @@ function DownstreamResources() {
       accessorFn: (row) => row.metadata.name,
       id: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => <span className="font-medium">{row.original.metadata.name}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium font-mono text-sm">{row.original.metadata.name}</span>
+      ),
     },
     {
       accessorFn: (row) => row.metadata.namespace,
@@ -139,16 +177,13 @@ function DownstreamResources() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Kind" />,
       cell: ({ row }) => <Badge variant="outline">{row.original.kind}</Badge>,
     },
-    ...(managedOnly
-      ? ([
-          {
-            accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
-            id: "tenant",
-            meta: { hideBelow: "md" },
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
-          },
-        ] as ColumnDef<GenericResource>[])
-      : []),
+    {
+      accessorFn: (row) =>
+        managedOnly ? namespaceToTenant(row.metadata.namespace ?? "") : "\u2014",
+      id: "tenant",
+      meta: { hideBelow: "md" },
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
+    },
     {
       id: "status",
       accessorFn: (row) => resolveHealthByKind(row.kind, row.status ?? {}).state,
@@ -193,6 +228,14 @@ function DownstreamResources() {
   return (
     <div className="space-y-6">
       <div>
+        <Link
+          to="/routes"
+          search={{ search: "", page: 0, pageSize: 10 }}
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Routes
+        </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Downstream Resources</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           View Gateway API and Ingress resources across tenants.
@@ -223,8 +266,8 @@ function DownstreamResources() {
           toolbarLeading={
             <>
               <ManagedToggle checked={managedOnly} onCheckedChange={setManagedOnly} />
-              {managedOnly && <TenantSelector />}
-              <Select value={kindFilter} onValueChange={(v) => setKindFilter(v ?? "")}>
+              {managedOnly ? <TenantSelector /> : <NamespaceSelector />}
+              <Select value={kindFilter} onValueChange={(v) => setKindFilter(v ?? "__all__")}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Kinds" />
                 </SelectTrigger>

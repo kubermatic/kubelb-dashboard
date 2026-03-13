@@ -19,6 +19,7 @@ import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { ManagedToggle } from "@/components/common/managed-toggle";
+import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
@@ -28,9 +29,15 @@ import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
 import type { GenericResource } from "@/mocks/fixtures/types";
-import { createFileRoute, stripSearchParams, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Server } from "lucide-react";
+import { ArrowLeft, FileText, Server } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/load-balancers/services")({
@@ -58,8 +65,13 @@ function getServicePorts(svc: GenericResource): string {
 function Services() {
   const [managed, setManaged] = useState(true);
   const selectedTenant = useUIStore((s) => s.selectedTenant);
+  const selectedNamespace = useUIStore((s) => s.selectedNamespace);
 
-  const namespace = managed && selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
+  const namespace = managed
+    ? selectedTenant
+      ? tenantToNamespace(selectedTenant)
+      : undefined
+    : (selectedNamespace ?? undefined);
   const labelSelector = managed ? MANAGED_LABEL : undefined;
 
   const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useServices(
@@ -76,23 +88,21 @@ function Services() {
       accessorFn: (row) => row.metadata.name,
       id: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => <span className="font-medium">{row.original.metadata.name}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium font-mono text-sm">{row.original.metadata.name}</span>
+      ),
     },
     {
       accessorFn: (row) => row.metadata.namespace,
       id: "namespace",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
     },
-    ...(managed
-      ? ([
-          {
-            accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
-            id: "tenant",
-            meta: { hideBelow: "md" },
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
-          },
-        ] as ColumnDef<GenericResource>[])
-      : []),
+    {
+      accessorFn: (row) => (managed ? namespaceToTenant(row.metadata.namespace ?? "") : "\u2014"),
+      id: "tenant",
+      meta: { hideBelow: "md" },
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
+    },
     {
       accessorFn: getServiceType,
       id: "type",
@@ -141,6 +151,14 @@ function Services() {
   return (
     <div className="space-y-6">
       <div>
+        <Link
+          to="/load-balancers"
+          search={{ search: "", page: 0, pageSize: 10 }}
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Load Balancers
+        </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           View Kubernetes services across tenants.
@@ -167,7 +185,7 @@ function Services() {
           toolbarLeading={
             <>
               <ManagedToggle checked={managed} onCheckedChange={setManaged} />
-              {managed && <TenantSelector />}
+              {managed ? <TenantSelector /> : <NamespaceSelector />}
             </>
           }
           initialSearch={search}
