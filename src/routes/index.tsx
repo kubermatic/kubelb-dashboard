@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -22,14 +23,20 @@ import {
   Clock,
   KeyRound,
   Network,
+  Plus,
   Route as RouteIcon,
   Shield,
   ShieldAlert,
   Users,
   XCircle,
 } from "lucide-react";
+import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useCreateSyncSecret } from "@/hooks/use-sync-secret-mutations";
+import { useCreateTenant } from "@/hooks/use-tenant-mutations";
 import { useDeployments } from "@/hooks/use-deployments";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
@@ -37,9 +44,11 @@ import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useTenants } from "@/hooks/use-tenants";
 import { useWAFPolicies } from "@/hooks/use-waf-policies";
 import { useEdition } from "@/hooks/use-edition";
+import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { Condition, Deployment } from "@/types/kubernetes";
+import type { SyncSecret, Tenant } from "@/types/kubelb";
 
 export const Route = createFileRoute("/")({
   component: Overview,
@@ -336,6 +345,20 @@ function ClusterStatus({ isHealthy }: { isHealthy: boolean }) {
   );
 }
 
+const TENANT_TEMPLATE = {
+  apiVersion: "kubelb.k8c.io/v1alpha1",
+  kind: "Tenant",
+  metadata: { name: "" },
+  spec: {},
+};
+
+const SYNCSECRET_TEMPLATE = {
+  apiVersion: "kubelb.k8c.io/v1alpha1",
+  kind: "SyncSecret",
+  metadata: { name: "", namespace: "" },
+  spec: {},
+};
+
 function Overview() {
   const { isEE } = useEdition();
   const tenantQuery = useTenants();
@@ -347,6 +370,24 @@ function Overview() {
   );
   const syncSecretQuery = useSyncSecrets();
   const wafQuery = useWAFPolicies();
+
+  const [createTenantOpen, setCreateTenantOpen] = useState(false);
+  const [createSyncSecretOpen, setCreateSyncSecretOpen] = useState(false);
+
+  const { data: tenantCrdSchema, isLoading: isTenantSchemaLoading } = useCRDSchema(
+    "tenants.kubelb.k8c.io",
+    "v1alpha1",
+  );
+  const { data: syncSecretCrdSchema, isLoading: isSyncSecretSchemaLoading } = useCRDSchema(
+    "syncsecrets.kubelb.k8c.io",
+    "v1alpha1",
+  );
+
+  const createTenant = useCreateTenant();
+  const createSyncSecret = useCreateSyncSecret();
+
+  const tenantUiSchema = useMemo(() => buildUiSchema("Tenant", "create"), []);
+  const syncSecretUiSchema = useMemo(() => buildUiSchema("SyncSecret", "create"), []);
 
   const tenantItems = tenantQuery.data?.items ?? [];
   const lbItems = lbQuery.data?.items ?? [];
@@ -576,10 +617,20 @@ function Overview() {
         <Card>
           <CardHeader className="border-b">
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Quick Navigation
+              Quick Actions
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2">
+            <div className="flex gap-2 px-4 py-3">
+              <Button size="sm" onClick={() => setCreateTenantOpen(true)}>
+                <Plus className="size-4" />
+                Create Tenant
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setCreateSyncSecretOpen(true)}>
+                <Plus className="size-4" />
+                Create Sync Secret
+              </Button>
+            </div>
             {[
               {
                 label: "Tenants",
@@ -627,6 +678,38 @@ function Overview() {
           </CardContent>
         </Card>
       </div>
+
+      <ResourceFormDialog
+        open={createTenantOpen}
+        onOpenChange={setCreateTenantOpen}
+        mode="create"
+        title="Create Tenant"
+        schema={tenantCrdSchema}
+        isSchemaLoading={isTenantSchemaLoading}
+        uiSchema={tenantUiSchema}
+        formData={TENANT_TEMPLATE}
+        isPending={createTenant.isPending}
+        onSubmit={(parsed) => {
+          void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateTenantOpen(false));
+        }}
+      />
+
+      <ResourceFormDialog
+        open={createSyncSecretOpen}
+        onOpenChange={setCreateSyncSecretOpen}
+        mode="create"
+        title="Create Sync Secret"
+        schema={syncSecretCrdSchema}
+        isSchemaLoading={isSyncSecretSchemaLoading}
+        uiSchema={syncSecretUiSchema}
+        formData={SYNCSECRET_TEMPLATE}
+        isPending={createSyncSecret.isPending}
+        onSubmit={(parsed) => {
+          void createSyncSecret
+            .mutateAsync(parsed as SyncSecret)
+            .then(() => setCreateSyncSecretOpen(false));
+        }}
+      />
     </div>
   );
 }

@@ -25,14 +25,13 @@ import {
 } from "@tanstack/react-router";
 import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
-import { RowActions, type RowAction } from "@/components/common/row-actions";
+import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -171,27 +170,25 @@ function WAFPolicies() {
       enableHiding: false,
       cell: ({ row }) => (
         <RowActions
-          actions={
-            [
-              {
-                label: "View YAML",
-                icon: FileText,
-                onClick: () => setYamlViewerResource(row.original),
-              },
-              EDITING_ENABLED && {
-                label: "Edit",
-                icon: Pencil,
-                onClick: () => setEditResource(row.original),
-              },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ].filter(Boolean) as RowAction[]
-          }
+          actions={[
+            {
+              label: "View YAML",
+              icon: FileText,
+              onClick: () => setYamlViewerResource(row.original),
+            },
+            {
+              label: "Edit",
+              icon: Pencil,
+              onClick: () => setEditResource(row.original),
+            },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
         />
       ),
     },
@@ -218,12 +215,10 @@ function WAFPolicies() {
           title="No WAF policies found"
           description="Get started by creating your first WAF policy."
           action={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create WAF Policy
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create WAF Policy
+            </Button>
           }
         />
       ) : (
@@ -234,12 +229,10 @@ function WAFPolicies() {
           searchColumn="name"
           searchPlaceholder="Filter WAF policies..."
           toolbarLeading={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create WAF Policy
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create WAF Policy
+            </Button>
           }
           initialSearch={search}
           initialPage={page}
@@ -259,22 +252,20 @@ function WAFPolicies() {
         />
       )}
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create WAF Policy"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={createUiSchema}
-          formData={WAF_POLICY_TEMPLATE}
-          isPending={createWAFPolicy.isPending}
-          onSubmit={(parsed) => {
-            void createWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        title="Create WAF Policy"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={createUiSchema}
+        formData={WAF_POLICY_TEMPLATE}
+        isPending={createWAFPolicy.isPending}
+        onSubmit={(parsed) => {
+          void createWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setCreateOpen(false));
+        }}
+      />
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -283,26 +274,22 @@ function WAFPolicies() {
         title={yamlViewerResource ? `WAF Policy: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={
-            editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
-          }
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateWAFPolicy.isPending}
-          onSubmit={(parsed) => {
-            void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={!!editResource}
+        onOpenChange={(open) => !open && setEditResource(null)}
+        mode="edit"
+        title={editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"}
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={
+          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+        }
+        isPending={updateWAFPolicy.isPending}
+        onSubmit={(parsed) => {
+          void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
+        }}
+      />
 
       {deleteResource && (
         <DeleteDialog

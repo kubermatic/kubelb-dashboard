@@ -18,7 +18,6 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 import { useConfigs } from "@/hooks/use-config";
 import { useEdition } from "@/hooks/use-edition";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
@@ -476,11 +475,9 @@ function Configuration() {
               <FileCode />
               View YAML
             </Button>
-            {EDITING_ENABLED && (
-              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-                Edit
-              </Button>
-            )}
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
           </div>
         )}
       </div>
@@ -502,22 +499,20 @@ function Configuration() {
         title={`Config: ${config?.metadata?.name ?? ""}`}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={config ? (sanitizeForEdit(config) as Record<string, unknown>) : undefined}
-          isPending={updateConfig.isPending}
-          onSubmit={(parsed) => {
-            void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={config ? (sanitizeForEdit(config) as Record<string, unknown>) : undefined}
+        isPending={updateConfig.isPending}
+        onSubmit={(parsed) => {
+          void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
+        }}
+      />
     </div>
   );
 }

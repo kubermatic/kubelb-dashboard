@@ -18,7 +18,7 @@ import { Fragment, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
+import { YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import {
   ArrowRight,
   Download,
@@ -122,12 +122,10 @@ function TenantDetail() {
             <Download />
             Kubeconfig
           </Button>
-          {EDITING_ENABLED && (
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil />
-              Edit
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil />
+            Edit
+          </Button>
           <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
             <Trash2 />
             Delete
@@ -167,7 +165,7 @@ function TenantDetail() {
         title={`Tenant: ${name}`}
       />
 
-      {EDITING_ENABLED && YAML_EDITOR_ENABLED && (
+      {YAML_EDITOR_ENABLED && (
         <YamlEditorDialog
           open={editOpen}
           onOpenChange={setEditOpen}

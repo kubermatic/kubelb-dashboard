@@ -25,7 +25,6 @@ import {
 } from "@tanstack/react-router";
 import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
@@ -33,7 +32,7 @@ import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
-import { RowActions, type RowAction } from "@/components/common/row-actions";
+import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -210,32 +209,30 @@ function Tenants() {
       enableHiding: false,
       cell: ({ row }) => (
         <RowActions
-          actions={
-            [
-              {
-                label: "View YAML",
-                icon: FileText,
-                onClick: () => setYamlViewerResource(row.original),
-              },
-              {
-                label: "Download Kubeconfig",
-                icon: Download,
-                onClick: () => void downloadKubeconfig(row.original.metadata.name),
-              },
-              EDITING_ENABLED && {
-                label: "Edit",
-                icon: Pencil,
-                onClick: () => setEditResource(row.original),
-              },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ].filter(Boolean) as RowAction[]
-          }
+          actions={[
+            {
+              label: "View YAML",
+              icon: FileText,
+              onClick: () => setYamlViewerResource(row.original),
+            },
+            {
+              label: "Download Kubeconfig",
+              icon: Download,
+              onClick: () => void downloadKubeconfig(row.original.metadata.name),
+            },
+            {
+              label: "Edit",
+              icon: Pencil,
+              onClick: () => setEditResource(row.original),
+            },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
         />
       ),
     },
@@ -264,12 +261,10 @@ function Tenants() {
           title="No tenants found"
           description="Get started by creating your first tenant."
           action={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create Tenant
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Tenant
+            </Button>
           }
         />
       ) : (
@@ -280,12 +275,10 @@ function Tenants() {
           searchColumn="name"
           searchPlaceholder="Filter tenants..."
           toolbarLeading={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create Tenant
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Tenant
+            </Button>
           }
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
@@ -302,28 +295,26 @@ function Tenants() {
               params: { name: row.original.metadata.name },
             });
           }}
-          enableRowSelection={EDITING_ENABLED}
+          enableRowSelection
           onDeleteSelected={setBulkDeleteItems}
           isDeletePending={isBulkDeleting}
         />
       )}
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Tenant"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={createUiSchema}
-          formData={TENANT_TEMPLATE}
-          isPending={createTenant.isPending}
-          onSubmit={(parsed) => {
-            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        title="Create Tenant"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={createUiSchema}
+        formData={TENANT_TEMPLATE}
+        isPending={createTenant.isPending}
+        onSubmit={(parsed) => {
+          void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+        }}
+      />
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -332,24 +323,22 @@ function Tenants() {
         title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateTenant.isPending}
-          onSubmit={(parsed) => {
-            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={!!editResource}
+        onOpenChange={(open) => !open && setEditResource(null)}
+        mode="edit"
+        title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={
+          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+        }
+        isPending={updateTenant.isPending}
+        onSubmit={(parsed) => {
+          void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+        }}
+      />
 
       {deleteResource && (
         <DeleteDialog

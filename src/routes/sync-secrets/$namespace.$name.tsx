@@ -44,7 +44,6 @@ import { useDeleteSyncSecret, useUpdateSyncSecret } from "@/hooks/use-sync-secre
 import { useSyncSecret } from "@/hooks/use-sync-secrets";
 import { KUBELB_LABELS } from "@/lib/constants";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { SyncSecret } from "@/types/kubelb";
 
@@ -109,11 +108,9 @@ function SyncSecretDetail() {
             <FileCode />
             View YAML
           </Button>
-          {EDITING_ENABLED && (
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
           <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
             Delete
           </Button>
@@ -147,22 +144,20 @@ function SyncSecretDetail() {
         title={`SyncSecret: ${namespace}/${name}`}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title="Edit SyncSecret"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={sanitizeForEdit(secret) as Record<string, unknown>}
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        title="Edit SyncSecret"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={sanitizeForEdit(secret) as Record<string, unknown>}
+        isPending={updateSyncSecret.isPending}
+        onSubmit={(parsed) => {
+          void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));
+        }}
+      />
 
       <DeleteDialog
         open={deleteOpen}

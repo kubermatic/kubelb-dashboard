@@ -16,4 +16,3 @@
 
 export const FORM_EDITOR_ENABLED = import.meta.env.VITE_ENABLE_FORM_EDITOR !== "false";
 export const YAML_EDITOR_ENABLED = import.meta.env.VITE_ENABLE_YAML_EDITOR !== "false";
-export const EDITING_ENABLED = FORM_EDITOR_ENABLED || YAML_EDITOR_ENABLED;

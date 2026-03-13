@@ -25,7 +25,6 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
@@ -157,15 +156,11 @@ function SyncSecrets() {
               icon: FileText,
               onClick: () => setYamlViewerResource(row.original),
             },
-            ...(EDITING_ENABLED
-              ? [
-                  {
-                    label: "Edit",
-                    icon: Pencil,
-                    onClick: () => setEditResource(row.original),
-                  },
-                ]
-              : []),
+            {
+              label: "Edit",
+              icon: Pencil,
+              onClick: () => setEditResource(row.original),
+            },
             {
               label: "Delete",
               icon: Trash2,
@@ -200,12 +195,10 @@ function SyncSecrets() {
           title={selectedTenant ? `No sync secrets in ${selectedTenant}` : "No sync secrets found"}
           description="Get started by creating your first sync secret."
           action={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create Sync Secret
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Sync Secret
+            </Button>
           }
         />
       ) : (
@@ -218,12 +211,10 @@ function SyncSecrets() {
           toolbarLeading={
             <>
               <TenantSelector />
-              {EDITING_ENABLED && (
-                <Button size="sm" onClick={() => setCreateOpen(true)}>
-                  <Plus />
-                  Create
-                </Button>
-              )}
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus />
+                Create
+              </Button>
             </>
           }
           initialSearch={search}
@@ -242,30 +233,26 @@ function SyncSecrets() {
               params: { namespace: namespace ?? "default", name },
             });
           }}
-          enableRowSelection={EDITING_ENABLED}
+          enableRowSelection
           onDeleteSelected={setBulkDeleteItems}
           isDeletePending={isBulkDeleting}
         />
       )}
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Sync Secret"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={createUiSchema}
-          formData={SYNCSECRET_TEMPLATE}
-          isPending={createSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void createSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        title="Create Sync Secret"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={createUiSchema}
+        formData={SYNCSECRET_TEMPLATE}
+        isPending={createSyncSecret.isPending}
+        onSubmit={(parsed) => {
+          void createSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setCreateOpen(false));
+        }}
+      />
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -274,28 +261,24 @@ function SyncSecrets() {
         title={yamlViewerResource ? `SyncSecret: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={
-            editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
-          }
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setEditResource(null));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={!!editResource}
+        onOpenChange={(open) => !open && setEditResource(null)}
+        mode="edit"
+        title={
+          editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
+        }
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={
+          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+        }
+        isPending={updateSyncSecret.isPending}
+        onSubmit={(parsed) => {
+          void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditResource(null));
+        }}
+      />
 
       {deleteResource && (
         <DeleteDialog
