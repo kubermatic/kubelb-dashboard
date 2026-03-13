@@ -32,6 +32,7 @@ export interface ObjectMeta {
   annotations?: Record<string, string>;
   deletionTimestamp?: string;
   generation?: number;
+  finalizers?: string[];
   ownerReferences?: OwnerReference[];
 }
 
