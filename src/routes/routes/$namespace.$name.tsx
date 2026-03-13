@@ -21,6 +21,7 @@ import { FileCode, Globe, Lock } from "lucide-react";
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
 import { MetadataSection } from "@/components/common/metadata-section";
+import { RouteResourceLinkage } from "@/components/common/resource-linkage";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -82,6 +83,7 @@ function RouteDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
@@ -91,6 +93,10 @@ function RouteDetail() {
 
         <TabsContent value="status" className="space-y-4">
           <StatusTab route={route} />
+        </TabsContent>
+
+        <TabsContent value="resources" className="space-y-4">
+          <RouteResourceLinkage route={route} />
         </TabsContent>
 
         <TabsContent value="metadata">

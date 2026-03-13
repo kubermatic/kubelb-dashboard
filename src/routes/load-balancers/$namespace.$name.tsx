@@ -22,6 +22,7 @@ import { KubeApiError } from "@/api/kube";
 import { KUBELB_ANNOTATIONS as KUBELB_ANNOTATION_KEYS } from "@/lib/constants";
 import { CopyButton } from "@/components/common/copy-button";
 import { MetadataSection } from "@/components/common/metadata-section";
+import { LoadBalancerResourceLinkage } from "@/components/common/resource-linkage";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -97,6 +98,7 @@ function LoadBalancerDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
@@ -106,6 +108,10 @@ function LoadBalancerDetail() {
 
         <TabsContent value="status" className="space-y-4">
           <StatusTab lb={lb} />
+        </TabsContent>
+
+        <TabsContent value="resources" className="space-y-4">
+          <LoadBalancerResourceLinkage lb={lb} />
         </TabsContent>
 
         <TabsContent value="metadata">
