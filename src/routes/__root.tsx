@@ -19,6 +19,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Layout } from "@/components/layout/layout";
 import { ErrorBoundary } from "@/components/common/error-boundary";
 import { NotFound } from "@/components/common/not-found";
+import { fetchAppConfig } from "@/api/config";
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -46,8 +47,13 @@ export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
     if (location.pathname === "/login") return;
 
+    const config = await fetchAppConfig();
+    if (!config.authEnabled) return;
+
     const response = await fetch("/auth/session", { credentials: "include" });
-    if (response.status === 404) return;
+    if (!response.ok) {
+      throw new Error(`Session check failed: ${response.status}`);
+    }
 
     const data = (await response.json()) as { authenticated: boolean };
     if (!data.authenticated) {

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -36,30 +37,32 @@ export function HelpMenu() {
         <TooltipContent>Help</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          render={
-            <a
-              href="https://docs.kubermatic.com/kubelb"
-              target="_blank"
-              rel="noopener noreferrer"
-            />
-          }
-        >
-          <ExternalLink />
-          Documentation
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          render={
-            <a
-              href="https://github.com/kubermatic/kubelb/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-            />
-          }
-        >
-          <ExternalLink />
-          Report Issue
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            render={
+              <a
+                href="https://docs.kubermatic.com/kubelb"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            <ExternalLink />
+            Documentation
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={
+              <a
+                href="https://github.com/kubermatic/kubelb/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            <ExternalLink />
+            Report Issue
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

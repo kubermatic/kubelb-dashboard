@@ -59,7 +59,7 @@ function EnvoyProxy() {
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
   const { data, isLoading, isError, error, refetch } = useDeployments(
     namespace,
-    "app.kubernetes.io/name=kubelb-envoy-proxy",
+    "app.kubernetes.io/managed-by=kubelb,app.kubernetes.io/name=kubelb-envoy-proxy",
   );
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/envoy-proxy/" });

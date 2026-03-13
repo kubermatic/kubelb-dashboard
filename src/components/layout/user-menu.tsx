@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -42,28 +43,29 @@ export function UserMenu() {
       </Tooltip>
       <DropdownMenuContent align="end">
         {authEnabled && user && (
-          <>
+          <DropdownMenuGroup>
             <DropdownMenuLabel>{user.name || user.email}</DropdownMenuLabel>
             {user.name && (
               <DropdownMenuLabel className="font-normal text-muted-foreground">
                 {user.email}
               </DropdownMenuLabel>
             )}
-            <DropdownMenuSeparator />
-          </>
+          </DropdownMenuGroup>
         )}
         {!authEnabled && (
-          <>
+          <DropdownMenuGroup>
             <DropdownMenuLabel className="text-muted-foreground">
               Authentication disabled
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-          </>
+          </DropdownMenuGroup>
         )}
-        <DropdownMenuItem disabled={!authEnabled} onClick={() => void logout()}>
-          <LogOut />
-          Sign out
-        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem disabled={!authEnabled} onClick={() => void logout()}>
+            <LogOut />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

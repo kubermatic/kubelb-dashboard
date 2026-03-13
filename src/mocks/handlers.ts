@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { http, HttpResponse } from "msw";
 import { backendTrafficPolicyHandlers } from "./handlers/backend-traffic-policies";
 import { clientTrafficPolicyHandlers } from "./handlers/client-traffic-policies";
 import { configHandlers } from "./handlers/configs";
@@ -34,6 +35,7 @@ import { udpRouteHandlers } from "./handlers/udproutes";
 import { wafPolicyHandlers } from "./handlers/waf-policies";
 
 export const handlers = [
+  http.get("/api/config", () => HttpResponse.json({ authEnabled: false })),
   ...tenantHandlers,
   ...configHandlers,
   ...loadBalancerHandlers,

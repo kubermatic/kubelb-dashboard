@@ -341,7 +341,10 @@ function Overview() {
   const tenantQuery = useTenants();
   const lbQuery = useLoadBalancers();
   const routeQuery = useRoutes();
-  const deploymentQuery = useDeployments(undefined, "app.kubernetes.io/name=kubelb-envoy-proxy");
+  const deploymentQuery = useDeployments(
+    undefined,
+    "app.kubernetes.io/managed-by=kubelb,app.kubernetes.io/name=kubelb-envoy-proxy",
+  );
   const syncSecretQuery = useSyncSecrets();
   const wafQuery = useWAFPolicies();
 
