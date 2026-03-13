@@ -200,6 +200,7 @@ export function DataTable<T>({
         return next;
       });
     },
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
