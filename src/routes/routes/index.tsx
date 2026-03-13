@@ -25,6 +25,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Route as RouteIcon, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -38,6 +39,7 @@ import { useRoutes } from "@/hooks/use-routes";
 import { AgeCell } from "@/components/common/age-cell";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
+import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
 
@@ -83,6 +85,13 @@ function getEndpointsSummary(route: RouteType): string {
     }
   }
   return parts.length ? parts.join(", ") : "\u2014";
+}
+
+function getSourceAnnotations(route: RouteType): Record<string, string> {
+  const resource = route.spec.source?.kubernetes?.resource;
+  if (!resource) return {};
+  const meta = resource["metadata"] as Record<string, unknown> | undefined;
+  return (meta?.["annotations"] as Record<string, string>) ?? {};
 }
 
 type RouteConditionStatus = "Ready" | "Error" | "Pending";
@@ -160,6 +169,47 @@ function Routes() {
           {getEndpointsSummary(row.original)}
         </span>
       ),
+    },
+    {
+      id: "dns",
+      meta: { hideBelow: "lg" },
+      accessorFn: (row) => getSourceAnnotations(row)[KUBELB_ANNOTATIONS.MANAGE_DNS] === "true",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="DNS" />,
+      cell: ({ row }) => {
+        const annotations = getSourceAnnotations(row.original);
+        const managed = annotations[KUBELB_ANNOTATIONS.MANAGE_DNS] === "true";
+        if (!managed) return <span className="text-muted-foreground">{"\u2014"}</span>;
+        const hostname = annotations[KUBELB_ANNOTATIONS.EXTERNAL_DNS_HOSTNAME];
+        const badge = <Badge className="bg-success/10 text-success">Managed</Badge>;
+        if (!hostname) return badge;
+        return (
+          <Tooltip>
+            <TooltipTrigger render={badge} />
+            <TooltipContent>{hostname}</TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      id: "tls",
+      meta: { hideBelow: "lg" },
+      accessorFn: (row) =>
+        getSourceAnnotations(row)[KUBELB_ANNOTATIONS.MANAGE_CERTIFICATES] === "true",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="TLS" />,
+      cell: ({ row }) => {
+        const annotations = getSourceAnnotations(row.original);
+        const managed = annotations[KUBELB_ANNOTATIONS.MANAGE_CERTIFICATES] === "true";
+        if (!managed) return <span className="text-muted-foreground">{"\u2014"}</span>;
+        const issuer = annotations[KUBELB_ANNOTATIONS.CERTMANAGER_ISSUER];
+        const badge = <Badge className="bg-success/10 text-success">Managed</Badge>;
+        if (!issuer) return badge;
+        return (
+          <Tooltip>
+            <TooltipTrigger render={badge} />
+            <TooltipContent>{issuer}</TooltipContent>
+          </Tooltip>
+        );
+      },
     },
     {
       id: "status",

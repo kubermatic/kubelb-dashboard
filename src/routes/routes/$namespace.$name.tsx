@@ -16,7 +16,7 @@
 
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { FileCode } from "lucide-react";
+import { FileCode, Globe, Lock } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { useRoute as useRouteResource } from "@/hooks/use-routes";
 import type { Route as RouteResource } from "@/types/kubelb";
 
@@ -113,6 +114,13 @@ function OverviewTab({ route }: { route: RouteResource }) {
   const meta = resource?.metadata as Record<string, unknown> | undefined;
   const sourceName = (meta?.name as string) ?? (resource?.name as string | undefined);
   const sourceNs = (meta?.namespace as string) ?? (resource?.namespace as string | undefined);
+  const annotations = (meta?.annotations as Record<string, string>) ?? {};
+
+  const manageDns = annotations[KUBELB_ANNOTATIONS.MANAGE_DNS] === "true";
+  const hostname = annotations[KUBELB_ANNOTATIONS.EXTERNAL_DNS_HOSTNAME];
+  const manageCerts = annotations[KUBELB_ANNOTATIONS.MANAGE_CERTIFICATES] === "true";
+  const issuer = annotations[KUBELB_ANNOTATIONS.CERTMANAGER_ISSUER];
+  const hasDnsCertAnnotations = manageDns || hostname || manageCerts || issuer;
 
   return (
     <>
@@ -171,6 +179,44 @@ function OverviewTab({ route }: { route: RouteResource }) {
           </CardContent>
         </Card>
       ) : null}
+
+      {hasDnsCertAnnotations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="size-4" />
+              DNS & Certificates
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
+              <span className="text-muted-foreground">DNS Management</span>
+              <div className="flex items-center gap-2">
+                {manageDns ? (
+                  <Badge className="bg-success/10 text-success">Managed</Badge>
+                ) : (
+                  <Badge variant="secondary">Not configured</Badge>
+                )}
+                {hostname && <span className="font-mono text-xs">{hostname}</span>}
+              </div>
+              <span className="text-muted-foreground">Certificate Management</span>
+              <div className="flex items-center gap-2">
+                {manageCerts ? (
+                  <Badge className="bg-success/10 text-success">Managed</Badge>
+                ) : (
+                  <Badge variant="secondary">Not configured</Badge>
+                )}
+                {issuer && (
+                  <span className="flex items-center gap-1 font-mono text-xs">
+                    <Lock className="size-3" />
+                    {issuer}
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

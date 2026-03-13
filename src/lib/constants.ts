@@ -34,4 +34,6 @@ export const KUBELB_ANNOTATIONS = {
   MANAGE_DNS: `${API_GROUP}/manage-dns`,
   MANAGE_CERTIFICATES: `${API_GROUP}/manage-certificates`,
   PROPAGATE_ANNOTATION: `${API_GROUP}/propagate-annotation`,
+  EXTERNAL_DNS_HOSTNAME: "external-dns.alpha.kubernetes.io/hostname",
+  CERTMANAGER_ISSUER: "cert-manager.io/cluster-issuer",
 } as const;

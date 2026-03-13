@@ -914,6 +914,12 @@ export const routes: Route[] = [
             apiVersion: "networking.k8s.io/v1",
             kind: "Ingress",
             metadata: {
+              annotations: {
+                "kubelb.k8c.io/manage-dns": "true",
+                "kubelb.k8c.io/manage-certificates": "true",
+                "external-dns.alpha.kubernetes.io/hostname": "docs.example.com",
+                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
+              },
               name: "docs-site",
               namespace: "default",
               uid: "997c74aa-ea4b-4cc7-9c6d-b7273fa3945f",
@@ -2330,6 +2336,10 @@ export const routes: Route[] = [
             apiVersion: "gateway.networking.k8s.io/v1",
             kind: "HTTPRoute",
             metadata: {
+              annotations: {
+                "kubelb.k8c.io/manage-dns": "true",
+                "external-dns.alpha.kubernetes.io/hostname": "staging.example.com",
+              },
               labels: {
                 "kubelb.k8c.io/source-ingress": "staging-app.default",
               },
