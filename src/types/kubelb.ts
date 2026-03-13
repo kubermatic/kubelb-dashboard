@@ -58,7 +58,9 @@ export interface HostnameStatus {
 }
 
 export interface LoadBalancerStatus {
-  loadBalancer?: { ingress?: Array<{ ip?: string; hostname?: string }> };
+  loadBalancer?: {
+    ingress?: Array<{ ip?: string; hostname?: string; ipMode?: string }>;
+  };
   service?: { ports?: ServicePort[] };
   hostname?: HostnameStatus;
 }
@@ -139,6 +141,7 @@ export interface Route {
 export interface LoadBalancerSettings {
   class?: string;
   disable?: boolean;
+  limit?: number;
 }
 
 export interface IngressSettings {
@@ -150,6 +153,7 @@ export interface GatewayAPISettings {
   class?: string;
   disable?: boolean;
   defaultGateway?: ObjectReference;
+  gateway?: Record<string, unknown>;
 }
 
 export interface DNSSettings {
@@ -157,10 +161,12 @@ export interface DNSSettings {
   allowExplicitHostnames?: boolean;
   useDNSAnnotations?: boolean;
   useCertificateAnnotations?: boolean;
+  allowedDomains?: string[];
 }
 
 export interface CertificatesSettings {
   defaultClusterIssuer?: string;
+  allowedDomains?: string[];
 }
 
 export interface TenantSpec {

@@ -43,7 +43,8 @@ src/
 
 `npm run dev:mock` starts the dashboard with MSW v2 intercepting `fetch()` in the browser. No cluster needed.
 
-- Fixtures in `src/mocks/fixtures/` — live-captured data (2 tenants, 3 LBs, 4 routes, 3 secrets, 3 WAF policies, 2 envoy deployments)
+- Fixtures in `src/mocks/fixtures/` — live-captured data (18 resource types: tenants, configs, LBs, routes, secrets, WAF policies, envoy deployments, namespaces, gateways, GW routes, ingresses, services, EG policies)
+- `npm run fixtures:capture` — re-capture fixtures from a live cluster (requires KUBECONFIG)
 - In-memory CRUD via `MockStore` in `src/mocks/store.ts` — persists within session, resets on refresh
 - Handlers in `src/mocks/handlers/` — one file per resource type, composed in `src/mocks/handlers.ts`
 - Gated by `VITE_MOCK=true` env var — dynamic import ensures MSW is tree-shaken from prod builds
@@ -70,6 +71,7 @@ npm run dev
 | `npm run format`       | Format with Prettier                 |
 | `npm run format:check` | Check formatting                     |
 | `npm run typecheck`    | Run TypeScript checker               |
+| `npm run fixtures:capture` | Re-capture mock fixtures from live cluster |
 
 ## Adding shadcn/ui Components
 

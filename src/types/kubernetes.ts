@@ -53,6 +53,7 @@ export interface Condition {
   type: string;
   status: "True" | "False" | "Unknown";
   lastTransitionTime: string;
+  lastUpdateTime?: string;
   reason: string;
   message: string;
   observedGeneration?: number;
@@ -84,12 +85,18 @@ export interface DeploymentSpec {
   replicas?: number;
   selector?: { matchLabels?: Record<string, string> };
   template?: Record<string, unknown>;
+  progressDeadlineSeconds?: number;
+  revisionHistoryLimit?: number;
+  strategy?: Record<string, unknown>;
 }
 
 export interface DeploymentStatus {
   replicas?: number;
   readyReplicas?: number;
   availableReplicas?: number;
+  updatedReplicas?: number;
+  observedGeneration?: number;
+  terminatingReplicas?: number;
   conditions?: Condition[];
 }
 
