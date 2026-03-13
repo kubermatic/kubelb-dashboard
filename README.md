@@ -14,6 +14,22 @@ npm run dev
 
 This starts the frontend (Vite on `:5173`) and the API proxy (Fastify on `:3001`) concurrently. The Vite dev server proxies `/api/` requests to the API server.
 
+## Authentication
+
+OIDC authentication is optional. Set all four env vars to enable:
+
+| Variable             | Required | Default                                 | Description                                               |
+| -------------------- | -------- | --------------------------------------- | --------------------------------------------------------- |
+| `OIDC_ISSUER`        | Yes\*    | —                                       | OIDC provider issuer URL (e.g. `https://dex.example.com`) |
+| `OIDC_CLIENT_ID`     | Yes\*    | —                                       | OIDC client ID                                            |
+| `OIDC_CLIENT_SECRET` | Yes\*    | —                                       | OIDC client secret                                        |
+| `SESSION_SECRET`     | Yes\*    | —                                       | 32+ char secret for encrypting session cookies            |
+| `OIDC_REDIRECT_URI`  | No       | `http://localhost:{PORT}/auth/callback` | Callback URL registered with IdP                          |
+| `OIDC_SCOPES`        | No       | `openid email profile groups`           | Space-separated scopes                                    |
+| `SESSION_MAX_AGE`    | No       | `86400` (24h)                           | Session cookie max age in seconds                         |
+
+\*All four must be set together. Partial config exits with an error. If none are set, the dashboard runs without authentication.
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE) for details.
