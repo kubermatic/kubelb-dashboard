@@ -43,7 +43,7 @@ export const deployments: Deployment[] = [
           "uid": "3846d2e8-2867-4f22-8aa2-f613041cb7ed"
         }
       ],
-      "resourceVersion": "228408",
+      "resourceVersion": "288541",
       "uid": "9417d534-58a0-46cc-b91e-f47d0fb36621"
     },
     "spec": {
@@ -384,8 +384,8 @@ export const deployments: Deployment[] = [
           "type": "Progressing"
         },
         {
-          "lastTransitionTime": "2026-03-13T08:46:09Z",
-          "lastUpdateTime": "2026-03-13T08:46:09Z",
+          "lastTransitionTime": "2026-03-13T09:00:50Z",
+          "lastUpdateTime": "2026-03-13T09:00:50Z",
           "message": "Deployment has minimum availability.",
           "reason": "MinimumReplicasAvailable",
           "status": "True",

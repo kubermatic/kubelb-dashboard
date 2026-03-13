@@ -40,7 +40,7 @@ export const httpRoutes: GenericResource[] = [
           "uid": "6c3d3d88-4bfd-48f8-ab92-51834e54069f"
         }
       ],
-      "resourceVersion": "251247",
+      "resourceVersion": "313061",
       "uid": "6eb4cf2a-0cdb-4724-9e20-72ee93e2f67b"
     },
     "spec": {
@@ -81,7 +81,7 @@ export const httpRoutes: GenericResource[] = [
         {
           "conditions": [
             {
-              "lastTransitionTime": "2026-03-13T08:50:04Z",
+              "lastTransitionTime": "2026-03-13T09:07:00Z",
               "message": "Route is accepted",
               "observedGeneration": 1,
               "reason": "Accepted",
@@ -89,11 +89,19 @@ export const httpRoutes: GenericResource[] = [
               "type": "Accepted"
             },
             {
-              "lastTransitionTime": "2026-03-13T08:50:04Z",
-              "message": "Failed to process route rule 0 backendRef 0: service tenant-secondary/default-staging-app-staging-web not found.",
+              "lastTransitionTime": "2026-03-13T09:07:00Z",
+              "message": "Failed to find endpoints: no ready endpoints for the related Service tenant-secondary/default-staging-app-staging-web.",
               "observedGeneration": 1,
-              "reason": "BackendNotFound",
+              "reason": "EndpointsNotFound",
               "status": "False",
+              "type": "BackendsAvailable"
+            },
+            {
+              "lastTransitionTime": "2026-03-13T09:07:00Z",
+              "message": "Resolved all the Object references for the Route",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "status": "True",
               "type": "ResolvedRefs"
             }
           ],

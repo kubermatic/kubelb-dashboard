@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "license:check": "bash hack/check-licenses.sh",
+    "fixtures:capture": "npx tsx hack/capture-fixtures.ts",
     "prepare": "husky"
   },
   "lint-staged": {

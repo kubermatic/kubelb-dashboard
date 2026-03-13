@@ -1426,7 +1426,7 @@ export const services: GenericResource[] = [
       },
       "name": "envoy-ab888762-02d4-415d-bf50-766100b4ba73",
       "namespace": "tenant-primary",
-      "resourceVersion": "57478",
+      "resourceVersion": "251477",
       "uid": "d8d7cdc0-b3b5-4075-a54b-9e7b926dfe09"
     },
     "spec": {
@@ -1447,14 +1447,14 @@ export const services: GenericResource[] = [
           "nodePort": 31496,
           "port": 9090,
           "protocol": "TCP",
-          "targetPort": 25582
+          "targetPort": 63220
         },
         {
           "name": "http",
           "nodePort": 30502,
           "port": 80,
           "protocol": "TCP",
-          "targetPort": 61567
+          "targetPort": 63647
         }
       ],
       "selector": {
@@ -1538,20 +1538,19 @@ export const services: GenericResource[] = [
     "kind": "Service",
     "metadata": {
       "annotations": {
-        "load-balancer.hetzner.cloud/location": "fsn1",
-        "metallb.io/ip-allocated-from-pool": "kubelb"
+        "load-balancer.hetzner.cloud/location": "fsn1"
       },
-      "creationTimestamp": "2026-03-13T08:50:04Z",
+      "creationTimestamp": "2026-03-13T09:07:01Z",
       "name": "default-staging-app-staging-web",
       "namespace": "tenant-secondary",
-      "resourceVersion": "251264",
-      "uid": "831aeb75-4112-40cf-9eef-1d35f811bf0c"
+      "resourceVersion": "313129",
+      "uid": "d58fa7bb-ca56-4163-bd36-d05b7e86dcb1"
     },
     "spec": {
       "allocateLoadBalancerNodePorts": true,
-      "clusterIP": "10.96.91.216",
+      "clusterIP": "10.96.120.36",
       "clusterIPs": [
-        "10.96.91.216"
+        "10.96.120.36"
       ],
       "externalTrafficPolicy": "Cluster",
       "internalTrafficPolicy": "Cluster",
@@ -1562,10 +1561,10 @@ export const services: GenericResource[] = [
       "ports": [
         {
           "name": "http",
-          "nodePort": 30204,
+          "nodePort": 32430,
           "port": 80,
           "protocol": "TCP",
-          "targetPort": 24460
+          "targetPort": 59394
         }
       ],
       "selector": {
@@ -1575,14 +1574,7 @@ export const services: GenericResource[] = [
       "type": "LoadBalancer"
     },
     "status": {
-      "loadBalancer": {
-        "ingress": [
-          {
-            "ip": "172.18.255.209",
-            "ipMode": "VIP"
-          }
-        ]
-      }
+      "loadBalancer": {}
     }
   },
   {
