@@ -17,6 +17,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { queryKeys } from "@/api/query-keys";
+import { fetchAppConfig } from "@/api/config";
+import { invalidateAuthCache } from "@/lib/auth-cache";
 
 interface User {
   email: string;
@@ -42,10 +44,14 @@ async function fetchSession(): Promise<{
   authenticated: boolean;
   user?: User;
 }> {
-  const response = await fetch("/auth/session", { credentials: "include" });
-
-  if (response.status === 404) {
+  const config = await fetchAppConfig();
+  if (!config.authEnabled) {
     return { authEnabled: false, authenticated: true };
+  }
+
+  const response = await fetch("/auth/session", { credentials: "include" });
+  if (!response.ok) {
+    throw new Error(`Session check failed: ${response.status}`);
   }
 
   const data = (await response.json()) as SessionResponse;
@@ -67,18 +73,19 @@ export function useAuth(): AuthState {
   });
 
   const logout = useCallback(async () => {
-    const response = await fetch("/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    const result = (await response.json()) as { logoutUrl: string | null };
-    queryClient.removeQueries({ queryKey: queryKeys.auth.session() });
-
-    if (result.logoutUrl) {
-      window.location.href = result.logoutUrl;
-    } else {
-      window.location.href = "/login";
+    try {
+      await fetch("/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+    } catch {
+      // Best-effort — cookies may already be cleared
     }
+    queryClient.removeQueries({ queryKey: queryKeys.auth.session() });
+    invalidateAuthCache();
+    window.location.href = "/login";
   }, [queryClient]);
 
   if (isLoading || !data) {

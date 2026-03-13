@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface EmptyStateProps {
   icon?: LucideIcon;
   title: string;
   description?: string;
-  action?: { label: string; onClick: () => void };
+  action?: ReactNode;
 }
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
@@ -33,11 +33,7 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
           <h3 className="text-lg font-medium text-muted-foreground">{title}</h3>
           {description && <p className="text-sm text-muted-foreground/80">{description}</p>}
         </div>
-        {action && (
-          <Button variant="outline" onClick={action.onClick} className="mt-2">
-            {action.label}
-          </Button>
-        )}
+        {action && <div className="mt-2">{action}</div>}
       </div>
     </div>
   );

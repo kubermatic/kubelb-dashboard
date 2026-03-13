@@ -18,67 +18,67 @@ import type { GenericResource } from "./types";
 
 export const backendTrafficPolicies: GenericResource[] = [
   {
-    "apiVersion": "gateway.envoyproxy.io/v1alpha1",
-    "kind": "BackendTrafficPolicy",
-    "metadata": {
-      "creationTimestamp": "2026-03-13T07:53:29Z",
-      "generation": 1,
-      "labels": {
+    apiVersion: "gateway.envoyproxy.io/v1alpha1",
+    kind: "BackendTrafficPolicy",
+    metadata: {
+      creationTimestamp: "2026-03-13T07:53:29Z",
+      generation: 1,
+      labels: {
         "kubelb.k8c.io/managed-by": "kubelb",
         "kubelb.k8c.io/origin-name": "grpc-btp",
-        "kubelb.k8c.io/origin-ns": "default"
+        "kubelb.k8c.io/origin-ns": "default",
       },
-      "name": "default-grpc-btp",
-      "namespace": "tenant-primary",
-      "ownerReferences": [
+      name: "default-grpc-btp",
+      namespace: "tenant-primary",
+      ownerReferences: [
         {
-          "apiVersion": "kubelb.k8c.io/v1alpha1",
-          "controller": true,
-          "kind": "Route",
-          "name": "65101abb-5ef5-4008-88ab-36d1397b68ae",
-          "uid": "195f56f9-1c86-473d-9f82-ceac97328743"
-        }
+          apiVersion: "kubelb.k8c.io/v1alpha1",
+          controller: true,
+          kind: "Route",
+          name: "65101abb-5ef5-4008-88ab-36d1397b68ae",
+          uid: "195f56f9-1c86-473d-9f82-ceac97328743",
+        },
       ],
-      "resourceVersion": "2322",
-      "uid": "66bab78b-f548-432d-99db-e2e128643f9f"
+      resourceVersion: "2322",
+      uid: "66bab78b-f548-432d-99db-e2e128643f9f",
     },
-    "spec": {
-      "circuitBreaker": {
-        "maxConnections": 200,
-        "maxParallelRequests": 1024,
-        "maxParallelRetries": 1024,
-        "maxPendingRequests": 1024
+    spec: {
+      circuitBreaker: {
+        maxConnections: 200,
+        maxParallelRequests: 1024,
+        maxParallelRetries: 1024,
+        maxPendingRequests: 1024,
       },
-      "targetRefs": [
+      targetRefs: [
         {
-          "group": "gateway.networking.k8s.io",
-          "kind": "GRPCRoute",
-          "name": "default-grpc-streaming"
-        }
-      ]
+          group: "gateway.networking.k8s.io",
+          kind: "GRPCRoute",
+          name: "default-grpc-streaming",
+        },
+      ],
     },
-    "status": {
-      "ancestors": [
+    status: {
+      ancestors: [
         {
-          "ancestorRef": {
-            "group": "gateway.networking.k8s.io",
-            "kind": "Gateway",
-            "name": "default-grpc-gw",
-            "namespace": "tenant-primary"
+          ancestorRef: {
+            group: "gateway.networking.k8s.io",
+            kind: "Gateway",
+            name: "default-grpc-gw",
+            namespace: "tenant-primary",
           },
-          "conditions": [
+          conditions: [
             {
-              "lastTransitionTime": "2026-03-13T07:53:29Z",
-              "message": "Policy has been accepted.",
-              "observedGeneration": 1,
-              "reason": "Accepted",
-              "status": "True",
-              "type": "Accepted"
-            }
+              lastTransitionTime: "2026-03-13T07:53:29Z",
+              message: "Policy has been accepted.",
+              observedGeneration: 1,
+              reason: "Accepted",
+              status: "True",
+              type: "Accepted",
+            },
           ],
-          "controllerName": "gateway.envoyproxy.io/gatewayclass-controller"
-        }
-      ]
-    }
-  }
+          controllerName: "gateway.envoyproxy.io/gatewayclass-controller",
+        },
+      ],
+    },
+  },
 ];

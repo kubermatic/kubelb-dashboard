@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -25,7 +25,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -44,7 +44,8 @@ import {
   useDeleteSyncSecret,
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
-import { formatAge, getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
+import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
@@ -69,7 +70,8 @@ export const Route = createFileRoute("/sync-secrets/")({
 function SyncSecrets() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useSyncSecrets(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useSyncSecrets(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
@@ -86,6 +88,22 @@ function SyncSecrets() {
   const [yamlViewerResource, setYamlViewerResource] = useState<SyncSecret | null>(null);
   const [editResource, setEditResource] = useState<SyncSecret | null>(null);
   const [deleteResource, setDeleteResource] = useState<SyncSecret | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<SyncSecret[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(
+      bulkDeleteItems.map((s) =>
+        deleteSyncSecret.mutateAsync({
+          namespace: s.metadata.namespace ?? "",
+          name: s.metadata.name,
+        }),
+      ),
+    )
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteSyncSecret]);
 
   const columns: ColumnDef<SyncSecret>[] = [
     {
@@ -112,6 +130,7 @@ function SyncSecrets() {
     },
     {
       id: "source",
+      meta: { hideBelow: "md" },
       accessorFn: (row) => getOriginSource(row.metadata.labels),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
       cell: ({ row }) => (
@@ -122,10 +141,7 @@ function SyncSecrets() {
       id: "age",
       accessorFn: (row) => row.metadata.creationTimestamp,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
       sortingFn: "datetime",
     },
     {
@@ -140,15 +156,11 @@ function SyncSecrets() {
               icon: FileText,
               onClick: () => setYamlViewerResource(row.original),
             },
-            ...(EDITING_ENABLED
-              ? [
-                  {
-                    label: "Edit",
-                    icon: Pencil,
-                    onClick: () => setEditResource(row.original),
-                  },
-                ]
-              : []),
+            {
+              label: "Edit",
+              icon: Pencil,
+              onClick: () => setEditResource(row.original),
+            },
             {
               label: "Delete",
               icon: Trash2,
@@ -178,7 +190,17 @@ function SyncSecrets() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={KeyRound} title="No sync secrets found" />
+        <EmptyState
+          icon={KeyRound}
+          title={selectedTenant ? `No sync secrets in ${selectedTenant}` : "No sync secrets found"}
+          description="Get started by creating your first sync secret."
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Sync Secret
+            </Button>
+          }
+        />
       ) : (
         <DataTable
           columns={columns}
@@ -189,12 +211,10 @@ function SyncSecrets() {
           toolbarLeading={
             <>
               <TenantSelector />
-              {EDITING_ENABLED && (
-                <Button size="sm" onClick={() => setCreateOpen(true)}>
-                  <Plus />
-                  Create
-                </Button>
-              )}
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus />
+                Create
+              </Button>
             </>
           }
           initialSearch={search}
@@ -203,6 +223,9 @@ function SyncSecrets() {
           onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
           onPageChange={(p) => updateSearch({ page: p })}
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           onRowClick={(row) => {
             const { name, namespace } = row.original.metadata;
             void navigate({
@@ -210,27 +233,26 @@ function SyncSecrets() {
               params: { namespace: namespace ?? "default", name },
             });
           }}
+          enableRowSelection
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Sync Secret"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={createUiSchema}
-          formData={SYNCSECRET_TEMPLATE}
-          isPending={createSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void createSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        title="Create Sync Secret"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={createUiSchema}
+        formData={SYNCSECRET_TEMPLATE}
+        isPending={createSyncSecret.isPending}
+        onSubmit={(parsed) => {
+          void createSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setCreateOpen(false));
+        }}
+      />
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -239,28 +261,24 @@ function SyncSecrets() {
         title={yamlViewerResource ? `SyncSecret: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={
-            editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
-          }
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateSyncSecret.isPending}
-          onSubmit={(parsed) => {
-            void updateSyncSecret
-              .mutateAsync(parsed as SyncSecret)
-              .then(() => setEditResource(null));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={!!editResource}
+        onOpenChange={(open) => !open && setEditResource(null)}
+        mode="edit"
+        title={
+          editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
+        }
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={
+          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+        }
+        isPending={updateSyncSecret.isPending}
+        onSubmit={(parsed) => {
+          void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditResource(null));
+        }}
+      />
 
       {deleteResource && (
         <DeleteDialog
@@ -279,6 +297,15 @@ function SyncSecrets() {
           }}
         />
       )}
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind={RESOURCE_KIND}
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+      />
     </div>
   );
 }

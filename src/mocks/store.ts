@@ -77,19 +77,12 @@ export class MockStore<T extends HasMeta> {
     return updated;
   }
 
-  patch(
-    name: string,
-    patch: Record<string, unknown>,
-    namespace?: string,
-  ): T | undefined {
+  patch(name: string, patch: Record<string, unknown>, namespace?: string): T | undefined {
     const key = storeKey(name, namespace);
     const existing = this.items.get(key);
     if (!existing) return undefined;
 
-    const patched = deepMerge(
-      existing as unknown as Record<string, unknown>,
-      patch,
-    ) as T;
+    const patched = deepMerge(existing as unknown as Record<string, unknown>, patch) as T;
     patched.metadata.resourceVersion = nextResourceVersion();
     this.items.set(key, patched);
     return patched;

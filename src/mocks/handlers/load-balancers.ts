@@ -28,11 +28,7 @@ const API = "/api/kube/apis/kubelb.k8c.io/v1alpha1";
 export const loadBalancerHandlers = [
   http.get(`${API}/loadbalancers`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "kubelb.k8c.io/v1alpha1",
-        "LoadBalancerList",
-        store.list(),
-      ),
+      kubeListEnvelope("kubelb.k8c.io/v1alpha1", "LoadBalancerList", store.list()),
     );
   }),
 
@@ -46,24 +42,14 @@ export const loadBalancerHandlers = [
     );
   }),
 
-  http.get(
-    `${API}/namespaces/:namespace/loadbalancers/:name`,
-    ({ params }) => {
-      const item = store.get(
-        params.name as string,
-        params.namespace as string,
+  http.get(`${API}/namespaces/:namespace/loadbalancers/:name`, ({ params }) => {
+    const item = store.get(params.name as string, params.namespace as string);
+    if (!item) {
+      return HttpResponse.json(
+        kubeStatus(404, "NotFound", `loadbalancers "${params.name as string}" not found`),
+        { status: 404 },
       );
-      if (!item) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `loadbalancers "${params.name as string}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(item);
-    },
-  ),
+    }
+    return HttpResponse.json(item);
+  }),
 ];

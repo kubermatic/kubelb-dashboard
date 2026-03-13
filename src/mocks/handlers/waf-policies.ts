@@ -28,11 +28,7 @@ const API = "/api/kube/apis/kubelb.k8c.io/v1alpha1";
 export const wafPolicyHandlers = [
   http.get(`${API}/wafpolicies`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "kubelb.k8c.io/v1alpha1",
-        "WAFPolicyList",
-        store.list(),
-      ),
+      kubeListEnvelope("kubelb.k8c.io/v1alpha1", "WAFPolicyList", store.list()),
     );
   }),
 
@@ -40,10 +36,9 @@ export const wafPolicyHandlers = [
     const name = params.name as string;
     const item = store.get(name);
     if (!item) {
-      return HttpResponse.json(
-        kubeStatus(404, "NotFound", `wafpolicies "${name}" not found`),
-        { status: 404 },
-      );
+      return HttpResponse.json(kubeStatus(404, "NotFound", `wafpolicies "${name}" not found`), {
+        status: 404,
+      });
     }
     return HttpResponse.json(item);
   }),
@@ -59,11 +54,7 @@ export const wafPolicyHandlers = [
     const updated = store.update(body);
     if (!updated) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `wafpolicies "${body.metadata.name}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `wafpolicies "${body.metadata.name}" not found`),
         { status: 404 },
       );
     }
@@ -74,13 +65,10 @@ export const wafPolicyHandlers = [
     const name = params.name as string;
     const deleted = store.delete(name);
     if (!deleted) {
-      return HttpResponse.json(
-        kubeStatus(404, "NotFound", `wafpolicies "${name}" not found`),
-        { status: 404 },
-      );
+      return HttpResponse.json(kubeStatus(404, "NotFound", `wafpolicies "${name}" not found`), {
+        status: 404,
+      });
     }
-    return HttpResponse.json(
-      kubeStatus(200, "OK", `wafpolicy "${name}" deleted`),
-    );
+    return HttpResponse.json(kubeStatus(200, "OK", `wafpolicy "${name}" deleted`));
   }),
 ];

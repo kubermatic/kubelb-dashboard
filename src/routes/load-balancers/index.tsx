@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
+import { AgeCell } from "@/components/common/age-cell";
+import { CopyButton } from "@/components/common/copy-button";
+import { DataTable } from "@/components/common/data-table";
+import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
+import { EmptyState } from "@/components/common/empty-state";
+import { QueryError } from "@/components/common/query-error";
+import { RowActions } from "@/components/common/row-actions";
+import { TenantSelector } from "@/components/common/tenant-selector";
+import { YamlViewer } from "@/components/common/yaml-viewer";
+import { Badge } from "@/components/ui/badge";
+import { useLoadBalancers } from "@/hooks/use-load-balancers";
+import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
+import { useUIStore } from "@/stores/ui";
 import {
   createFileRoute,
   Link,
@@ -24,19 +37,7 @@ import {
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Network } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { CopyButton } from "@/components/common/copy-button";
-import { DataTable } from "@/components/common/data-table";
-import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { EmptyState } from "@/components/common/empty-state";
-import { RowActions } from "@/components/common/row-actions";
-import { TenantSelector } from "@/components/common/tenant-selector";
-import { QueryError } from "@/components/common/query-error";
-import { YamlViewer } from "@/components/common/yaml-viewer";
-import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { formatAge, getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
-import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
-import { useUIStore } from "@/stores/ui";
+import { useState } from "react";
 
 import type { LoadBalancer } from "@/types/kubelb";
 
@@ -85,7 +86,8 @@ function isReady(lb: LoadBalancer): boolean {
 function LoadBalancers() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useLoadBalancers(namespace);
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useLoadBalancers(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/load-balancers/" });
   const items = data?.items ?? [];
@@ -112,6 +114,7 @@ function LoadBalancers() {
     {
       accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
       id: "tenant",
+      meta: { hideBelow: "md" },
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
@@ -151,6 +154,7 @@ function LoadBalancers() {
     },
     {
       id: "endpoints",
+      meta: { hideBelow: "md" },
       accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
       cell: ({ row }) => (
@@ -182,10 +186,7 @@ function LoadBalancers() {
       id: "age",
       accessorFn: (row) => row.metadata.creationTimestamp,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
       sortingFn: "datetime",
     },
     {
@@ -212,7 +213,7 @@ function LoadBalancers() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Load Balancers</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Load Balancer</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           View and manage load balancer services across tenants.
         </p>
@@ -220,7 +221,13 @@ function LoadBalancers() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={Network} title="No load balancers found" />
+        <EmptyState
+          icon={Network}
+          title={
+            selectedTenant ? `No load balancers in ${selectedTenant}` : "No load balancers found"
+          }
+          description="Load balancers will appear here once created."
+        />
       ) : (
         <DataTable
           columns={columns}
@@ -228,6 +235,9 @@ function LoadBalancers() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search load balancers..."
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}

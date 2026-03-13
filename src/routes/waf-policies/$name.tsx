@@ -17,7 +17,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 import { FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
@@ -100,12 +99,10 @@ function WAFPolicyDetail() {
             <FileCode />
             View YAML
           </Button>
-          {EDITING_ENABLED && (
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil />
-              Edit
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil />
+            Edit
+          </Button>
           <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
             <Trash2 />
             Delete
@@ -135,22 +132,20 @@ function WAFPolicyDetail() {
         title={`WAF Policy: ${name}`}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          mode="edit"
-          title="Edit WAF Policy"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={sanitizeForEdit(policy) as Record<string, unknown>}
-          isPending={updateWAFPolicy.isPending}
-          onSubmit={(parsed) => {
-            void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        title="Edit WAF Policy"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={sanitizeForEdit(policy) as Record<string, unknown>}
+        isPending={updateWAFPolicy.isPending}
+        onSubmit={(parsed) => {
+          void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditOpen(false));
+        }}
+      />
 
       <DeleteDialog
         open={deleteOpen}

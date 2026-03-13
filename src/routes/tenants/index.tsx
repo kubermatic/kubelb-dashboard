@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   createFileRoute,
@@ -25,22 +25,23 @@ import {
 } from "@tanstack/react-router";
 import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
-import { RowActions, type RowAction } from "@/components/common/row-actions";
+import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useEdition } from "@/hooks/use-edition";
 import { useTenants } from "@/hooks/use-tenants";
 import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
-import { formatAge } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
@@ -75,7 +76,8 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 }
 
 function Tenants() {
-  const { data, isLoading, isError, error, refetch } = useTenants();
+  const { isEE } = useEdition();
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useTenants();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
@@ -92,6 +94,15 @@ function Tenants() {
   const [yamlViewerResource, setYamlViewerResource] = useState<Tenant | null>(null);
   const [editResource, setEditResource] = useState<Tenant | null>(null);
   const [deleteResource, setDeleteResource] = useState<Tenant | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<Tenant[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(bulkDeleteItems.map((t) => deleteTenant.mutateAsync(t.metadata.name)))
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteTenant]);
 
   const columns: ColumnDef<Tenant>[] = [
     {
@@ -133,11 +144,51 @@ function Tenants() {
     },
     {
       id: "dnsDomain",
+      meta: { hideBelow: "md" },
       header: "DNS Domain",
       cell: ({ row }) => (
         <span className="text-sm">{row.original.spec.dns?.wildcardDomain ?? "\u2014"}</span>
       ),
     },
+    ...(isEE
+      ? [
+          {
+            id: "lbLimit",
+            meta: { hideBelow: "lg" as const },
+            header: "LB Limit",
+            cell: ({ row }: { row: { original: Tenant } }) => {
+              const limit = row.original.spec.loadBalancer?.limit;
+              return <span className="text-sm">{limit ?? "∞"}</span>;
+            },
+          },
+          {
+            id: "gwLimit",
+            meta: { hideBelow: "lg" as const },
+            header: "GW Limit",
+            cell: ({ row }: { row: { original: Tenant } }) => {
+              const limit = row.original.spec.gatewayAPI?.gatewaySettings?.limit;
+              return <span className="text-sm">{limit ?? "∞"}</span>;
+            },
+          },
+          {
+            id: "tunnel",
+            meta: { hideBelow: "lg" as const },
+            header: "Tunnel",
+            cell: ({ row }: { row: { original: Tenant } }) => (
+              <FeatureBadge enabled={!row.original.spec.tunnel?.disable} />
+            ),
+          },
+          {
+            id: "allowedDomains",
+            meta: { hideBelow: "lg" as const },
+            header: "Allowed Domains",
+            cell: ({ row }: { row: { original: Tenant } }) => {
+              const count = row.original.spec.allowedDomains?.length;
+              return <span className="text-sm">{count ? String(count) : "—"}</span>;
+            },
+          },
+        ]
+      : []),
     {
       accessorKey: "metadata.creationTimestamp",
       id: "age",
@@ -150,12 +201,7 @@ function Tenants() {
           <ArrowUpDown className="ml-1 size-3" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return (
-          <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>
-        );
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
     },
     {
       id: "actions",
@@ -163,32 +209,30 @@ function Tenants() {
       enableHiding: false,
       cell: ({ row }) => (
         <RowActions
-          actions={
-            [
-              {
-                label: "View YAML",
-                icon: FileText,
-                onClick: () => setYamlViewerResource(row.original),
-              },
-              {
-                label: "Download Kubeconfig",
-                icon: Download,
-                onClick: () => void downloadKubeconfig(row.original.metadata.name),
-              },
-              EDITING_ENABLED && {
-                label: "Edit",
-                icon: Pencil,
-                onClick: () => setEditResource(row.original),
-              },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ].filter(Boolean) as RowAction[]
-          }
+          actions={[
+            {
+              label: "View YAML",
+              icon: FileText,
+              onClick: () => setYamlViewerResource(row.original),
+            },
+            {
+              label: "Download Kubeconfig",
+              icon: Download,
+              onClick: () => void downloadKubeconfig(row.original.metadata.name),
+            },
+            {
+              label: "Edit",
+              icon: Pencil,
+              onClick: () => setEditResource(row.original),
+            },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
         />
       ),
     },
@@ -212,7 +256,17 @@ function Tenants() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={Users} title="No tenants found" />
+        <EmptyState
+          icon={Users}
+          title="No tenants found"
+          description="Get started by creating your first tenant."
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Tenant
+            </Button>
+          }
+        />
       ) : (
         <DataTable
           columns={columns}
@@ -221,13 +275,14 @@ function Tenants() {
           searchColumn="name"
           searchPlaceholder="Filter tenants..."
           toolbarLeading={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create Tenant
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create Tenant
+            </Button>
           }
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           initialSearch={search}
           initialPage={page}
           initialPageSize={pageSize}
@@ -240,25 +295,26 @@ function Tenants() {
               params: { name: row.original.metadata.name },
             });
           }}
+          enableRowSelection
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create Tenant"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={createUiSchema}
-          formData={TENANT_TEMPLATE}
-          isPending={createTenant.isPending}
-          onSubmit={(parsed) => {
-            void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        title="Create Tenant"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={createUiSchema}
+        formData={TENANT_TEMPLATE}
+        isPending={createTenant.isPending}
+        onSubmit={(parsed) => {
+          void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+        }}
+      />
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -267,24 +323,22 @@ function Tenants() {
         title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateTenant.isPending}
-          onSubmit={(parsed) => {
-            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={!!editResource}
+        onOpenChange={(open) => !open && setEditResource(null)}
+        mode="edit"
+        title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={
+          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+        }
+        isPending={updateTenant.isPending}
+        onSubmit={(parsed) => {
+          void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+        }}
+      />
 
       {deleteResource && (
         <DeleteDialog
@@ -306,6 +360,15 @@ function Tenants() {
           </p>
         </DeleteDialog>
       )}
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind={RESOURCE_KIND}
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+      />
     </div>
   );
 }

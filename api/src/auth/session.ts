@@ -48,18 +48,14 @@ function getKey(): Uint8Array {
   return encryptionKey;
 }
 
-export async function encryptSession(
-  payload: SessionPayload,
-): Promise<string> {
+export async function encryptSession(payload: SessionPayload): Promise<string> {
   return new EncryptJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
     .setIssuedAt()
     .encrypt(getKey());
 }
 
-export async function decryptSession(
-  token: string,
-): Promise<SessionPayload | null> {
+export async function decryptSession(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtDecrypt(token, getKey());
     return payload as unknown as SessionPayload;
@@ -137,9 +133,7 @@ export function clearSessionCookies(
   reply.clearCookie(`${COOKIE_PREFIX}.count`, opts);
 }
 
-export async function getSession(
-  request: FastifyRequest,
-): Promise<SessionPayload | null> {
+export async function getSession(request: FastifyRequest): Promise<SessionPayload | null> {
   const token = readSessionCookies(request);
   if (!token) return null;
   return decryptSession(token);

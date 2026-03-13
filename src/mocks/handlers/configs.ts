@@ -32,22 +32,15 @@ export const configHandlers = [
     );
   }),
 
-  http.put(
-    `${API}/namespaces/:namespace/configs/:name`,
-    async ({ request }) => {
-      const body = (await request.json()) as Config;
-      const updated = store.update(body);
-      if (!updated) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `configs "${body.metadata.name}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(updated);
-    },
-  ),
+  http.put(`${API}/namespaces/:namespace/configs/:name`, async ({ request }) => {
+    const body = (await request.json()) as Config;
+    const updated = store.update(body);
+    if (!updated) {
+      return HttpResponse.json(
+        kubeStatus(404, "NotFound", `configs "${body.metadata.name}" not found`),
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(updated);
+  }),
 ];

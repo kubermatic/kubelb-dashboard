@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   createFileRoute,
@@ -25,14 +25,14 @@ import {
 } from "@tanstack/react-router";
 import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { EDITING_ENABLED } from "@/lib/feature-flags";
 
+import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
-import { RowActions, type RowAction } from "@/components/common/row-actions";
+import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ import {
   useDeleteWAFPolicy,
   useUpdateWAFPolicy,
 } from "@/hooks/use-waf-policy-mutations";
-import { formatAge } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { WAFPolicy } from "@/types/kubelb";
@@ -91,7 +91,8 @@ function validConditionBadge(policy: WAFPolicy) {
 }
 
 function WAFPolicies() {
-  const { data, isLoading, isError, error, refetch } = useWAFPolicies();
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useWAFPolicies();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/waf-policies/" });
   const items = data?.items ?? [];
@@ -108,6 +109,15 @@ function WAFPolicies() {
   const [yamlViewerResource, setYamlViewerResource] = useState<WAFPolicy | null>(null);
   const [editResource, setEditResource] = useState<WAFPolicy | null>(null);
   const [deleteResource, setDeleteResource] = useState<WAFPolicy | null>(null);
+  const [bulkDeleteItems, setBulkDeleteItems] = useState<WAFPolicy[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(() => {
+    setIsBulkDeleting(true);
+    void Promise.all(bulkDeleteItems.map((p) => deleteWAFPolicy.mutateAsync(p.metadata.name)))
+      .then(() => setBulkDeleteItems([]))
+      .finally(() => setIsBulkDeleting(false));
+  }, [bulkDeleteItems, deleteWAFPolicy]);
 
   const columns: ColumnDef<WAFPolicy>[] = [
     {
@@ -138,16 +148,8 @@ function WAFPolicies() {
       cell: ({ row }) => <span className="text-sm">{targetDisplay(row.original.spec)}</span>,
     },
     {
-      id: "kind",
-      header: "Kind",
-      cell: ({ row }) => {
-        const { spec } = row.original;
-        const kind = spec.global ? "Global" : (spec.targetRef?.kind ?? "\u2014");
-        return <span className="text-sm">{kind}</span>;
-      },
-    },
-    {
       id: "failureMode",
+      meta: { hideBelow: "md" },
       header: "Failure Mode",
       cell: ({ row }) => (
         <Badge variant="outline">{row.original.spec.failureMode ?? "Closed"}</Badge>
@@ -170,12 +172,7 @@ function WAFPolicies() {
           <ArrowUpDown className="ml-1 size-3" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return (
-          <span className="text-sm text-muted-foreground">{ts ? formatAge(ts) : "\u2014"}</span>
-        );
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
     },
     {
       id: "actions",
@@ -183,27 +180,25 @@ function WAFPolicies() {
       enableHiding: false,
       cell: ({ row }) => (
         <RowActions
-          actions={
-            [
-              {
-                label: "View YAML",
-                icon: FileText,
-                onClick: () => setYamlViewerResource(row.original),
-              },
-              EDITING_ENABLED && {
-                label: "Edit",
-                icon: Pencil,
-                onClick: () => setEditResource(row.original),
-              },
-              {
-                label: "Delete",
-                icon: Trash2,
-                variant: "destructive",
-                separator: true,
-                onClick: () => setDeleteResource(row.original),
-              },
-            ].filter(Boolean) as RowAction[]
-          }
+          actions={[
+            {
+              label: "View YAML",
+              icon: FileText,
+              onClick: () => setYamlViewerResource(row.original),
+            },
+            {
+              label: "Edit",
+              icon: Pencil,
+              onClick: () => setEditResource(row.original),
+            },
+            {
+              label: "Delete",
+              icon: Trash2,
+              variant: "destructive",
+              separator: true,
+              onClick: () => setDeleteResource(row.original),
+            },
+          ]}
         />
       ),
     },
@@ -225,7 +220,17 @@ function WAFPolicies() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={ShieldAlert} title="No WAF policies found" />
+        <EmptyState
+          icon={ShieldAlert}
+          title="No WAF policies found"
+          description="Get started by creating your first WAF policy."
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create WAF Policy
+            </Button>
+          }
+        />
       ) : (
         <DataTable
           columns={columns}
@@ -234,12 +239,10 @@ function WAFPolicies() {
           searchColumn="name"
           searchPlaceholder="Filter WAF policies..."
           toolbarLeading={
-            EDITING_ENABLED ? (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="size-4" />
-                Create WAF Policy
-              </Button>
-            ) : undefined
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Create WAF Policy
+            </Button>
           }
           initialSearch={search}
           initialPage={page}
@@ -247,31 +250,35 @@ function WAFPolicies() {
           onSearchChange={(v) => updateSearch({ search: v, page: 0 })}
           onPageChange={(p) => updateSearch({ page: p })}
           onPageSizeChange={(s) => updateSearch({ pageSize: s, page: 0 })}
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           onRowClick={(row) => {
             void navigate({
               to: "/waf-policies/$name",
               params: { name: row.original.metadata.name },
             });
           }}
+          enableRowSelection
+          onDeleteSelected={setBulkDeleteItems}
+          isDeletePending={isBulkDeleting}
         />
       )}
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          mode="create"
-          title="Create WAF Policy"
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={createUiSchema}
-          formData={WAF_POLICY_TEMPLATE}
-          isPending={createWAFPolicy.isPending}
-          onSubmit={(parsed) => {
-            void createWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setCreateOpen(false));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        title="Create WAF Policy"
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={createUiSchema}
+        formData={WAF_POLICY_TEMPLATE}
+        isPending={createWAFPolicy.isPending}
+        onSubmit={(parsed) => {
+          void createWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setCreateOpen(false));
+        }}
+      />
 
       <YamlViewer
         open={!!yamlViewerResource}
@@ -280,26 +287,31 @@ function WAFPolicies() {
         title={yamlViewerResource ? `WAF Policy: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      {EDITING_ENABLED && (
-        <ResourceFormDialog
-          open={!!editResource}
-          onOpenChange={(open) => !open && setEditResource(null)}
-          mode="edit"
-          title={
-            editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"
-          }
-          schema={crdSchema}
-          isSchemaLoading={isSchemaLoading}
-          uiSchema={editUiSchema}
-          formData={
-            editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-          }
-          isPending={updateWAFPolicy.isPending}
-          onSubmit={(parsed) => {
-            void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
-          }}
-        />
-      )}
+      <ResourceFormDialog
+        open={!!editResource}
+        onOpenChange={(open) => !open && setEditResource(null)}
+        mode="edit"
+        title={editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"}
+        schema={crdSchema}
+        isSchemaLoading={isSchemaLoading}
+        uiSchema={editUiSchema}
+        formData={
+          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
+        }
+        isPending={updateWAFPolicy.isPending}
+        onSubmit={(parsed) => {
+          void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
+        }}
+      />
+
+      <BulkDeleteDialog
+        open={bulkDeleteItems.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteItems([])}
+        count={bulkDeleteItems.length}
+        resourceKind={RESOURCE_KIND}
+        isPending={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+      />
 
       {deleteResource && (
         <DeleteDialog

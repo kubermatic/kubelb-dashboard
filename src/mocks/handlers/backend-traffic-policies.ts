@@ -27,45 +27,28 @@ const API = "/api/kube/apis/gateway.envoyproxy.io/v1alpha1";
 export const backendTrafficPolicyHandlers = [
   http.get(`${API}/backendtrafficpolicies`, () => {
     return HttpResponse.json(
+      kubeListEnvelope("gateway.envoyproxy.io/v1alpha1", "BackendTrafficPolicyList", store.list()),
+    );
+  }),
+
+  http.get(`${API}/namespaces/:namespace/backendtrafficpolicies`, ({ params }) => {
+    return HttpResponse.json(
       kubeListEnvelope(
         "gateway.envoyproxy.io/v1alpha1",
         "BackendTrafficPolicyList",
-        store.list(),
+        store.list(params.namespace as string),
       ),
     );
   }),
 
-  http.get(
-    `${API}/namespaces/:namespace/backendtrafficpolicies`,
-    ({ params }) => {
+  http.get(`${API}/namespaces/:namespace/backendtrafficpolicies/:name`, ({ params }) => {
+    const item = store.get(params.name as string, params.namespace as string);
+    if (!item) {
       return HttpResponse.json(
-        kubeListEnvelope(
-          "gateway.envoyproxy.io/v1alpha1",
-          "BackendTrafficPolicyList",
-          store.list(params.namespace as string),
-        ),
+        kubeStatus(404, "NotFound", `backendtrafficpolicies "${params.name as string}" not found`),
+        { status: 404 },
       );
-    },
-  ),
-
-  http.get(
-    `${API}/namespaces/:namespace/backendtrafficpolicies/:name`,
-    ({ params }) => {
-      const item = store.get(
-        params.name as string,
-        params.namespace as string,
-      );
-      if (!item) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `backendtrafficpolicies "${params.name as string}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(item);
-    },
-  ),
+    }
+    return HttpResponse.json(item);
+  }),
 ];

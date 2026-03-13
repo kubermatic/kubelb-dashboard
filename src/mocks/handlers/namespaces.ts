@@ -25,8 +25,6 @@ const store = new MockStore<Namespace>(seed);
 
 export const namespaceHandlers = [
   http.get("/api/kube/api/v1/namespaces", () => {
-    return HttpResponse.json(
-      kubeListEnvelope("v1", "NamespaceList", store.list()),
-    );
+    return HttpResponse.json(kubeListEnvelope("v1", "NamespaceList", store.list()));
   }),
 ];

@@ -143,7 +143,6 @@ export interface LoadBalancerSettings {
   class?: string;
   limit?: number;
   disable?: boolean;
-  limit?: number;
 }
 
 export interface IngressSettings {

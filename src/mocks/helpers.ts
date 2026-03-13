@@ -22,11 +22,7 @@ export function nextResourceVersion(): string {
   return String(++resourceVersionCounter);
 }
 
-export function kubeListEnvelope<T>(
-  apiVersion: string,
-  kind: string,
-  items: T[],
-): KubeList<T> {
+export function kubeListEnvelope<T>(apiVersion: string, kind: string, items: T[]): KubeList<T> {
   return {
     apiVersion,
     kind,
@@ -35,11 +31,7 @@ export function kubeListEnvelope<T>(
   };
 }
 
-export function kubeStatus(
-  code: number,
-  reason: string,
-  message: string,
-): KubeStatus {
+export function kubeStatus(code: number, reason: string, message: string): KubeStatus {
   return {
     kind: "Status",
     apiVersion: "v1",

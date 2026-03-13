@@ -15,12 +15,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import {
-  getSession,
-  encryptSession,
-  setSessionCookies,
-  type SessionPayload,
-} from "./session.js";
+import { getSession, encryptSession, setSessionCookies, type SessionPayload } from "./session.js";
 import { refreshAccessToken } from "./oidc.js";
 
 const TOKEN_REFRESH_WINDOW_SECONDS = 30;
@@ -34,10 +29,7 @@ export function initAuthMiddleware(config: {
   middlewareConfig = config;
 }
 
-export async function authMiddleware(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function authMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const session = await getSession(request);
   if (!session) {
     reply.code(401).send({ error: "unauthorized" });

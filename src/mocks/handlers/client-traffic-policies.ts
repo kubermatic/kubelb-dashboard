@@ -27,45 +27,28 @@ const API = "/api/kube/apis/gateway.envoyproxy.io/v1alpha1";
 export const clientTrafficPolicyHandlers = [
   http.get(`${API}/clienttrafficpolicies`, () => {
     return HttpResponse.json(
+      kubeListEnvelope("gateway.envoyproxy.io/v1alpha1", "ClientTrafficPolicyList", store.list()),
+    );
+  }),
+
+  http.get(`${API}/namespaces/:namespace/clienttrafficpolicies`, ({ params }) => {
+    return HttpResponse.json(
       kubeListEnvelope(
         "gateway.envoyproxy.io/v1alpha1",
         "ClientTrafficPolicyList",
-        store.list(),
+        store.list(params.namespace as string),
       ),
     );
   }),
 
-  http.get(
-    `${API}/namespaces/:namespace/clienttrafficpolicies`,
-    ({ params }) => {
+  http.get(`${API}/namespaces/:namespace/clienttrafficpolicies/:name`, ({ params }) => {
+    const item = store.get(params.name as string, params.namespace as string);
+    if (!item) {
       return HttpResponse.json(
-        kubeListEnvelope(
-          "gateway.envoyproxy.io/v1alpha1",
-          "ClientTrafficPolicyList",
-          store.list(params.namespace as string),
-        ),
+        kubeStatus(404, "NotFound", `clienttrafficpolicies "${params.name as string}" not found`),
+        { status: 404 },
       );
-    },
-  ),
-
-  http.get(
-    `${API}/namespaces/:namespace/clienttrafficpolicies/:name`,
-    ({ params }) => {
-      const item = store.get(
-        params.name as string,
-        params.namespace as string,
-      );
-      if (!item) {
-        return HttpResponse.json(
-          kubeStatus(
-            404,
-            "NotFound",
-            `clienttrafficpolicies "${params.name as string}" not found`,
-          ),
-          { status: 404 },
-        );
-      }
-      return HttpResponse.json(item);
-    },
-  ),
+    }
+    return HttpResponse.json(item);
+  }),
 ];

@@ -16,41 +16,11 @@
 
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  LayoutDashboard,
-  Users,
-  Network,
-  Route,
-  KeyRound,
-  Shield,
-  ShieldAlert,
-  Settings,
-  PanelLeftClose,
-  PanelLeftOpen,
-  X,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useEdition } from "@/hooks/use-edition";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
-
-interface NavItem {
-  label: string;
-  to: string;
-  icon: LucideIcon;
-  ee?: boolean;
-}
-
-const navItems: NavItem[] = [
-  { label: "Overview", to: "/", icon: LayoutDashboard },
-  { label: "Tenants", to: "/tenants", icon: Users },
-  { label: "Load Balancers", to: "/load-balancers", icon: Network },
-  { label: "Routes", to: "/routes", icon: Route },
-  { label: "Sync Secrets", to: "/sync-secrets", icon: KeyRound },
-  { label: "Envoy Proxy", to: "/envoy-proxy", icon: Shield },
-  { label: "Configuration", to: "/configuration", icon: Settings },
-  { label: "WAF Policies", to: "/waf-policies", icon: ShieldAlert, ee: true },
-];
+import { navItems } from "@/lib/nav-items";
 
 function NavLinks({
   collapsed,

@@ -95,7 +95,7 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRouteOptions): 
       return reply.code(403).send({ error: "missing code_verifier" });
     }
 
-    const callbackUrl = new URL(`${request.protocol}://${request.host}${request.url}`);
+    const callbackUrl = new URL(request.url, opts.redirectUri);
 
     const tokens = await exchangeCode(callbackUrl, codeVerifier, expectedState);
     const claims = decodeIdTokenClaims(tokens.idToken);

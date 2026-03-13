@@ -1,5 +1,6 @@
 dist
 node_modules
 src/routeTree.gen.ts
+public/mockServiceWorker.js
 charts/**/templates
 .claude

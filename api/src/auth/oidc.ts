@@ -122,17 +122,13 @@ export async function exchangeCode(
   return toTokenResult(tokens);
 }
 
-export async function refreshAccessToken(
-  refreshToken: string,
-): Promise<TokenResult> {
+export async function refreshAccessToken(refreshToken: string): Promise<TokenResult> {
   const cfg = getConfig();
   const tokens = await client.refreshTokenGrant(cfg, refreshToken);
   return toTokenResult(tokens);
 }
 
-export function getEndSessionUrl(
-  postLogoutRedirectUri?: string,
-): string | undefined {
+export function getEndSessionUrl(postLogoutRedirectUri?: string): string | undefined {
   const cfg = getConfig();
   const endpoint = cfg.serverMetadata().end_session_endpoint;
   if (!endpoint) return undefined;
@@ -145,8 +141,6 @@ export function getEndSessionUrl(
   return url.toString();
 }
 
-export function decodeIdTokenClaims(
-  idToken: string,
-): Record<string, unknown> {
+export function decodeIdTokenClaims(idToken: string): Record<string, unknown> {
   return decodeJwt(idToken) as Record<string, unknown>;
 }

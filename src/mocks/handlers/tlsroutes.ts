@@ -27,11 +27,7 @@ const API = "/api/kube/apis/gateway.networking.k8s.io/v1alpha2";
 export const tlsRouteHandlers = [
   http.get(`${API}/tlsroutes`, () => {
     return HttpResponse.json(
-      kubeListEnvelope(
-        "gateway.networking.k8s.io/v1alpha2",
-        "TLSRouteList",
-        store.list(),
-      ),
+      kubeListEnvelope("gateway.networking.k8s.io/v1alpha2", "TLSRouteList", store.list()),
     );
   }),
 
@@ -49,11 +45,7 @@ export const tlsRouteHandlers = [
     const item = store.get(params.name as string, params.namespace as string);
     if (!item) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `tlsroutes "${params.name as string}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `tlsroutes "${params.name as string}" not found`),
         { status: 404 },
       );
     }

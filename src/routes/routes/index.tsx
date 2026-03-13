@@ -23,20 +23,21 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Route as RouteIcon, Trash2 } from "lucide-react";
+import { FileText, Route as RouteIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { YamlViewer } from "@/components/common/yaml-viewer";
-import { useDeleteRoute } from "@/hooks/use-route-mutations";
 import { useRoutes } from "@/hooks/use-routes";
-import { formatAge, namespaceToTenant, tenantToNamespace } from "@/lib/format";
+import { AgeCell } from "@/components/common/age-cell";
+import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
+import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { useUIStore } from "@/stores/ui";
 import type { Route as RouteType } from "@/types/kubelb";
 
@@ -84,6 +85,13 @@ function getEndpointsSummary(route: RouteType): string {
   return parts.length ? parts.join(", ") : "\u2014";
 }
 
+function getSourceAnnotations(route: RouteType): Record<string, string> {
+  const resource = route.spec.source?.kubernetes?.resource;
+  if (!resource) return {};
+  const meta = resource["metadata"] as Record<string, unknown> | undefined;
+  return (meta?.["annotations"] as Record<string, string>) ?? {};
+}
+
 type RouteConditionStatus = "Ready" | "Error" | "Pending";
 
 function getRouteStatus(route: RouteType): RouteConditionStatus {
@@ -105,13 +113,12 @@ const statusStyles: Record<RouteConditionStatus, string> = {
 function Routes() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
-  const { data, isLoading, isError, error, refetch } = useRoutes(namespace);
-  const deleteRoute = useDeleteRoute();
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useRoutes(namespace);
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/routes/" });
   const items = data?.items ?? [];
   const [yamlResource, setYamlResource] = useState<RouteType | null>(null);
-  const [deleteResource, setDeleteResource] = useState<RouteType | null>(null);
 
   const columns: ColumnDef<RouteType>[] = [
     {
@@ -134,10 +141,12 @@ function Routes() {
     {
       accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
       id: "tenant",
+      meta: { hideBelow: "md" },
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
       id: "type",
+      meta: { hideBelow: "md" },
       accessorFn: deriveRouteType,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
     },
@@ -158,6 +167,47 @@ function Routes() {
       ),
     },
     {
+      id: "dns",
+      meta: { hideBelow: "lg" },
+      accessorFn: (row) => getSourceAnnotations(row)[KUBELB_ANNOTATIONS.MANAGE_DNS] === "true",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="DNS" />,
+      cell: ({ row }) => {
+        const annotations = getSourceAnnotations(row.original);
+        const managed = annotations[KUBELB_ANNOTATIONS.MANAGE_DNS] === "true";
+        if (!managed) return <span className="text-muted-foreground">{"\u2014"}</span>;
+        const hostname = annotations[KUBELB_ANNOTATIONS.EXTERNAL_DNS_HOSTNAME];
+        const badge = <Badge className="bg-success/10 text-success">Managed</Badge>;
+        if (!hostname) return badge;
+        return (
+          <Tooltip>
+            <TooltipTrigger render={badge} />
+            <TooltipContent>{hostname}</TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      id: "tls",
+      meta: { hideBelow: "lg" },
+      accessorFn: (row) =>
+        getSourceAnnotations(row)[KUBELB_ANNOTATIONS.MANAGE_CERTIFICATES] === "true",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="TLS" />,
+      cell: ({ row }) => {
+        const annotations = getSourceAnnotations(row.original);
+        const managed = annotations[KUBELB_ANNOTATIONS.MANAGE_CERTIFICATES] === "true";
+        if (!managed) return <span className="text-muted-foreground">{"\u2014"}</span>;
+        const issuer = annotations[KUBELB_ANNOTATIONS.CERTMANAGER_ISSUER];
+        const badge = <Badge className="bg-success/10 text-success">Managed</Badge>;
+        if (!issuer) return badge;
+        return (
+          <Tooltip>
+            <TooltipTrigger render={badge} />
+            <TooltipContent>{issuer}</TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
       id: "status",
       accessorFn: getRouteStatus,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
@@ -170,10 +220,7 @@ function Routes() {
       id: "age",
       accessorFn: (row) => row.metadata.creationTimestamp,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-      cell: ({ row }) => {
-        const ts = row.original.metadata.creationTimestamp;
-        return ts ? formatAge(ts) : "\u2014";
-      },
+      cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
       sortingFn: "datetime",
     },
     {
@@ -184,13 +231,6 @@ function Routes() {
         <RowActions
           actions={[
             { label: "View YAML", icon: FileText, onClick: () => setYamlResource(row.original) },
-            {
-              label: "Delete",
-              icon: Trash2,
-              variant: "destructive",
-              separator: true,
-              onClick: () => setDeleteResource(row.original),
-            },
           ]}
         />
       ),
@@ -215,7 +255,11 @@ function Routes() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={RouteIcon} title="No routes found" />
+        <EmptyState
+          icon={RouteIcon}
+          title={selectedTenant ? `No routes in ${selectedTenant}` : "No routes found"}
+          description="Routes will appear here once created."
+        />
       ) : (
         <DataTable
           columns={columns}
@@ -223,6 +267,9 @@ function Routes() {
           isLoading={isLoading}
           searchColumn="name"
           searchPlaceholder="Search routes..."
+          onRefresh={() => void refetch()}
+          isRefetching={isRefetching}
+          dataUpdatedAt={dataUpdatedAt}
           toolbarLeading={<TenantSelector />}
           initialSearch={search}
           initialPage={page}
@@ -250,24 +297,6 @@ function Routes() {
             : undefined
         }
       />
-
-      {deleteResource && (
-        <DeleteDialog
-          open={!!deleteResource}
-          onOpenChange={(open) => !open && setDeleteResource(null)}
-          resourceName={deleteResource.metadata.name}
-          resourceKind="Route"
-          isPending={deleteRoute.isPending}
-          onConfirm={() => {
-            void deleteRoute
-              .mutateAsync({
-                namespace: deleteResource.metadata.namespace ?? "",
-                name: deleteResource.metadata.name,
-              })
-              .then(() => setDeleteResource(null));
-          }}
-        />
-      )}
     </div>
   );
 }

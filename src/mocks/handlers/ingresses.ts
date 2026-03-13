@@ -26,13 +26,7 @@ const API = "/api/kube/apis/networking.k8s.io/v1";
 
 export const ingressHandlers = [
   http.get(`${API}/ingresses`, () => {
-    return HttpResponse.json(
-      kubeListEnvelope(
-        "networking.k8s.io/v1",
-        "IngressList",
-        store.list(),
-      ),
-    );
+    return HttpResponse.json(kubeListEnvelope("networking.k8s.io/v1", "IngressList", store.list()));
   }),
 
   http.get(`${API}/namespaces/:namespace/ingresses`, ({ params }) => {
@@ -49,11 +43,7 @@ export const ingressHandlers = [
     const item = store.get(params.name as string, params.namespace as string);
     if (!item) {
       return HttpResponse.json(
-        kubeStatus(
-          404,
-          "NotFound",
-          `ingresses "${params.name as string}" not found`,
-        ),
+        kubeStatus(404, "NotFound", `ingresses "${params.name as string}" not found`),
         { status: 404 },
       );
     }
