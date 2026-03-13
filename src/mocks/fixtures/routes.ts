@@ -731,6 +731,49 @@ export const routes: Route[] = [
         },
       },
     },
+    status: {
+      resources: {
+        route: {
+          apiVersion: "gateway.envoyproxy.io/v1alpha1",
+          conditions: [
+            {
+              lastTransitionTime: "2026-03-13T16:45:19Z",
+              message: "Success",
+              reason: "InstallationSuccessful",
+              status: "True",
+              type: "ResourceAppliedSuccessfully",
+            },
+          ],
+          generatedName: "default-product-ctp",
+          kind: "ClientTrafficPolicy",
+          name: "product-ctp",
+          namespace: "default",
+          status: {
+            ancestors: [
+              {
+                ancestorRef: {
+                  group: "gateway.networking.k8s.io",
+                  kind: "Gateway",
+                  name: "kubelb",
+                  namespace: "tenant-primary",
+                },
+                conditions: [
+                  {
+                    lastTransitionTime: "2026-03-13T16:45:16Z",
+                    message: "Policy has been accepted.",
+                    observedGeneration: 1,
+                    reason: "Accepted",
+                    status: "True",
+                    type: "Accepted",
+                  },
+                ],
+                controllerName: "gateway.envoyproxy.io/gatewayclass-controller",
+              },
+            ],
+          },
+        },
+      },
+    },
   },
   {
     apiVersion: "kubelb.k8c.io/v1alpha1",
