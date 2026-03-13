@@ -59,4 +59,7 @@ export const queryKeys = {
   edition: {
     detect: () => ["edition", "detect"] as const,
   },
+  auth: {
+    session: () => ["auth", "session"] as const,
+  },
 } as const;
