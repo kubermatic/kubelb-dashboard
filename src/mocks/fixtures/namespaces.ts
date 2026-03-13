@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 
-import type { ObjectMeta } from "@/types/kubernetes";
-
-export interface Namespace {
-  apiVersion: string;
-  kind: string;
-  metadata: ObjectMeta;
-  spec: { finalizers?: string[] };
-  status?: { phase?: string };
-}
+import type { Namespace } from "@/types/kubernetes";
 
 export const namespaces: Namespace[] = [
   {

@@ -16,7 +16,7 @@
 
 import { http, HttpResponse } from "msw";
 
-import type { Namespace } from "../fixtures";
+import type { Namespace } from "@/types/kubernetes";
 import { namespaces as seed } from "../fixtures";
 import { kubeListEnvelope } from "../helpers";
 import { MockStore } from "../store";

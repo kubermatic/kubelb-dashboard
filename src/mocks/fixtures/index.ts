@@ -18,7 +18,6 @@ export { configs } from "./configs";
 export { deployments } from "./deployments";
 export { loadBalancers } from "./load-balancers";
 export { namespaces } from "./namespaces";
-export type { Namespace } from "./namespaces";
 export { routes } from "./routes";
 export { syncSecrets } from "./sync-secrets";
 export { tenants } from "./tenants";
