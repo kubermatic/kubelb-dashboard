@@ -36,8 +36,20 @@ export function formatTimestamp(timestamp: string): string {
   return new Date(timestamp).toLocaleString();
 }
 
+const TENANT_NS_PREFIX = "tenant-";
+
 export function tenantToNamespace(tenant: string): string {
-  return `tenant-${tenant}`;
+  return `${TENANT_NS_PREFIX}${tenant}`;
+}
+
+export function namespaceToTenant(namespace: string): string {
+  return namespace.startsWith(TENANT_NS_PREFIX)
+    ? namespace.slice(TENANT_NS_PREFIX.length)
+    : namespace;
+}
+
+export function isTenantNamespace(namespace: string): boolean {
+  return namespace.startsWith(TENANT_NS_PREFIX);
 }
 
 export function getOriginSource(labels: Record<string, string> | undefined): string {

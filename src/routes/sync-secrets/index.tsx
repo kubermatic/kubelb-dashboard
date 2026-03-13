@@ -46,7 +46,7 @@ import {
   useDeleteSyncSecret,
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
-import { formatAge, getOriginSource, tenantToNamespace } from "@/lib/format";
+import { formatAge, getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
@@ -108,9 +108,9 @@ function SyncSecrets() {
       },
     },
     {
-      accessorFn: (row) => row.metadata.namespace,
-      id: "namespace",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      accessorFn: (row) => namespaceToTenant(row.metadata.namespace ?? ""),
+      id: "tenant",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
     },
     {
       id: "source",
