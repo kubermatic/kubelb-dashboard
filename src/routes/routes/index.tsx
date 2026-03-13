@@ -216,7 +216,11 @@ function Routes() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={RouteIcon} title="No routes found" />
+        <EmptyState
+          icon={RouteIcon}
+          title={selectedTenant ? `No routes in ${selectedTenant}` : "No routes found"}
+          description="Routes will appear here once created."
+        />
       ) : (
         <DataTable
           columns={columns}

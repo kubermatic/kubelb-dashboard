@@ -178,7 +178,19 @@ function SyncSecrets() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={KeyRound} title="No sync secrets found" />
+        <EmptyState
+          icon={KeyRound}
+          title={selectedTenant ? `No sync secrets in ${selectedTenant}` : "No sync secrets found"}
+          description="Get started by creating your first sync secret."
+          action={
+            EDITING_ENABLED ? (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create Sync Secret
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <DataTable
           columns={columns}

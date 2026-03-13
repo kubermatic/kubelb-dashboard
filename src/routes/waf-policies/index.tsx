@@ -223,7 +223,19 @@ function WAFPolicies() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={ShieldAlert} title="No WAF policies found" />
+        <EmptyState
+          icon={ShieldAlert}
+          title="No WAF policies found"
+          description="Get started by creating your first WAF policy."
+          action={
+            EDITING_ENABLED ? (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create WAF Policy
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <DataTable
           columns={columns}

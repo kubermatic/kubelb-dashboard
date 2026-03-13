@@ -221,7 +221,13 @@ function LoadBalancers() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={Network} title="No load balancers found" />
+        <EmptyState
+          icon={Network}
+          title={
+            selectedTenant ? `No load balancers in ${selectedTenant}` : "No load balancers found"
+          }
+          description="Load balancers will appear here once created."
+        />
       ) : (
         <DataTable
           columns={columns}

@@ -149,7 +149,13 @@ function EnvoyProxy() {
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (
-        <EmptyState icon={Shield} title="No envoy proxies found" />
+        <EmptyState
+          icon={Shield}
+          title={
+            selectedTenant ? `No envoy proxies in ${selectedTenant}` : "No envoy proxies found"
+          }
+          description="Envoy proxy deployments will appear here once provisioned."
+        />
       ) : (
         <DataTable
           columns={columns}
