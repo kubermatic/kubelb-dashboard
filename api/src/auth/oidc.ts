@@ -99,7 +99,7 @@ function toTokenResult(
 ): TokenResult {
   const expiresAt = tokens.expires_in
     ? Math.floor(Date.now() / 1000) + tokens.expires_in
-    : 0;
+    : Math.floor(Date.now() / 1000) + 3600;
 
   return {
     accessToken: tokens.access_token,
@@ -138,6 +138,7 @@ export function getEndSessionUrl(
   if (!endpoint) return undefined;
 
   const url = new URL(endpoint);
+  url.searchParams.set("client_id", getOpts().clientId);
   if (postLogoutRedirectUri) {
     url.searchParams.set("post_logout_redirect_uri", postLogoutRedirectUri);
   }
