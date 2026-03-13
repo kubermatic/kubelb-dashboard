@@ -173,12 +173,13 @@ export function DataTable<T>({
         />
       ),
       cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(val) => row.toggleSelected(!!val)}
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Select row"
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(val) => row.toggleSelected(!!val)}
+            aria-label="Select row"
+          />
+        </div>
       ),
     }),
     [],
