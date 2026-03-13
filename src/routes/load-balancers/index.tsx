@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { AgeCell } from "@/components/common/age-cell";
 import { CopyButton } from "@/components/common/copy-button";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
@@ -24,7 +25,6 @@ import { TenantSelector } from "@/components/common/tenant-selector";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
-import { AgeCell } from "@/components/common/age-cell";
 import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
