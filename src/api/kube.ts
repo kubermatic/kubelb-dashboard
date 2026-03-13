@@ -33,6 +33,14 @@ export class KubeApiError extends Error {
 async function toKubeError(response: Response): Promise<KubeApiError> {
   if (response.status === 401) {
     window.location.href = "/login";
+    throw new KubeApiError({
+      kind: "Status",
+      apiVersion: "v1",
+      status: "Failure",
+      message: "Unauthorized",
+      reason: "Unauthorized",
+      code: 401,
+    });
   }
   try {
     const body = (await response.json()) as KubeStatus;
