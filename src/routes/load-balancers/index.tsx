@@ -226,7 +226,9 @@ function LoadBalancers() {
           data={items}
           isLoading={isLoading}
           emptyMessage={
-            selectedTenant ? `No load balancers in ${selectedTenant}` : "No load balancers found."
+            selectedTenant
+              ? `No load balancers available for tenant ${selectedTenant}`
+              : "No load balancers found."
           }
           searchColumn="name"
           searchPlaceholder="Search load balancers..."

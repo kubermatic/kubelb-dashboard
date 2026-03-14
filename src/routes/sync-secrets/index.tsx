@@ -199,7 +199,9 @@ function SyncSecrets() {
           data={items}
           isLoading={isLoading}
           emptyMessage={
-            selectedTenant ? `No sync secrets in ${selectedTenant}` : "No sync secrets found."
+            selectedTenant
+              ? `No sync secrets available for tenant ${selectedTenant}`
+              : "No sync secrets found."
           }
           searchColumn="name"
           searchPlaceholder="Search sync secrets..."

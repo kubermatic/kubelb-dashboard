@@ -25,6 +25,7 @@ import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useServices } from "@/hooks/use-services";
+import { KUBELB_LABELS } from "@/lib/constants";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/load-balancers/services")({
   component: Services,
 });
 
-const MANAGED_LABEL = "kubelb.k8c.io/managed-by=kubelb";
+const MANAGED_LABEL = KUBELB_LABELS.ORIGIN_NS;
 
 function getServiceType(svc: GenericResource): string {
   return (svc.spec?.["type"] as string) ?? "ClusterIP";
@@ -134,7 +135,7 @@ function Services() {
             }) => <DataTableColumnHeader column={column} title="Managed" />,
             cell: ({ row }) => {
               const labels = row.original.metadata.labels ?? {};
-              const isManaged = !!labels["kubelb.k8c.io/managed-by"];
+              const isManaged = !!labels[KUBELB_LABELS.ORIGIN_NS];
               if (!isManaged) return <Badge variant="outline">External</Badge>;
               return <Badge className="bg-success/10 text-success">Managed</Badge>;
             },
@@ -222,7 +223,15 @@ function Services() {
           columns={columns}
           data={items}
           isLoading={isLoading}
-          emptyMessage={selectedTenant ? `No services in ${selectedTenant}` : "No services found."}
+          emptyMessage={
+            managed
+              ? selectedTenant
+                ? `No services available for tenant ${selectedTenant}`
+                : "No services found."
+              : selectedNamespace
+                ? `No services available in namespace ${selectedNamespace}`
+                : "No services found."
+          }
           searchColumn="name"
           searchPlaceholder="Search services..."
           onRefresh={() => void refetch()}

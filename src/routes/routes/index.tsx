@@ -256,7 +256,9 @@ function Routes() {
           columns={columns}
           data={items}
           isLoading={isLoading}
-          emptyMessage={selectedTenant ? `No routes in ${selectedTenant}` : "No routes found."}
+          emptyMessage={
+            selectedTenant ? `No routes available for tenant ${selectedTenant}` : "No routes found."
+          }
           searchColumn="name"
           searchPlaceholder="Search routes..."
           onRefresh={() => void refetch()}

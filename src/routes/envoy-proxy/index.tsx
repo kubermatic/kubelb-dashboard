@@ -165,7 +165,9 @@ function EnvoyProxy() {
           data={items}
           isLoading={isLoading}
           emptyMessage={
-            selectedTenant ? `No envoy proxies in ${selectedTenant}` : "No envoy proxies found."
+            selectedTenant
+              ? `No envoy proxies available for tenant ${selectedTenant}`
+              : "No envoy proxies found."
           }
           searchColumn="name"
           searchPlaceholder="Filter by name..."

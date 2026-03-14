@@ -31,10 +31,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KUBELB_ANNOTATIONS } from "@/lib/constants";
-import { getRouteHealthStatus } from "@/lib/status-mapper";
+import { type HealthState, getRouteHealthStatus } from "@/lib/status-mapper";
 import { statusStyles } from "@/lib/status-styles";
 import { useRoute as useRouteResource } from "@/hooks/use-routes";
-import type { Route as RouteResource } from "@/types/kubelb";
+import type { Route as RouteResource, RouteServiceStatus } from "@/types/kubelb";
 
 export const Route = createFileRoute("/routes/$namespace/$name")({
   component: RouteDetail,
@@ -107,10 +107,21 @@ function RouteDetail() {
   );
 }
 
+function getServiceHealth(svc: RouteServiceStatus): HealthState {
+  if (!svc.conditions?.length) return "Pending";
+  const ready = svc.conditions.find(
+    (c) => c.type === "Ready" || c.type === "Available" || c.type === "Programmed",
+  );
+  if (ready?.status === "True") return "Ready";
+  if (ready?.status === "False") return "Error";
+  return "Pending";
+}
+
 function ResourcesSection({ route }: { route: RouteResource }) {
   const routeResource = route.status?.resources?.route;
   const services = route.status?.resources?.services ?? {};
-  const serviceCount = Object.keys(services).length;
+  const serviceEntries = Object.entries(services);
+  const serviceCount = serviceEntries.length;
   const health = getRouteHealthStatus(route);
   const routeKind = routeResource?.kind ?? "Unknown";
   const generatedName = routeResource?.generatedName;
@@ -146,18 +157,30 @@ function ResourcesSection({ route }: { route: RouteResource }) {
         <Card className="border-l-2 border-l-primary">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
             <Server className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Services</CardTitle>
+            <CardTitle className="text-sm font-medium">Services ({serviceCount})</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-end justify-between">
-            <span className="text-3xl font-bold">{serviceCount}</span>
-            {serviceCount > 0 && (
-              <Link
-                to="/load-balancers/services"
-                search={{ search: route.metadata.name, page: 0, pageSize: 10 }}
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                View all <ArrowRight className="h-4 w-4" />
-              </Link>
+          <CardContent>
+            {serviceCount === 0 ? (
+              <span className="text-sm text-muted-foreground">No services</span>
+            ) : (
+              <div className="space-y-2">
+                {serviceEntries.map(([svcName, svc]) => {
+                  const svcHealth = getServiceHealth(svc);
+                  return (
+                    <Link
+                      key={svcName}
+                      to="/load-balancers/services"
+                      search={{ search: svc.generatedName ?? svcName, page: 0, pageSize: 10 }}
+                      className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-muted/50"
+                    >
+                      <span className="truncate font-medium">{svcName}</span>
+                      <Badge variant="outline" className={statusStyles[svcHealth]}>
+                        {svcHealth}
+                      </Badge>
+                    </Link>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>

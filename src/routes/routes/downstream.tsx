@@ -44,6 +44,7 @@ import { useTLSRoutes } from "@/hooks/use-tlsroutes";
 import { useIngresses } from "@/hooks/use-ingresses";
 import { useBackendTrafficPolicies } from "@/hooks/use-backend-traffic-policies";
 import { useClientTrafficPolicies } from "@/hooks/use-client-traffic-policies";
+import { KUBELB_LABELS } from "@/lib/constants";
 import { resolveHealthByKind } from "@/lib/status-mapper";
 import { statusStyles } from "@/lib/status-styles";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/routes/downstream")({
   component: DownstreamResources,
 });
 
-const MANAGED_LABEL = "kubelb.k8c.io/managed-by=kubelb";
+const MANAGED_LABEL = KUBELB_LABELS.ORIGIN_NS;
 
 const KIND_OPTIONS = [
   { value: "__all__", label: "All Kinds" },
@@ -207,7 +208,7 @@ function DownstreamResources() {
             }) => <DataTableColumnHeader column={column} title="Managed" />,
             cell: ({ row }) => {
               const labels = row.original.metadata.labels ?? {};
-              const isManaged = !!labels["kubelb.k8c.io/managed-by"];
+              const isManaged = !!labels[KUBELB_LABELS.ORIGIN_NS];
               if (!isManaged) return <Badge variant="outline">External</Badge>;
               return <Badge className="bg-success/10 text-success">Managed</Badge>;
             },
@@ -277,7 +278,15 @@ function DownstreamResources() {
           columns={columns}
           data={items}
           isLoading={isLoading}
-          emptyMessage="No downstream resources found."
+          emptyMessage={
+            managedOnly
+              ? selectedTenant
+                ? `No downstream resources available for tenant ${selectedTenant}`
+                : "No downstream resources found."
+              : selectedNamespace
+                ? `No downstream resources available in namespace ${selectedNamespace}`
+                : "No downstream resources found."
+          }
           searchColumn="name"
           searchPlaceholder="Search resources..."
           onRefresh={refetch}
