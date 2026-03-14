@@ -21,8 +21,8 @@ import type { Tenant } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
-export function useTenants() {
-  return useKubeList<Tenant>(queryKeys.tenants.list(), `${BASE}/tenants`);
+export function useTenants(options?: { enabled?: boolean }) {
+  return useKubeList<Tenant>(queryKeys.tenants.list(), `${BASE}/tenants`, options);
 }
 
 export function useTenant(name: string) {

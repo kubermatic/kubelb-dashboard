@@ -22,17 +22,17 @@ const STATUS_CONFIG: Record<
   { className: string; label: string; visible: boolean }
 > = {
   connecting: {
-    className: "bg-yellow-400 animate-pulse",
+    className: "bg-warning animate-pulse",
     label: "Connecting to watch stream...",
     visible: true,
   },
   connected: {
-    className: "bg-green-500",
-    label: "Watch stream connected",
-    visible: false,
+    className: "bg-success",
+    label: "Live — watch stream connected",
+    visible: true,
   },
   reconnecting: {
-    className: "bg-yellow-400 animate-pulse",
+    className: "bg-warning animate-pulse",
     label: "Reconnecting to watch stream...",
     visible: true,
   },

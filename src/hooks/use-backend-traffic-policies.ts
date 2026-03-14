@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-import { useEdition } from "@/hooks/use-edition";
+import { queryKeys } from "@/api/query-keys";
+import { useKubeList } from "@/hooks/use-kube-list";
+import type { GenericResource } from "@/mocks/fixtures/types";
 
-export function Footer() {
-  const { isEE } = useEdition();
+const BASE = "/apis/gateway.envoyproxy.io/v1alpha1";
 
-  return (
-    <footer className="border-t px-3 py-2 md:px-5">
-      <div className="flex items-center justify-center text-xs text-muted-foreground">
-        <span>{isEE ? "Enterprise Edition" : "Community Edition"}</span>
-      </div>
-    </footer>
+export function useBackendTrafficPolicies(namespace?: string, labelSelector?: string) {
+  const path = namespace
+    ? `${BASE}/namespaces/${namespace}/backendtrafficpolicies`
+    : `${BASE}/backendtrafficpolicies`;
+  return useKubeList<GenericResource>(
+    queryKeys.backendTrafficPolicies.list(namespace, labelSelector),
+    path,
+    { labelSelector },
   );
 }

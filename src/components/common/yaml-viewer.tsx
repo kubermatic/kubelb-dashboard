@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import { dump } from "js-yaml";
 
 import { CopyButton } from "@/components/common/copy-button";
+import { YamlEditor } from "@/components/common/yaml-editor";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { sanitizeForView } from "@/lib/kube-sanitize";
 
@@ -36,13 +37,13 @@ export function YamlViewer({ open, onOpenChange, resource, title }: YamlViewerPr
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[600px] sm:max-w-[600px]">
+      <SheetContent side="right" className="w-[600px] data-[side=right]:sm:max-w-[600px]">
         <SheetHeader className="flex-row items-center justify-between pr-10">
           <SheetTitle>{title ?? "Resource YAML"}</SheetTitle>
           <CopyButton value={yaml} />
         </SheetHeader>
-        <div className="flex-1 overflow-auto rounded-md bg-muted p-4">
-          <pre className="font-mono text-sm text-foreground">{yaml}</pre>
+        <div className="flex-1 overflow-hidden rounded-md border">
+          <YamlEditor value={yaml} readOnly height="100%" />
         </div>
       </SheetContent>
     </Sheet>

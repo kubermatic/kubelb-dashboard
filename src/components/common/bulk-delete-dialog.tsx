@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { type ReactNode, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { InlineCopyBadge } from "@/components/common/inline-copy-badge";
 
 interface BulkDeleteDialogProps {
   open: boolean;
@@ -32,6 +35,7 @@ interface BulkDeleteDialogProps {
   resourceKind: string;
   onConfirm: () => void;
   isPending?: boolean;
+  children?: ReactNode;
 }
 
 export function BulkDeleteDialog({
@@ -41,9 +45,18 @@ export function BulkDeleteDialog({
   resourceKind,
   onConfirm,
   isPending,
+  children,
 }: BulkDeleteDialogProps) {
+  const [confirmation, setConfirmation] = useState("");
+  const isConfirmed = confirmation === "confirm";
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setConfirmation("");
+    onOpenChange(next);
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
@@ -55,10 +68,31 @@ export function BulkDeleteDialog({
             {count !== 1 ? "s" : ""}? This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        {children}
+
+        <div className="grid gap-2">
+          <label htmlFor="bulk-delete-confirmation" className="text-sm text-muted-foreground">
+            Type <InlineCopyBadge value="confirm" /> to proceed
+          </label>
+          <Input
+            id="bulk-delete-confirmation"
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
+            autoComplete="off"
+          />
+        </div>
+
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" disabled={isPending} onClick={onConfirm}>
-            {isPending ? "Deleting..." : `Delete ${count} item${count !== 1 ? "s" : ""}`}
+          <AlertDialogAction
+            variant="destructive"
+            disabled={!isConfirmed || isPending}
+            onClick={onConfirm}
+          >
+            {isPending
+              ? "Deleting..."
+              : `Delete ${count} ${resourceKind.toLowerCase()}${count !== 1 ? "s" : ""}`}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -27,6 +27,24 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("monaco-editor") || id.includes("monaco-yaml")) return "monaco";
+          if (id.includes("@rjsf") || id.includes("/ajv")) return "rjsf";
+          if (
+            id.includes("react-dom") ||
+            id.includes("@tanstack/react-router") ||
+            id.includes("@tanstack/react-query") ||
+            id.includes("@tanstack/history")
+          )
+            return "vendor";
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       "/api/": {

@@ -50,9 +50,6 @@ export const configs: Config[] = [
       loadBalancer: {
         limit: 15,
       },
-      networkPolicy: {
-        enable: true,
-      },
     },
   },
 ];

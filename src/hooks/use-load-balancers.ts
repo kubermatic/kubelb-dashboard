@@ -21,11 +21,11 @@ import type { LoadBalancer } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
-export function useLoadBalancers(namespace?: string) {
+export function useLoadBalancers(namespace?: string, options?: { enabled?: boolean }) {
   const path = namespace
     ? `${BASE}/namespaces/${namespace}/loadbalancers`
     : `${BASE}/loadbalancers`;
-  return useKubeList<LoadBalancer>(queryKeys.loadBalancers.list(namespace), path);
+  return useKubeList<LoadBalancer>(queryKeys.loadBalancers.list(namespace), path, options);
 }
 
 export function useLoadBalancer(namespace: string, name: string) {

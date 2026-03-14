@@ -14,20 +14,30 @@
  * limitations under the License.
  */
 
-import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
+import { useQuery } from "@tanstack/react-query";
 
 type Edition = "ce" | "ee";
 
+const STORAGE_KEY = "kubelb-edition";
+
+function getCachedEdition(): Edition | undefined {
+  const cached = localStorage.getItem(STORAGE_KEY);
+  return cached === "ce" || cached === "ee" ? cached : undefined;
+}
+
 async function detectEdition(): Promise<Edition> {
   const res = await fetch("/api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies");
-  return res.ok ? "ee" : "ce";
+  const edition = res.ok ? "ee" : "ce";
+  localStorage.setItem(STORAGE_KEY, edition);
+  return edition;
 }
 
 export function useEdition() {
   const { data: edition, isLoading } = useQuery({
     queryKey: queryKeys.edition.detect(),
     queryFn: detectEdition,
+    initialData: getCachedEdition,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,

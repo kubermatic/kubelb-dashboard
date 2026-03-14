@@ -27,7 +27,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
-      <div className="flex flex-col items-center gap-3 text-center">
+      <div className="animate-enter flex flex-col items-center gap-3 text-center">
         {Icon && <Icon className="size-12 text-muted-foreground/50" />}
         <div className="space-y-1">
           <h3 className="text-lg font-medium text-muted-foreground">{title}</h3>

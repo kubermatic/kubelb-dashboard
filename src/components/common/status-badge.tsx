@@ -15,15 +15,10 @@
  */
 
 import type { Condition } from "@/types/kubernetes";
+import { conditionStyles } from "@/lib/status-styles";
 import { cn } from "@/lib/utils";
 
 type StatusVariant = "success" | "warning" | "destructive";
-
-const variantClasses: Record<StatusVariant, string> = {
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  destructive: "bg-destructive/10 text-destructive",
-};
 
 function conditionToVariant(status: Condition["status"]): StatusVariant {
   switch (status) {
@@ -48,7 +43,7 @@ export function StatusBadge({ label, status, className }: StatusBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        variantClasses[variant],
+        conditionStyles[status],
         className,
       )}
     >

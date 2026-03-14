@@ -56,10 +56,76 @@ export const queryKeys = {
     list: () => ["wafpolicies", "list"] as const,
     detail: (name: string) => ["wafpolicies", "detail", name] as const,
   },
+  addresses: {
+    all: ["addresses"] as const,
+    detail: (ns: string, name: string) => ["addresses", "detail", ns, name] as const,
+  },
   edition: {
     detect: () => ["edition", "detect"] as const,
   },
   auth: {
     session: () => ["auth", "session"] as const,
+  },
+  gateways: {
+    all: ["gateways"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns ? (["gateways", "list", ns, labels] as const) : (["gateways", "list", labels] as const),
+  },
+  httpRoutes: {
+    all: ["httproutes"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns
+        ? (["httproutes", "list", ns, labels] as const)
+        : (["httproutes", "list", labels] as const),
+  },
+  grpcRoutes: {
+    all: ["grpcroutes"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns
+        ? (["grpcroutes", "list", ns, labels] as const)
+        : (["grpcroutes", "list", labels] as const),
+  },
+  tcpRoutes: {
+    all: ["tcproutes"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns ? (["tcproutes", "list", ns, labels] as const) : (["tcproutes", "list", labels] as const),
+  },
+  udpRoutes: {
+    all: ["udproutes"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns ? (["udproutes", "list", ns, labels] as const) : (["udproutes", "list", labels] as const),
+  },
+  tlsRoutes: {
+    all: ["tlsroutes"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns ? (["tlsroutes", "list", ns, labels] as const) : (["tlsroutes", "list", labels] as const),
+  },
+  ingresses: {
+    all: ["ingresses"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns ? (["ingresses", "list", ns, labels] as const) : (["ingresses", "list", labels] as const),
+  },
+  backendTrafficPolicies: {
+    all: ["backendtrafficpolicies"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns
+        ? (["backendtrafficpolicies", "list", ns, labels] as const)
+        : (["backendtrafficpolicies", "list", labels] as const),
+  },
+  clientTrafficPolicies: {
+    all: ["clienttrafficpolicies"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns
+        ? (["clienttrafficpolicies", "list", ns, labels] as const)
+        : (["clienttrafficpolicies", "list", labels] as const),
+  },
+  services: {
+    all: ["services"] as const,
+    list: (ns?: string, labels?: string) =>
+      ns ? (["services", "list", ns, labels] as const) : (["services", "list", labels] as const),
+  },
+  namespaces: {
+    all: ["namespaces"] as const,
+    list: () => ["namespaces", "list"] as const,
   },
 } as const;

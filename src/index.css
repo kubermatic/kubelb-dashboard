@@ -5,77 +5,77 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #edeff0;
-  --foreground: #4d555c;
-  --card: #fff;
-  --card-foreground: #4d555c;
-  --popover: #fff;
-  --popover-foreground: #4d555c;
-  --primary: #00517d;
-  --primary-foreground: #fff;
-  --primary-hover: #003454;
-  --secondary: #00c9c9;
-  --secondary-foreground: #fff;
-  --muted: #f5f5f5;
-  --muted-foreground: #7e868f;
-  --accent: #00c9c9;
-  --accent-foreground: #fff;
-  --destructive: #eb5757;
-  --success: #1dc67f;
-  --warning: #f7b500;
-  --border: #e0e3e5;
-  --input: #e0e3e5;
-  --ring: #00517d;
+  --background: #eef1f6;
+  --foreground: #151a20;
+  --card: #f8f9fc;
+  --card-foreground: #151a20;
+  --popover: #f8f9fc;
+  --popover-foreground: #151a20;
+  --primary: #004066;
+  --primary-foreground: #f0f7ff;
+  --primary-hover: #002e4a;
+  --secondary: #00b3b3;
+  --secondary-foreground: #ffffff;
+  --muted: #e4e8f0;
+  --muted-foreground: #556373;
+  --accent: #00b3b3;
+  --accent-foreground: #ffffff;
+  --destructive: #dc3545;
+  --success: #0d9668;
+  --warning: #d97706;
+  --border: #d5dbe2;
+  --input: #d5dbe2;
+  --ring: #004066;
   --radius: 0.5rem;
-  --sidebar: #edeff0;
-  --sidebar-foreground: #4d555c;
-  --sidebar-primary: #00517d;
-  --sidebar-primary-foreground: #fff;
-  --sidebar-accent: #c2d3dc;
-  --sidebar-accent-foreground: #4d555c;
-  --sidebar-border: #e0e3e5;
-  --sidebar-ring: #00517d;
-  --sidebar-hover: #dce0e3;
-  --surface-hover: #f5f5f5;
+  --sidebar: #1b2530;
+  --sidebar-foreground: #b0bec9;
+  --sidebar-primary: #3db8e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3db8e5;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2a3744;
+  --sidebar-ring: #3db8e5;
+  --sidebar-hover: #243240;
+  --surface-hover: #e6e9f2;
 }
 
 .dark {
-  --background: #000;
-  --foreground: rgba(255, 255, 255, 0.85);
-  --card: #2b2b2c;
-  --card-foreground: rgba(255, 255, 255, 0.85);
-  --popover: #2b2b2c;
-  --popover-foreground: rgba(255, 255, 255, 0.85);
-  --primary: #0072b0;
-  --primary-foreground: #fff;
-  --primary-hover: #008bd6;
-  --secondary: #00b2b2;
-  --secondary-foreground: #fff;
-  --muted: #535354;
-  --muted-foreground: #b8b8b8;
-  --accent: #00b2b2;
-  --accent-foreground: #fff;
-  --destructive: #eb5757;
-  --success: #1dc67f;
-  --warning: #f7b500;
-  --border: #464647;
-  --input: #464647;
-  --ring: #0072b0;
-  --sidebar: #000;
-  --sidebar-foreground: rgba(255, 255, 255, 0.85);
-  --sidebar-primary: #0072b0;
-  --sidebar-primary-foreground: #fff;
-  --sidebar-accent: #66c9ff;
-  --sidebar-accent-foreground: #000;
-  --sidebar-border: #464647;
-  --sidebar-ring: #0072b0;
-  --sidebar-hover: #202021;
-  --surface-hover: #535354;
+  --background: #0a0e14;
+  --foreground: #e0e6ec;
+  --card: #131a24;
+  --card-foreground: #e0e6ec;
+  --popover: #131a24;
+  --popover-foreground: #e0e6ec;
+  --primary: #3db8e5;
+  --primary-foreground: #0a0e14;
+  --primary-hover: #5ec8ed;
+  --secondary: #10a8a8;
+  --secondary-foreground: #ffffff;
+  --muted: #1a2232;
+  --muted-foreground: #8898a8;
+  --accent: #10a8a8;
+  --accent-foreground: #ffffff;
+  --destructive: #e5484d;
+  --success: #30a46c;
+  --warning: #e5a000;
+  --border: #1e2a38;
+  --input: #1e2a38;
+  --ring: #3db8e5;
+  --sidebar: #060a0e;
+  --sidebar-foreground: #8898a8;
+  --sidebar-primary: #3db8e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3db8e5;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1a2230;
+  --sidebar-ring: #3db8e5;
+  --sidebar-hover: #131c28;
+  --surface-hover: #1c2436;
 }
 
 @theme inline {
-  --font-sans: "Roboto", sans-serif;
-  --font-mono: "Roboto Mono", monospace;
+  --font-sans: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -143,10 +143,10 @@
 @keyframes hero-logo-glow {
   0%,
   100% {
-    filter: drop-shadow(0 0 8px rgba(79, 209, 197, 0.25));
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--secondary) 25%, transparent));
   }
   50% {
-    filter: drop-shadow(0 0 20px rgba(79, 209, 197, 0.5));
+    filter: drop-shadow(0 0 20px color-mix(in srgb, var(--secondary) 50%, transparent));
   }
 }
 
@@ -189,4 +189,53 @@
 
 .command-item:active {
   @apply bg-muted;
+}
+
+/* Entrance animation — use with --enter-delay CSS var for stagger */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: enter 350ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Skeleton wave — replaces plain pulse with gradient sweep */
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-skeleton-wave {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    color-mix(in srgb, var(--muted) 60%, transparent) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.5s ease-in-out infinite;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

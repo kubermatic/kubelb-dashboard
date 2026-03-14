@@ -21,8 +21,8 @@ import type { WAFPolicy } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
-export function useWAFPolicies() {
-  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), `${BASE}/wafpolicies`);
+export function useWAFPolicies(options?: { enabled?: boolean }) {
+  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), `${BASE}/wafpolicies`, options);
 }
 
 export function useWAFPolicy(name: string) {

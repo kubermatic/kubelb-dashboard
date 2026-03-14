@@ -24,16 +24,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAge } from "@/hooks/use-age";
+import { conditionStyles } from "@/lib/status-styles";
 import type { Condition } from "@/types/kubernetes";
 
 interface ConditionsTableProps {
   conditions: Condition[];
-}
-
-function statusVariant(status: Condition["status"]) {
-  if (status === "True") return "bg-success/10 text-success" as const;
-  if (status === "False") return "bg-destructive/10 text-destructive" as const;
-  return "bg-warning/10 text-warning" as const;
 }
 
 function ConditionRow({ condition: c }: { condition: Condition }) {
@@ -42,12 +37,14 @@ function ConditionRow({ condition: c }: { condition: Condition }) {
     <TableRow>
       <TableCell className="font-medium">{c.type}</TableCell>
       <TableCell>
-        <Badge className={statusVariant(c.status)} variant="outline">
+        <Badge className={conditionStyles[c.status]} variant="outline">
           {c.status}
         </Badge>
       </TableCell>
       <TableCell>{c.reason}</TableCell>
-      <TableCell className="max-w-xs truncate">{c.message}</TableCell>
+      <TableCell className="max-w-xs truncate" title={c.message}>
+        {c.message}
+      </TableCell>
       <TableCell>{age}</TableCell>
     </TableRow>
   );

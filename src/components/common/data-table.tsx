@@ -28,7 +28,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Settings2, Trash2 } from "lucide-react";
+import { SearchX, Settings2, Trash2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import "@/types/table";
@@ -82,7 +83,9 @@ interface DataTableProps<T> {
   columns: ColumnDef<T, unknown>[];
   data: T[];
   isLoading?: boolean;
+  emptyIcon?: LucideIcon;
   emptyMessage?: string;
+  emptyDescription?: string;
   searchPlaceholder?: string;
   searchColumn?: string;
   filterColumns?: FilterColumn[];
@@ -103,11 +106,48 @@ interface DataTableProps<T> {
   connectionStatus?: WatchConnectionStatus;
 }
 
+function TableEmptyState({
+  icon: Icon,
+  message,
+  description,
+  hasActiveFilters,
+  onClearFilters,
+}: {
+  icon?: LucideIcon;
+  message: string;
+  description?: string;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+}) {
+  const DisplayIcon = hasActiveFilters ? SearchX : Icon;
+
+  return (
+    <div className="animate-enter flex flex-col items-center justify-center py-6 text-center">
+      {DisplayIcon && <DisplayIcon className="mb-2.5 size-8 text-muted-foreground/30" />}
+      <p className="text-sm font-medium text-muted-foreground">
+        {hasActiveFilters ? "No matching results" : message}
+      </p>
+      {hasActiveFilters ? (
+        <p className="mt-1 text-xs text-muted-foreground/70">
+          Try adjusting your search or filter criteria, or{" "}
+          <button type="button" onClick={onClearFilters} className="text-primary hover:underline">
+            clear all filters
+          </button>
+        </p>
+      ) : (
+        description && <p className="mt-1 text-xs text-muted-foreground/70">{description}</p>
+      )}
+    </div>
+  );
+}
+
 export function DataTable<T>({
   columns,
   data,
   isLoading,
+  emptyIcon,
   emptyMessage = "No results.",
+  emptyDescription,
   searchPlaceholder,
   searchColumn,
   filterColumns,
@@ -162,52 +202,6 @@ export function DataTable<T>({
 
   const hasSelection = Object.keys(rowSelection).length > 0;
 
-  const selectColumn: ColumnDef<T, unknown> = useMemo(
-    () => ({
-      id: "select",
-      enableSorting: false,
-      enableHiding: false,
-      header: ({ table: t }) => (
-        <div
-          className={cn(
-            "transition-opacity",
-            hasSelection ? "opacity-100" : "opacity-0 group-hover/row:opacity-100",
-          )}
-        >
-          <Checkbox
-            checked={t.getIsAllPageRowsSelected()}
-            indeterminate={t.getIsSomePageRowsSelected()}
-            onCheckedChange={(val) => t.toggleAllPageRowsSelected(!!val)}
-            aria-label="Select all"
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "transition-opacity",
-            row.getIsSelected() || hasSelection
-              ? "opacity-100"
-              : "opacity-0 group-hover/row:opacity-100",
-          )}
-        >
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(val) => row.toggleSelected(!!val)}
-            aria-label="Select row"
-          />
-        </div>
-      ),
-    }),
-    [hasSelection],
-  );
-
-  const allColumns = useMemo(
-    () => (enableRowSelection ? [selectColumn, ...columns] : columns),
-    [enableRowSelection, selectColumn, columns],
-  );
-
   const [pagination, setPagination] = useState({
     pageIndex: initialPage ?? 0,
     pageSize: initialPageSize ?? getStoredPageSize(),
@@ -215,7 +209,7 @@ export function DataTable<T>({
 
   const table = useReactTable({
     data,
-    columns: allColumns,
+    columns,
     state: { sorting, columnFilters, columnVisibility, pagination, rowSelection },
     onSortingChange: setSorting,
     enableRowSelection,
@@ -246,13 +240,12 @@ export function DataTable<T>({
         return next;
       });
     },
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
-
-  const handlePageSizeChange = (_size: number) => {};
 
   return (
     <div className="space-y-4">
@@ -322,12 +315,30 @@ export function DataTable<T>({
         </DataTableToolbar>
       )}
       <div className="overflow-x-auto rounded-md border">
-        <Table className="min-w-[600px]">
+        <Table className="min-w-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="group/row">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                {headerGroup.headers.map((header, headerIndex) => (
+                  <TableHead key={header.id} className={cn(headerIndex === 0 && "relative pl-8")}>
+                    {headerIndex === 0 && enableRowSelection && (
+                      <div
+                        className={cn(
+                          "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
+                          hasSelection
+                            ? "opacity-100"
+                            : "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100",
+                        )}
+                      >
+                        <Checkbox
+                          className="border-muted-foreground/40"
+                          checked={table.getIsAllPageRowsSelected()}
+                          indeterminate={table.getIsSomePageRowsSelected()}
+                          onCheckedChange={(val) => table.toggleAllPageRowsSelected(!!val)}
+                          aria-label="Select all"
+                        />
+                      </div>
+                    )}
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -339,23 +350,57 @@ export function DataTable<T>({
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {allColumns.map((_, j) => (
+                <TableRow key={i} style={{ "--delay": `${i * 75}ms` } as React.CSSProperties}>
+                  {columns.map((_, j) => (
                     <TableCell key={j}>
-                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton
+                        className={cn(
+                          "h-4",
+                          j === 0 ? "w-2/3" : j === columns.length - 1 ? "w-8" : "w-1/2",
+                        )}
+                        style={{ animationDelay: "var(--delay)" }}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row, rowIndex) => (
                 <TableRow
                   key={row.id}
-                  className={cn("group/row", onRowClick && "cursor-pointer")}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={cn("animate-enter group/row", onRowClick && "cursor-pointer")}
+                  style={{ "--enter-delay": `${rowIndex * 30}ms` } as React.CSSProperties}
+                  onClick={
+                    onRowClick
+                      ? (e: React.MouseEvent) => {
+                          const target = e.target as HTMLElement;
+                          if (target.closest('[data-slot^="dropdown-menu"]')) return;
+                          if (target.closest("a")) return;
+                          onRowClick(row);
+                        }
+                      : undefined
+                  }
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                  {row.getVisibleCells().map((cell, cellIndex) => (
+                    <TableCell key={cell.id} className={cn(cellIndex === 0 && "relative pl-8")}>
+                      {cellIndex === 0 && enableRowSelection && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
+                            row.getIsSelected() || hasSelection
+                              ? "opacity-100"
+                              : "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100",
+                          )}
+                        >
+                          <Checkbox
+                            className="border-muted-foreground/40"
+                            checked={row.getIsSelected()}
+                            onCheckedChange={(val) => row.toggleSelected(!!val)}
+                            aria-label="Select row"
+                          />
+                        </div>
+                      )}
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -363,15 +408,24 @@ export function DataTable<T>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={allColumns.length} className="h-24 text-center">
-                  {emptyMessage}
+                <TableCell colSpan={columns.length} className="h-40">
+                  <TableEmptyState
+                    icon={emptyIcon}
+                    message={emptyMessage}
+                    description={emptyDescription}
+                    hasActiveFilters={columnFilters.length > 0}
+                    onClearFilters={() => {
+                      setColumnFilters([]);
+                      onSearchChange?.("");
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} onPageSizeChange={handlePageSizeChange} />
+      <DataTablePagination table={table} />
     </div>
   );
 }

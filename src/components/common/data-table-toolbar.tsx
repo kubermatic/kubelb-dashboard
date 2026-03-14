@@ -19,13 +19,7 @@ import type { Table } from "@tanstack/react-table";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WatchConnectionStatus } from "@/hooks/use-kube-watch";
 import { WatchStatusIndicator } from "@/components/common/watch-status-indicator";
@@ -73,6 +67,7 @@ export function DataTableToolbar<T>({
             value={(searchCol.getFilterValue() as string) ?? ""}
             onChange={(e) => searchCol.setFilterValue(e.target.value)}
             className="max-w-sm"
+            aria-label={searchPlaceholder}
           />
         )}
         {filterColumns?.map(({ column, title, options }) => {
@@ -81,14 +76,14 @@ export function DataTableToolbar<T>({
           return (
             <Select
               key={column}
-              value={(col.getFilterValue() as string) ?? ""}
-              onValueChange={(val) => col.setFilterValue(val || undefined)}
+              value={(col.getFilterValue() as string) ?? "__all__"}
+              onValueChange={(val) => col.setFilterValue(val === "__all__" ? undefined : val)}
             >
               <SelectTrigger className="w-36">
-                <SelectValue placeholder={title} />
+                <span>{options.find((o) => o.value === col.getFilterValue())?.label ?? title}</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="__all__">All</SelectItem>
                 {options.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
@@ -110,7 +105,7 @@ export function DataTableToolbar<T>({
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button variant="ghost" size="icon" onClick={onRefresh}>
+                <Button variant="ghost" size="icon" onClick={onRefresh} aria-label="Refresh data">
                   <RefreshCw className={`size-4 ${isRefetching ? "animate-spin" : ""}`} />
                 </Button>
               }

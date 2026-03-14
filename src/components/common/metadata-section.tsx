@@ -92,6 +92,8 @@ export function MetadataSection({ metadata }: MetadataSectionProps) {
             type="button"
             className="flex w-full items-center gap-2"
             onClick={() => setShowAnnotations(!showAnnotations)}
+            aria-expanded={showAnnotations}
+            aria-controls="annotations-content"
           >
             {showAnnotations ? (
               <ChevronDown className="size-4" />
@@ -102,7 +104,7 @@ export function MetadataSection({ metadata }: MetadataSectionProps) {
           </button>
         </CardHeader>
         {showAnnotations && (
-          <CardContent>
+          <CardContent id="annotations-content">
             <KeyValuePairs data={annotations} emptyMessage="No annotations." />
           </CardContent>
         )}

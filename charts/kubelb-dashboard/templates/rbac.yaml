@@ -7,14 +7,26 @@ metadata:
     {{- include "kubelb-dashboard.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["kubelb.k8c.io"]
-    resources: ["loadbalancers", "routes", "tenants", "configs", "syncsecrets"]
-    verbs: ["get", "list", "watch"]
+    resources: ["tenants", "configs", "syncsecrets", "wafpolicies", "loadbalancers", "routes", "addresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["namespaces", "pods", "services"]
+    resources: ["namespaces", "services"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["gateways", "httproutes", "grpcroutes", "tcproutes", "tlsroutes", "udproutes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["gateway.envoyproxy.io"]
+    resources: ["backendtrafficpolicies", "clienttrafficpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

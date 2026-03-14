@@ -20,6 +20,8 @@ import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
 import { Route as WafPoliciesNameRouteImport } from "./routes/waf-policies/$name"
 import { Route as TenantsNameRouteImport } from "./routes/tenants/$name"
+import { Route as RoutesDownstreamRouteImport } from "./routes/routes/downstream"
+import { Route as LoadBalancersServicesRouteImport } from "./routes/load-balancers/services"
 import { Route as SyncSecretsNamespaceNameRouteImport } from "./routes/sync-secrets/$namespace.$name"
 import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namespace.$name"
 import { Route as LoadBalancersNamespaceNameRouteImport } from "./routes/load-balancers/$namespace.$name"
@@ -29,83 +31,121 @@ const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import("./routes/login.lazy").then((d) => d.Route))
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import("./routes/index.lazy").then((d) => d.Route))
 const WafPoliciesIndexRoute = WafPoliciesIndexRouteImport.update({
   id: "/waf-policies/",
   path: "/waf-policies/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/waf-policies/index.lazy").then((d) => d.Route),
+)
 const TenantsIndexRoute = TenantsIndexRouteImport.update({
   id: "/tenants/",
   path: "/tenants/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import("./routes/tenants/index.lazy").then((d) => d.Route))
 const SyncSecretsIndexRoute = SyncSecretsIndexRouteImport.update({
   id: "/sync-secrets/",
   path: "/sync-secrets/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/sync-secrets/index.lazy").then((d) => d.Route),
+)
 const RoutesIndexRoute = RoutesIndexRouteImport.update({
   id: "/routes/",
   path: "/routes/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import("./routes/routes/index.lazy").then((d) => d.Route))
 const LoadBalancersIndexRoute = LoadBalancersIndexRouteImport.update({
   id: "/load-balancers/",
   path: "/load-balancers/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/load-balancers/index.lazy").then((d) => d.Route),
+)
 const EnvoyProxyIndexRoute = EnvoyProxyIndexRouteImport.update({
   id: "/envoy-proxy/",
   path: "/envoy-proxy/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/envoy-proxy/index.lazy").then((d) => d.Route),
+)
 const ConfigurationIndexRoute = ConfigurationIndexRouteImport.update({
   id: "/configuration/",
   path: "/configuration/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/configuration/index.lazy").then((d) => d.Route),
+)
 const WafPoliciesNameRoute = WafPoliciesNameRouteImport.update({
   id: "/waf-policies/$name",
   path: "/waf-policies/$name",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/waf-policies/$name.lazy").then((d) => d.Route),
+)
 const TenantsNameRoute = TenantsNameRouteImport.update({
   id: "/tenants/$name",
   path: "/tenants/$name",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import("./routes/tenants/$name.lazy").then((d) => d.Route))
+const RoutesDownstreamRoute = RoutesDownstreamRouteImport.update({
+  id: "/routes/downstream",
+  path: "/routes/downstream",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/routes/downstream.lazy").then((d) => d.Route),
+)
+const LoadBalancersServicesRoute = LoadBalancersServicesRouteImport.update({
+  id: "/load-balancers/services",
+  path: "/load-balancers/services",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/load-balancers/services.lazy").then((d) => d.Route),
+)
 const SyncSecretsNamespaceNameRoute =
   SyncSecretsNamespaceNameRouteImport.update({
     id: "/sync-secrets/$namespace/$name",
     path: "/sync-secrets/$namespace/$name",
     getParentRoute: () => rootRouteImport,
-  } as any)
+  } as any).lazy(() =>
+    import("./routes/sync-secrets/$namespace.$name.lazy").then((d) => d.Route),
+  )
 const RoutesNamespaceNameRoute = RoutesNamespaceNameRouteImport.update({
   id: "/routes/$namespace/$name",
   path: "/routes/$namespace/$name",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/routes/$namespace.$name.lazy").then((d) => d.Route),
+)
 const LoadBalancersNamespaceNameRoute =
   LoadBalancersNamespaceNameRouteImport.update({
     id: "/load-balancers/$namespace/$name",
     path: "/load-balancers/$namespace/$name",
     getParentRoute: () => rootRouteImport,
-  } as any)
+  } as any).lazy(() =>
+    import("./routes/load-balancers/$namespace.$name.lazy").then(
+      (d) => d.Route,
+    ),
+  )
 const EnvoyProxyNamespaceNameRoute = EnvoyProxyNamespaceNameRouteImport.update({
   id: "/envoy-proxy/$namespace/$name",
   path: "/envoy-proxy/$namespace/$name",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import("./routes/envoy-proxy/$namespace.$name.lazy").then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/login": typeof LoginRoute
+  "/load-balancers/services": typeof LoadBalancersServicesRoute
+  "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration/": typeof ConfigurationIndexRoute
@@ -123,6 +163,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/login": typeof LoginRoute
+  "/load-balancers/services": typeof LoadBalancersServicesRoute
+  "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration": typeof ConfigurationIndexRoute
@@ -141,6 +183,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
   "/login": typeof LoginRoute
+  "/load-balancers/services": typeof LoadBalancersServicesRoute
+  "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/configuration/": typeof ConfigurationIndexRoute
@@ -160,6 +204,8 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/login"
+    | "/load-balancers/services"
+    | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/configuration/"
@@ -177,6 +223,8 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/login"
+    | "/load-balancers/services"
+    | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/configuration"
@@ -194,6 +242,8 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/login"
+    | "/load-balancers/services"
+    | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/configuration/"
@@ -212,6 +262,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  LoadBalancersServicesRoute: typeof LoadBalancersServicesRoute
+  RoutesDownstreamRoute: typeof RoutesDownstreamRoute
   TenantsNameRoute: typeof TenantsNameRoute
   WafPoliciesNameRoute: typeof WafPoliciesNameRoute
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
@@ -306,6 +358,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TenantsNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/routes/downstream": {
+      id: "/routes/downstream"
+      path: "/routes/downstream"
+      fullPath: "/routes/downstream"
+      preLoaderRoute: typeof RoutesDownstreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/load-balancers/services": {
+      id: "/load-balancers/services"
+      path: "/load-balancers/services"
+      fullPath: "/load-balancers/services"
+      preLoaderRoute: typeof LoadBalancersServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/sync-secrets/$namespace/$name": {
       id: "/sync-secrets/$namespace/$name"
       path: "/sync-secrets/$namespace/$name"
@@ -340,6 +406,8 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  LoadBalancersServicesRoute: LoadBalancersServicesRoute,
+  RoutesDownstreamRoute: RoutesDownstreamRoute,
   TenantsNameRoute: TenantsNameRoute,
   WafPoliciesNameRoute: WafPoliciesNameRoute,
   ConfigurationIndexRoute: ConfigurationIndexRoute,

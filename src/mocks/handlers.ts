@@ -15,6 +15,7 @@
  */
 
 import { http, HttpResponse } from "msw";
+import { addressHandlers } from "./handlers/addresses";
 import { backendTrafficPolicyHandlers } from "./handlers/backend-traffic-policies";
 import { clientTrafficPolicyHandlers } from "./handlers/client-traffic-policies";
 import { configHandlers } from "./handlers/configs";
@@ -35,7 +36,24 @@ import { udpRouteHandlers } from "./handlers/udproutes";
 import { wafPolicyHandlers } from "./handlers/waf-policies";
 
 export const handlers = [
-  http.get("/api/config", () => HttpResponse.json({ authEnabled: false })),
+  http.get("/api/config", () => HttpResponse.json({ authEnabled: true })),
+
+  http.get("/auth/session", () => {
+    const entered = sessionStorage.getItem("kubelb-mock-session");
+    if (entered) {
+      return HttpResponse.json({
+        authenticated: true,
+        user: { email: "admin@kubelb.local", name: "Mock Admin", groups: ["admin"] },
+      });
+    }
+    return HttpResponse.json({ authenticated: false });
+  }),
+
+  http.post("/auth/logout", () => {
+    sessionStorage.removeItem("kubelb-mock-session");
+    return HttpResponse.json({ ok: true });
+  }),
+  ...addressHandlers,
   ...tenantHandlers,
   ...configHandlers,
   ...loadBalancerHandlers,

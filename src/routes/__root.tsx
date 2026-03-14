@@ -23,8 +23,14 @@ import { fetchAppConfig } from "@/api/config";
 import { checkAuth } from "@/lib/auth-cache";
 
 function RootComponent() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isLogin = pathname === "/login";
+  const { pathname, resolvedPathname, isLoading } = useRouterState({
+    select: (s) => ({
+      pathname: s.location.pathname,
+      resolvedPathname: s.resolvedLocation?.pathname,
+      isLoading: s.isLoading,
+    }),
+  });
+  const isLogin = pathname === "/login" || (isLoading && resolvedPathname === "/login");
 
   if (isLogin) {
     return (

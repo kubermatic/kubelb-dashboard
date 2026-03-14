@@ -17,11 +17,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchCRDSchema } from "@/api/crd-schema";
 
-export function useCRDSchema(crdName: string, version?: string) {
+export function useCRDSchema(crdName: string, version?: string, enabled?: boolean) {
   return useQuery({
     queryKey: ["crd-schema", crdName, version] as const,
     queryFn: () => fetchCRDSchema(crdName, version),
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60,
+    enabled,
   });
 }

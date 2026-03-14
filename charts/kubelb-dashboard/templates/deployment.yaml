@@ -88,8 +88,13 @@ spec:
               port: api
             initialDelaySeconds: 3
             periodSeconds: 5
-          {{- if .Values.auth.enabled }}
+          {{- if or .Values.kubeconfig.existingSecret .Values.auth.enabled }}
           env:
+          {{- if .Values.kubeconfig.existingSecret }}
+            - name: KUBECONFIG
+              value: /etc/kubelb/kubeconfig
+          {{- end }}
+          {{- if .Values.auth.enabled }}
             - name: OIDC_ISSUER
               value: {{ required "auth.oidc.issuerUrl is required when auth.enabled=true" .Values.auth.oidc.issuerUrl | quote }}
             - name: OIDC_CLIENT_ID
@@ -117,11 +122,17 @@ spec:
               value: {{ .Values.auth.session.maxAge | quote }}
             {{- end }}
           {{- end }}
+          {{- end }}
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if .Values.kubeconfig.existingSecret }}
+            - name: kubeconfig
+              mountPath: /etc/kubelb
+              readOnly: true
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
@@ -129,6 +140,14 @@ spec:
           emptyDir: {}
         - name: nginx-run
           emptyDir: {}
+        {{- if .Values.kubeconfig.existingSecret }}
+        - name: kubeconfig
+          secret:
+            secretName: {{ .Values.kubeconfig.existingSecret }}
+            items:
+              - key: {{ .Values.kubeconfig.key }}
+                path: kubeconfig
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
