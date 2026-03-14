@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   createFileRoute,
   Link,
@@ -24,6 +24,7 @@ import {
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
+import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
@@ -31,11 +32,10 @@ import { DataTableColumnHeader } from "@/components/common/data-table-column-hea
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Button } from "@/components/ui/button";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import {
   useCreateSyncSecret,
@@ -44,21 +44,24 @@ import {
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
 import { AgeCell } from "@/components/common/age-cell";
+import { Badge } from "@/components/ui/badge";
+import { getSyncSecretHealthStatus } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
 
 const RESOURCE_KIND = "SyncSecret";
 const API_VERSION = "kubelb.k8c.io/v1alpha1";
-const CRD_NAME = "syncsecrets.kubelb.k8c.io";
 
-const SYNCSECRET_TEMPLATE = {
-  apiVersion: API_VERSION,
-  kind: RESOURCE_KIND,
-  metadata: { name: "", namespace: "" },
-  spec: {},
-};
+const CREATE_TEMPLATE = `apiVersion: kubelb.k8c.io/v1alpha1
+kind: SyncSecret
+metadata:
+  name: ""
+  namespace: ""
+type: Opaque
+data: {}
+`;
 
 export const Route = createFileRoute("/sync-secrets/")({
   validateSearch: validateListSearch,
@@ -75,13 +78,9 @@ function SyncSecrets() {
   const { search, page, pageSize } = useSearch({ from: "/sync-secrets/" });
   const items = data?.items ?? [];
 
-  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const createSyncSecret = useCreateSyncSecret();
   const updateSyncSecret = useUpdateSyncSecret();
   const deleteSyncSecret = useDeleteSyncSecret();
-
-  const createUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "create"), []);
-  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [yamlViewerResource, setYamlViewerResource] = useState<SyncSecret | null>(null);
@@ -138,6 +137,19 @@ function SyncSecrets() {
           <span className="block max-w-48 truncate font-mono text-xs" title={source}>
             {source}
           </span>
+        );
+      },
+    },
+    {
+      id: "status",
+      accessorFn: (row) => getSyncSecretHealthStatus(row).state,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const { state, reason } = getSyncSecretHealthStatus(row.original);
+        return (
+          <Badge className={statusStyles[state]} title={reason}>
+            {state}
+          </Badge>
         );
       },
     },
@@ -236,15 +248,14 @@ function SyncSecrets() {
         />
       )}
 
-      <ResourceFormDialog
+      <YamlEditorDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         mode="create"
         title="Create Sync Secret"
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={createUiSchema}
-        formData={SYNCSECRET_TEMPLATE}
+        resourceKind={RESOURCE_KIND}
+        apiVersion={API_VERSION}
+        initialYaml={CREATE_TEMPLATE}
         isPending={createSyncSecret.isPending}
         onSubmit={(parsed) => {
           void createSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setCreateOpen(false));
@@ -258,24 +269,24 @@ function SyncSecrets() {
         title={yamlViewerResource ? `SyncSecret: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      <ResourceFormDialog
-        open={!!editResource}
-        onOpenChange={(open) => !open && setEditResource(null)}
-        mode="edit"
-        title={
-          editResource ? `Edit Sync Secret: ${editResource.metadata.name}` : "Edit Sync Secret"
-        }
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={editUiSchema}
-        formData={
-          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-        }
-        isPending={updateSyncSecret.isPending}
-        onSubmit={(parsed) => {
-          void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditResource(null));
-        }}
-      />
+      {editResource && (
+        <YamlEditorDialog
+          open={!!editResource}
+          onOpenChange={(open) => !open && setEditResource(null)}
+          mode="edit"
+          title={`Edit Sync Secret: ${editResource.metadata.name}`}
+          resourceKind={RESOURCE_KIND}
+          apiVersion={API_VERSION}
+          initialYaml={yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })}
+          lockedFields={{ name: true, namespace: true }}
+          isPending={updateSyncSecret.isPending}
+          onSubmit={(parsed) => {
+            void updateSyncSecret
+              .mutateAsync(parsed as SyncSecret)
+              .then(() => setEditResource(null));
+          }}
+        />
+      )}
 
       {deleteResource && (
         <DeleteDialog

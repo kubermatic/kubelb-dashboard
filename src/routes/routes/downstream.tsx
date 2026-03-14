@@ -216,10 +216,14 @@ function DownstreamResources() {
         ]),
     {
       id: "status",
-      accessorFn: (row) => resolveHealthByKind(row.kind, row.status ?? {}).state,
+      accessorFn: (row) => resolveHealthByKind(row.kind, row.status ?? {}, row.metadata).state,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => {
-        const { state, reason } = resolveHealthByKind(row.original.kind, row.original.status ?? {});
+        const { state, reason } = resolveHealthByKind(
+          row.original.kind,
+          row.original.status ?? {},
+          row.original.metadata,
+        );
         return (
           <Badge className={statusStyles[state]} title={reason}>
             {state}

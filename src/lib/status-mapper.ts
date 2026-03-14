@@ -14,9 +14,16 @@
  * limitations under the License.
  */
 
-import type { LoadBalancer, Route } from "@/types/kubelb";
+import type { ObjectMeta } from "@/types/kubernetes";
+import type { LoadBalancer, Route, SyncSecret } from "@/types/kubelb";
 
-export type HealthState = "Ready" | "Degraded" | "Pending" | "Error";
+export type HealthState = "Ready" | "Degraded" | "Pending" | "Error" | "Terminating";
+
+const TERMINATING: HealthStatus = { state: "Terminating" };
+
+function isTerminating(metadata: ObjectMeta): boolean {
+  return !!metadata.deletionTimestamp;
+}
 
 export interface HealthStatus {
   state: HealthState;
@@ -81,6 +88,21 @@ function resolveIngressHealth(status: Record<string, unknown>): HealthStatus {
   return { state: "Pending" };
 }
 
+export function resolveServiceHealth(
+  status: Record<string, unknown>,
+  spec: Record<string, unknown>,
+): HealthStatus {
+  const svcType = (spec["type"] as string) ?? "ClusterIP";
+  if (svcType === "LoadBalancer") {
+    const lb = status["loadBalancer"] as Record<string, unknown> | undefined;
+    const ingress = lb?.["ingress"] as unknown[] | undefined;
+    if (ingress?.length) return { state: "Ready" };
+    return { state: "Pending" };
+  }
+  if ("loadBalancer" in status) return { state: "Ready" };
+  return { state: "Pending" };
+}
+
 interface AncestorStatus {
   conditions?: unknown[];
 }
@@ -100,7 +122,12 @@ function resolvePolicyHealth(status: Record<string, unknown>): HealthStatus {
   return { state: "Ready" };
 }
 
-export function resolveHealthByKind(kind: string, status: Record<string, unknown>): HealthStatus {
+export function resolveHealthByKind(
+  kind: string,
+  status: Record<string, unknown>,
+  metadata?: ObjectMeta,
+): HealthStatus {
+  if (metadata && isTerminating(metadata)) return TERMINATING;
   switch (kind) {
     case "Gateway":
       return resolveGatewayHealth(status);
@@ -121,6 +148,7 @@ export function resolveHealthByKind(kind: string, status: Record<string, unknown
 }
 
 export function getRouteHealthStatus(route: Route): HealthStatus {
+  if (isTerminating(route.metadata)) return TERMINATING;
   const routeResource = route.status?.resources?.route;
   if (!routeResource) return { state: "Pending" };
 
@@ -136,7 +164,15 @@ export function getRouteHealthStatus(route: Route): HealthStatus {
 }
 
 export function getLoadBalancerHealthStatus(lb: LoadBalancer): HealthStatus {
+  if (isTerminating(lb.metadata)) return TERMINATING;
   const ingress = lb.status?.loadBalancer?.ingress;
   if (ingress?.length) return { state: "Ready" };
+  return { state: "Pending" };
+}
+
+export function getSyncSecretHealthStatus(secret: SyncSecret): HealthStatus {
+  if (isTerminating(secret.metadata)) return TERMINATING;
+  const finalizers = secret.metadata.finalizers ?? [];
+  if (finalizers.includes("kubelb.k8c.io/cleanup")) return { state: "Ready" };
   return { state: "Pending" };
 }

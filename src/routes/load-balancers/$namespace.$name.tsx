@@ -150,7 +150,7 @@ function ResourcesSection({ lb }: { lb: LoadBalancer }) {
               search={{ search: lb.metadata.name, page: 0, pageSize: 10 }}
               className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
-              View <ArrowRight className="h-4 w-4" />
+              View All <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>
         </Card>

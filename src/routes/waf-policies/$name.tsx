@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { FileCode, Pencil, Trash2 } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
@@ -25,7 +24,7 @@ import { DeleteDialog } from "@/components/common/delete-dialog";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { WAFPolicyFormDialog } from "@/components/common/waf-policy-form-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -33,13 +32,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useDeleteWAFPolicy, useUpdateWAFPolicy } from "@/hooks/use-waf-policy-mutations";
 import { useWAFPolicy } from "@/hooks/use-waf-policies";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { WAFPolicy } from "@/types/kubelb";
-
-const CRD_NAME = "wafpolicies.kubelb.k8c.io";
 
 export const Route = createFileRoute("/waf-policies/$name")({
   component: WAFPolicyDetail,
@@ -49,10 +44,8 @@ function WAFPolicyDetail() {
   const { name } = Route.useParams();
   const navigate = useNavigate();
   const { data: policy, isLoading, error, refetch } = useWAFPolicy(name);
-  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateWAFPolicy = useUpdateWAFPolicy();
   const deleteWAFPolicy = useDeleteWAFPolicy();
-  const editUiSchema = useMemo(() => buildUiSchema("WAFPolicy", "edit"), []);
 
   const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -132,18 +125,15 @@ function WAFPolicyDetail() {
         title={`WAF Policy: ${name}`}
       />
 
-      <ResourceFormDialog
+      <WAFPolicyFormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         mode="edit"
-        title="Edit WAF Policy"
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={editUiSchema}
-        formData={sanitizeForEdit(policy) as Record<string, unknown>}
+        title={`Edit WAF Policy: ${name}`}
+        policy={policy}
         isPending={updateWAFPolicy.isPending}
         onSubmit={(parsed) => {
-          void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditOpen(false));
+          void updateWAFPolicy.mutateAsync(parsed).then(() => setEditOpen(false));
         }}
       />
 

@@ -14,19 +14,35 @@
  * limitations under the License.
  */
 
-import { LogOut, User } from "lucide-react";
+import { LogOut, ShieldOff, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+
+function UserAvatar({ name, email }: { name?: string; email?: string }) {
+  const initials = name
+    ? name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : (email?.[0]?.toUpperCase() ?? "?");
+
+  return (
+    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+      {initials}
+    </div>
+  );
+}
 
 export function UserMenu() {
   const { user, authEnabled, logout } = useAuth();
@@ -41,27 +57,32 @@ export function UserMenu() {
         </TooltipTrigger>
         <TooltipContent>Account</TooltipContent>
       </Tooltip>
-      <DropdownMenuContent align="end">
-        {authEnabled && user && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>{user.name || user.email}</DropdownMenuLabel>
-            {user.name && (
-              <DropdownMenuLabel className="font-normal text-muted-foreground">
-                {user.email}
-              </DropdownMenuLabel>
-            )}
-          </DropdownMenuGroup>
-        )}
-        {!authEnabled && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel className="text-muted-foreground">
-              Authentication disabled
-            </DropdownMenuLabel>
-          </DropdownMenuGroup>
+      <DropdownMenuContent align="end" className="w-64">
+        {authEnabled && user ? (
+          <div className="flex items-center gap-3 px-2 py-3">
+            <UserAvatar name={user.name} email={user.email} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">
+                {user.name || user.email}
+              </p>
+              {user.name && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 px-2 py-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
+              <ShieldOff className="size-3.5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">Authentication disabled</p>
+          </div>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled={!authEnabled} onClick={() => void logout()}>
+          <DropdownMenuItem
+            disabled={!authEnabled}
+            onClick={() => void logout()}
+            variant="destructive"
+          >
             <LogOut />
             Sign out
           </DropdownMenuItem>

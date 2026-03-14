@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { YamlEditor } from "@/components/common/yaml-editor";
 import { DialogClose } from "@/components/ui/dialog";
 
 interface LockedFields {
@@ -96,6 +96,12 @@ export function YamlEditorDialog({
 }: YamlEditorDialogProps) {
   const [value, setValue] = useState(initialYaml);
   const [error, setError] = useState<string | null>(null);
+  const [prevInitialYaml, setPrevInitialYaml] = useState(initialYaml);
+
+  if (open && initialYaml && initialYaml !== prevInitialYaml) {
+    setPrevInitialYaml(initialYaml);
+    setValue(initialYaml);
+  }
 
   const handleOpenChange = (next: boolean) => {
     setValue(initialYaml);
@@ -160,20 +166,21 @@ export function YamlEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <Textarea
-          className="min-h-[200px] flex-1 resize-y font-mono text-sm"
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setError(null);
-          }}
-          spellCheck={false}
-        />
+        <div className="flex-1 min-h-0">
+          <YamlEditor
+            value={value}
+            onChange={(v) => {
+              setValue(v);
+              setError(null);
+            }}
+            height="100%"
+          />
+        </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 

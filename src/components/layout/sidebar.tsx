@@ -223,19 +223,19 @@ function NavLinks({
           </div>
         )}
 
-        {/* Infrastructure */}
-        {infraItems.length > 0 && (
-          <div className="mt-6">
-            {sectionLabel("Infrastructure")}
-            <div className="space-y-1">{infraItems.map(renderItem)}</div>
-          </div>
-        )}
-
         {/* Security (EE only) */}
         {securityItems.length > 0 && (
           <div className="mt-6">
             {sectionLabel("Security")}
             <div className="space-y-1">{securityItems.map(renderItem)}</div>
+          </div>
+        )}
+
+        {/* Infrastructure */}
+        {infraItems.length > 0 && (
+          <div className="mt-6">
+            {sectionLabel("Infrastructure")}
+            <div className="space-y-1">{infraItems.map(renderItem)}</div>
           </div>
         )}
       </nav>

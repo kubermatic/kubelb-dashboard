@@ -110,7 +110,11 @@ function RouteDetail() {
 function getServiceHealth(svc: RouteServiceStatus): HealthState {
   if (!svc.conditions?.length) return "Pending";
   const ready = svc.conditions.find(
-    (c) => c.type === "Ready" || c.type === "Available" || c.type === "Programmed",
+    (c) =>
+      c.type === "Ready" ||
+      c.type === "Available" ||
+      c.type === "Programmed" ||
+      c.type === "ResourceAppliedSuccessfully",
   );
   if (ready?.status === "True") return "Ready";
   if (ready?.status === "False") return "Error";
@@ -131,16 +135,10 @@ function ResourcesSection({ route }: { route: RouteResource }) {
       <h3 className="text-sm font-medium text-muted-foreground">Resources</h3>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-2 border-l-primary">
-          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-            <Network className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Downstream</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-end justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{routeKind}</Badge>
-              <Badge variant="outline" className={statusStyles[health.state]}>
-                {health.state}
-              </Badge>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="flex items-center gap-3">
+              <Network className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Downstream (1)</CardTitle>
             </div>
             {generatedName && (
               <Link
@@ -148,16 +146,46 @@ function ResourcesSection({ route }: { route: RouteResource }) {
                 search={{ search: generatedName, page: 0, pageSize: 10 }}
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               >
-                View <ArrowRight className="h-4 w-4" />
+                View All <ArrowRight className="h-4 w-4" />
               </Link>
+            )}
+          </CardHeader>
+          <CardContent>
+            {generatedName ? (
+              <Link
+                to="/routes/downstream"
+                search={{ search: generatedName, page: 0, pageSize: 10 }}
+                className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-muted/50"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <span className="truncate font-medium">{generatedName}</span>
+                  <Badge variant="outline">{routeKind}</Badge>
+                </div>
+                <Badge variant="outline" className={statusStyles[health.state]}>
+                  {health.state}
+                </Badge>
+              </Link>
+            ) : (
+              <span className="text-sm text-muted-foreground">No downstream resource</span>
             )}
           </CardContent>
         </Card>
 
         <Card className="border-l-2 border-l-primary">
-          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-            <Server className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Services ({serviceCount})</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="flex items-center gap-3">
+              <Server className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Services ({serviceCount})</CardTitle>
+            </div>
+            {serviceCount > 0 && (
+              <Link
+                to="/load-balancers/services"
+                search={{ search: generatedName ?? "", page: 0, pageSize: 10 }}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                View All <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
           </CardHeader>
           <CardContent>
             {serviceCount === 0 ? (

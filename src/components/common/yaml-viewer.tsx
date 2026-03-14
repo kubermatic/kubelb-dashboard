@@ -37,7 +37,7 @@ export function YamlViewer({ open, onOpenChange, resource, title }: YamlViewerPr
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[600px] sm:max-w-[600px]">
+      <SheetContent side="right" className="w-[600px] data-[side=right]:sm:max-w-[600px]">
         <SheetHeader className="flex-row items-center justify-between pr-10">
           <SheetTitle>{title ?? "Resource YAML"}</SheetTitle>
           <CopyButton value={yaml} />

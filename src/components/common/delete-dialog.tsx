@@ -69,7 +69,16 @@ export function DeleteDialog({
 
         <div className="grid gap-2">
           <label htmlFor="delete-confirmation" className="text-sm text-muted-foreground">
-            Type <span className="font-medium text-foreground">{resourceName}</span> to confirm
+            Type{" "}
+            <button
+              type="button"
+              className="font-medium text-foreground hover:underline cursor-copy"
+              onClick={() => void navigator.clipboard.writeText(resourceName)}
+              title="Click to copy"
+            >
+              {resourceName}
+            </button>{" "}
+            to confirm
           </label>
           <Input
             id="delete-confirmation"

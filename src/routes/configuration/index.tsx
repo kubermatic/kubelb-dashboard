@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { useConfigs } from "@/hooks/use-config";
 import { useEdition } from "@/hooks/use-edition";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
+import yaml from "js-yaml";
 import type { Config, EnvoyProxy, ConfigSpec } from "@/types/kubelb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 
 const RESOURCE_KIND = "Config";
-const CRD_NAME = "configs.kubelb.k8c.io";
+const API_VERSION = "kubelb.k8c.io/v1alpha1";
 
 export const Route = createFileRoute("/configuration/")({
   component: Configuration,
@@ -414,9 +413,7 @@ function ConfigView({ config }: { config: Config }) {
 
 function Configuration() {
   const { data, isLoading, isError, error, refetch } = useConfigs();
-  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateConfig = useUpdateConfig();
-  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [yamlOpen, setYamlOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -499,20 +496,22 @@ function Configuration() {
         title={`Config: ${config?.metadata?.name ?? ""}`}
       />
 
-      <ResourceFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        mode="edit"
-        title={config ? `Edit Config: ${config.metadata.name}` : "Edit Config"}
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={editUiSchema}
-        formData={config ? (sanitizeForEdit(config) as Record<string, unknown>) : undefined}
-        isPending={updateConfig.isPending}
-        onSubmit={(parsed) => {
-          void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
-        }}
-      />
+      {config && (
+        <YamlEditorDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          mode="edit"
+          title={`Edit Config: ${config.metadata.name}`}
+          resourceKind={RESOURCE_KIND}
+          apiVersion={API_VERSION}
+          initialYaml={yaml.dump(sanitizeForEdit(config), { noRefs: true, lineWidth: -1 })}
+          lockedFields={{ name: true, namespace: true }}
+          isPending={updateConfig.isPending}
+          onSubmit={(parsed) => {
+            void updateConfig.mutateAsync(parsed as Config).then(() => setEditOpen(false));
+          }}
+        />
+      )}
     </div>
   );
 }

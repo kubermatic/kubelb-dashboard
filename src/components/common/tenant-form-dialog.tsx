@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { YamlEditor } from "@/components/common/yaml-editor";
 import type { Tenant, TenantSpec } from "@/types/kubelb";
 
 const K8S_NAME_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
@@ -152,13 +152,14 @@ export function TenantFormDialog({
   const [mode, setMode] = useState<"form" | "yaml">("form");
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [yamlValue, setYamlValue] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
   const [yamlError, setYamlError] = useState<string | null>(null);
-  const [touched, setTouched] = useState(false);
+  const [nameBlurred, setNameBlurred] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const nameError = useMemo(() => validateName(form.name), [form.name]);
 
   const set = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (key === "name") setNameError(validateName(value as string));
   }, []);
 
   const currentYaml = useMemo(() => tenantToYaml(form), [form]);
@@ -174,10 +175,10 @@ export function TenantFormDialog({
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setForm(INITIAL_STATE);
-      setNameError(null);
       setYamlError(null);
       setYamlValue("");
-      setTouched(false);
+      setNameBlurred(false);
+      setSubmitted(false);
       setMode("form");
     }
     onOpenChange(next);
@@ -199,18 +200,14 @@ export function TenantFormDialog({
       return;
     }
 
-    setTouched(true);
-    const error = validateName(form.name);
-    if (error) {
-      setNameError(error);
-      return;
-    }
+    setSubmitted(true);
+    if (nameError) return;
     onSubmit(buildTenant(form));
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
+      <DialogContent className="flex h-[80vh] flex-col sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Create Tenant</DialogTitle>
         </DialogHeader>
@@ -228,10 +225,15 @@ export function TenantFormDialog({
           <TabsContent value="form" className="min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-6 py-2">
               <FormSection title="General">
-                <FormField label="Name" error={touched ? nameError : null} required>
+                <FormField
+                  label="Name"
+                  error={nameBlurred || submitted ? nameError : null}
+                  required
+                >
                   <Input
                     value={form.name}
                     onChange={(e) => set("name", e.target.value.toLowerCase())}
+                    onBlur={() => setNameBlurred(true)}
                     placeholder="my-tenant"
                     autoFocus
                   />
@@ -374,16 +376,17 @@ export function TenantFormDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="yaml" className="min-h-0 flex-1">
-            <Textarea
-              className="h-full min-h-[300px] resize-none font-mono text-sm"
-              value={yamlValue}
-              onChange={(e) => {
-                setYamlValue(e.target.value);
-                setYamlError(null);
-              }}
-              spellCheck={false}
-            />
+          <TabsContent value="yaml" className="min-h-0 flex-1 flex flex-col">
+            <div className="flex-1 min-h-0">
+              <YamlEditor
+                value={yamlValue}
+                onChange={(v) => {
+                  setYamlValue(v);
+                  setYamlError(null);
+                }}
+                height="100%"
+              />
+            </div>
             {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
           </TabsContent>
         </Tabs>

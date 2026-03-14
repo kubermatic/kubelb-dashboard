@@ -68,6 +68,15 @@ export function ResourceFormDialog({
   const [localFormData, setLocalFormData] = useState<Record<string, unknown>>(formData ?? {});
   const [yamlValue, setYamlValue] = useState("");
   const [yamlError, setYamlError] = useState<string | null>(null);
+  const [prevFormData, setPrevFormData] = useState(formData);
+
+  if (open && formData && formData !== prevFormData) {
+    setPrevFormData(formData);
+    setLocalFormData(formData);
+    if (tab === "yaml") {
+      setYamlValue(yaml.dump(formData, { noRefs: true, lineWidth: -1 }));
+    }
+  }
 
   const handleOpenChange = (next: boolean) => {
     setLocalFormData(formData ?? {});
@@ -136,7 +145,7 @@ export function ResourceFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -173,15 +182,17 @@ export function ResourceFormDialog({
 
             {YAML_EDITOR_ENABLED && (
               <TabsContent value="yaml" className="flex-1 flex flex-col min-h-0 mt-0 pt-4">
-                <YamlEditor
-                  value={yamlValue}
-                  onChange={(v) => {
-                    setYamlValue(v);
-                    setYamlError(null);
-                  }}
-                  schema={schema}
-                  height="400px"
-                />
+                <div className="flex-1 min-h-0">
+                  <YamlEditor
+                    value={yamlValue}
+                    onChange={(v) => {
+                      setYamlValue(v);
+                      setYamlError(null);
+                    }}
+                    schema={schema}
+                    height="100%"
+                  />
+                </div>
                 {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
               </TabsContent>
             )}

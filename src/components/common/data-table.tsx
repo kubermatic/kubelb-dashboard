@@ -289,6 +289,7 @@ export function DataTable<T>({
                         )}
                       >
                         <Checkbox
+                          className="border-muted-foreground/40"
                           checked={table.getIsAllPageRowsSelected()}
                           indeterminate={table.getIsSomePageRowsSelected()}
                           onCheckedChange={(val) => table.toggleAllPageRowsSelected(!!val)}
@@ -344,6 +345,7 @@ export function DataTable<T>({
                           )}
                         >
                           <Checkbox
+                            className="border-muted-foreground/40"
                             checked={row.getIsSelected()}
                             onCheckedChange={(val) => row.toggleSelected(!!val)}
                             aria-label="Select row"

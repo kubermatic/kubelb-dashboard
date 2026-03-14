@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   createFileRoute,
@@ -24,19 +24,17 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
-import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { WAFPolicyFormDialog } from "@/components/common/waf-policy-form-dialog";
 import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useWAFPolicies } from "@/hooks/use-waf-policies";
 import {
   useCreateWAFPolicy,
@@ -44,21 +42,10 @@ import {
   useUpdateWAFPolicy,
 } from "@/hooks/use-waf-policy-mutations";
 import { AgeCell } from "@/components/common/age-cell";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { WAFPolicy } from "@/types/kubelb";
 
 const RESOURCE_KIND = "WAFPolicy";
-const API_VERSION = "kubelb.k8c.io/v1alpha1";
-
-const CRD_NAME = "wafpolicies.kubelb.k8c.io";
-
-const WAF_POLICY_TEMPLATE = {
-  apiVersion: API_VERSION,
-  kind: RESOURCE_KIND,
-  metadata: { name: "" },
-  spec: {},
-};
 
 export const Route = createFileRoute("/waf-policies/")({
   validateSearch: validateListSearch,
@@ -97,13 +84,9 @@ function WAFPolicies() {
   const { search, page, pageSize } = useSearch({ from: "/waf-policies/" });
   const items = data?.items ?? [];
 
-  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const createWAFPolicy = useCreateWAFPolicy();
   const updateWAFPolicy = useUpdateWAFPolicy();
   const deleteWAFPolicy = useDeleteWAFPolicy();
-
-  const createUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "create"), []);
-  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [yamlViewerResource, setYamlViewerResource] = useState<WAFPolicy | null>(null);
@@ -265,18 +248,14 @@ function WAFPolicies() {
         />
       )}
 
-      <ResourceFormDialog
+      <WAFPolicyFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         mode="create"
         title="Create WAF Policy"
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={createUiSchema}
-        formData={WAF_POLICY_TEMPLATE}
         isPending={createWAFPolicy.isPending}
         onSubmit={(parsed) => {
-          void createWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setCreateOpen(false));
+          void createWAFPolicy.mutateAsync(parsed).then(() => setCreateOpen(false));
         }}
       />
 
@@ -287,22 +266,19 @@ function WAFPolicies() {
         title={yamlViewerResource ? `WAF Policy: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      <ResourceFormDialog
-        open={!!editResource}
-        onOpenChange={(open) => !open && setEditResource(null)}
-        mode="edit"
-        title={editResource ? `Edit WAF Policy: ${editResource.metadata.name}` : "Edit WAF Policy"}
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={editUiSchema}
-        formData={
-          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-        }
-        isPending={updateWAFPolicy.isPending}
-        onSubmit={(parsed) => {
-          void updateWAFPolicy.mutateAsync(parsed as WAFPolicy).then(() => setEditResource(null));
-        }}
-      />
+      {editResource && (
+        <WAFPolicyFormDialog
+          open={!!editResource}
+          onOpenChange={(open) => !open && setEditResource(null)}
+          mode="edit"
+          title={`Edit WAF Policy: ${editResource.metadata.name}`}
+          policy={editResource}
+          isPending={updateWAFPolicy.isPending}
+          onSubmit={(parsed) => {
+            void updateWAFPolicy.mutateAsync(parsed).then(() => setEditResource(null));
+          }}
+        />
+      )}
 
       <BulkDeleteDialog
         open={bulkDeleteItems.length > 0}

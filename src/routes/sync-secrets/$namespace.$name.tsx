@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
+import yaml from "js-yaml";
 
 import { KubeApiError } from "@/api/kube";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { ResourceHeader } from "@/components/common/resource-header";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -39,16 +40,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useDeleteSyncSecret, useUpdateSyncSecret } from "@/hooks/use-sync-secret-mutations";
 import { useSyncSecret } from "@/hooks/use-sync-secrets";
 import { KUBELB_LABELS } from "@/lib/constants";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
 import type { SyncSecret } from "@/types/kubelb";
 
 const RESOURCE_KIND = "SyncSecret";
-const CRD_NAME = "syncsecrets.kubelb.k8c.io";
 
 export const Route = createFileRoute("/sync-secrets/$namespace/$name")({
   component: SyncSecretDetail,
@@ -58,10 +56,8 @@ function SyncSecretDetail() {
   const { namespace, name } = Route.useParams();
   const navigate = useNavigate();
   const { data: secret, isLoading, error, refetch } = useSyncSecret(namespace, name);
-  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
   const updateSyncSecret = useUpdateSyncSecret();
   const deleteSyncSecret = useDeleteSyncSecret();
-  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [yamlOpen, setYamlOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -144,15 +140,15 @@ function SyncSecretDetail() {
         title={`SyncSecret: ${namespace}/${name}`}
       />
 
-      <ResourceFormDialog
+      <YamlEditorDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         mode="edit"
         title="Edit SyncSecret"
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={editUiSchema}
-        formData={sanitizeForEdit(secret) as Record<string, unknown>}
+        resourceKind={RESOURCE_KIND}
+        apiVersion="kubelb.k8c.io/v1alpha1"
+        initialYaml={yaml.dump(sanitizeForEdit(secret), { noRefs: true, lineWidth: -1 })}
+        lockedFields={{ name: true, namespace: true }}
         isPending={updateSyncSecret.isPending}
         onSubmit={(parsed) => {
           void updateSyncSecret.mutateAsync(parsed as SyncSecret).then(() => setEditOpen(false));

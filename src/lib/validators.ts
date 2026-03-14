@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-import type { HealthState } from "@/lib/status-mapper";
+const RFC1123_LABEL_REGEX = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+const RFC1123_MAX_LENGTH = 63;
 
-export const statusStyles: Record<HealthState, string> = {
-  Ready: "bg-success/10 text-success hover:bg-success/20",
-  Degraded: "bg-warning/10 text-warning hover:bg-warning/20",
-  Pending: "bg-warning/10 text-warning hover:bg-warning/20",
-  Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-  Terminating: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-};
+export function validateRFC1123Name(value: string): string | null {
+  if (!value) return "Name is required";
+  if (value !== value.toLowerCase()) return "Name must be lowercase";
+  if (value.length > RFC1123_MAX_LENGTH)
+    return `Name must not exceed ${RFC1123_MAX_LENGTH} characters`;
+  if (!RFC1123_LABEL_REGEX.test(value))
+    return "Must start and end with a lowercase letter or number, and may contain hyphens in between";
+  return null;
+}
