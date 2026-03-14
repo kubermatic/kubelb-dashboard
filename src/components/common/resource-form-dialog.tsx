@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { YamlEditor } from "@/components/common/yaml-editor";
 import { FORM_EDITOR_ENABLED, YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import { shadcnTheme } from "@/lib/rjsf/theme";
 
@@ -173,14 +173,14 @@ export function ResourceFormDialog({
 
             {YAML_EDITOR_ENABLED && (
               <TabsContent value="yaml" className="flex-1 flex flex-col min-h-0 mt-0 pt-4">
-                <Textarea
-                  className="min-h-[200px] flex-1 resize-y font-mono text-sm"
+                <YamlEditor
                   value={yamlValue}
-                  onChange={(e) => {
-                    setYamlValue(e.target.value);
+                  onChange={(v) => {
+                    setYamlValue(v);
                     setYamlError(null);
                   }}
-                  spellCheck={false}
+                  schema={schema}
+                  height="400px"
                 />
                 {yamlError && <p className="mt-2 text-sm text-destructive">{yamlError}</p>}
               </TabsContent>
