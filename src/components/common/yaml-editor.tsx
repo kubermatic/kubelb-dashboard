@@ -21,6 +21,17 @@ import type { IDisposable } from "monaco-editor";
 import type { configureMonacoYaml } from "monaco-yaml";
 
 type MonacoInstance = Parameters<typeof configureMonacoYaml>[0];
+type ConfigureFn = typeof configureMonacoYaml;
+
+let yamlDisposable: IDisposable | null = null;
+let configurePromise: Promise<ConfigureFn> | null = null;
+
+function getConfigureFn(): Promise<ConfigureFn> {
+  if (!configurePromise) {
+    configurePromise = import("monaco-yaml").then((m) => m.configureMonacoYaml);
+  }
+  return configurePromise;
+}
 
 window.MonacoEnvironment = {
   getWorker(_, label) {
@@ -70,18 +81,17 @@ export function YamlEditor({
   schema,
 }: YamlEditorProps) {
   const theme = useMonacoTheme();
-  const disposableRef = useRef<IDisposable | null>(null);
   const monacoRef = useRef<MonacoInstance | null>(null);
   const callIdRef = useRef(0);
   const initializedRef = useRef(false);
 
   const configureSchema = useCallback((monaco: MonacoInstance, s?: Record<string, unknown>) => {
-    disposableRef.current?.dispose();
     const callId = ++callIdRef.current;
 
-    void import("monaco-yaml").then(({ configureMonacoYaml: configure }) => {
+    void getConfigureFn().then((configure) => {
       if (callIdRef.current !== callId) return;
-      disposableRef.current = configure(monaco, {
+      yamlDisposable?.dispose();
+      yamlDisposable = configure(monaco, {
         enableSchemaRequest: false,
         schemas: s
           ? [
@@ -94,13 +104,6 @@ export function YamlEditor({
           : [],
       });
     });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      disposableRef.current?.dispose();
-      disposableRef.current = null;
-    };
   }, []);
 
   useEffect(() => {
