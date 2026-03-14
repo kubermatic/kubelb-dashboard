@@ -24,6 +24,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
+import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
@@ -31,33 +32,25 @@ import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
 import { RowActions } from "@/components/common/row-actions";
+import { StatusBadge } from "@/components/common/status-badge";
+import { TenantFormDialog } from "@/components/common/tenant-form-dialog";
+import { TenantResourceCounts } from "@/components/common/tenant-resource-counts";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { YamlViewer } from "@/components/common/yaml-viewer";
+import { AgeCell } from "@/components/common/age-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
 import { useEdition } from "@/hooks/use-edition";
+import { useNamespaces } from "@/hooks/use-namespaces";
 import { useTenants } from "@/hooks/use-tenants";
 import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
-import { AgeCell } from "@/components/common/age-cell";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
+import { tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { Tenant } from "@/types/kubelb";
 
 const RESOURCE_KIND = "Tenant";
-const API_VERSION = "kubelb.k8c.io/v1alpha1";
-
-const CRD_NAME = "tenants.kubelb.k8c.io";
-
-const TENANT_TEMPLATE = {
-  apiVersion: API_VERSION,
-  kind: RESOURCE_KIND,
-  metadata: { name: "" },
-  spec: {},
-};
-
 export const Route = createFileRoute("/tenants/")({
   validateSearch: validateListSearch,
   search: { middlewares: [stripSearchParams(listSearchDefaults)] },
@@ -78,17 +71,22 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 function Tenants() {
   const { isEE } = useEdition();
   const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useTenants();
+  const { data: namespacesData } = useNamespaces();
   const navigate = useNavigate();
   const { search, page, pageSize } = useSearch({ from: "/tenants/" });
   const items = data?.items ?? [];
 
-  const { data: crdSchema, isLoading: isSchemaLoading } = useCRDSchema(CRD_NAME, "v1alpha1");
+  const namespaceMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const ns of namespacesData?.items ?? []) {
+      map.set(ns.metadata.name, ns.status?.phase ?? "Unknown");
+    }
+    return map;
+  }, [namespacesData]);
+
   const createTenant = useCreateTenant();
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
-
-  const createUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "create"), []);
-  const editUiSchema = useMemo(() => buildUiSchema(RESOURCE_KIND, "edit"), []);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [yamlViewerResource, setYamlViewerResource] = useState<Tenant | null>(null);
@@ -126,6 +124,22 @@ function Tenants() {
           {row.original.metadata.name}
         </Link>
       ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const tenant = row.original;
+        if (tenant.metadata.deletionTimestamp) {
+          return <StatusBadge label="Terminating" status="False" />;
+        }
+        const nsName = tenantToNamespace(tenant.metadata.name);
+        const phase = namespaceMap.get(nsName);
+        if (!phase) return <StatusBadge label="Provisioning" status="Unknown" />;
+        if (phase === "Active") return <StatusBadge label="Active" status="True" />;
+        if (phase === "Terminating") return <StatusBadge label="Terminating" status="False" />;
+        return <StatusBadge label={phase} status="Unknown" />;
+      },
     },
     {
       id: "l4",
@@ -301,18 +315,13 @@ function Tenants() {
         />
       )}
 
-      <ResourceFormDialog
+      <TenantFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        mode="create"
-        title="Create Tenant"
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={createUiSchema}
-        formData={TENANT_TEMPLATE}
         isPending={createTenant.isPending}
-        onSubmit={(parsed) => {
-          void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateOpen(false));
+        isEE={isEE}
+        onSubmit={(tenant) => {
+          void createTenant.mutateAsync(tenant).then(() => setCreateOpen(false));
         }}
       />
 
@@ -323,22 +332,22 @@ function Tenants() {
         title={yamlViewerResource ? `Tenant: ${yamlViewerResource.metadata.name}` : undefined}
       />
 
-      <ResourceFormDialog
-        open={!!editResource}
-        onOpenChange={(open) => !open && setEditResource(null)}
-        mode="edit"
-        title={editResource ? `Edit Tenant: ${editResource.metadata.name}` : "Edit Tenant"}
-        schema={crdSchema}
-        isSchemaLoading={isSchemaLoading}
-        uiSchema={editUiSchema}
-        formData={
-          editResource ? (sanitizeForEdit(editResource) as Record<string, unknown>) : undefined
-        }
-        isPending={updateTenant.isPending}
-        onSubmit={(parsed) => {
-          void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
-        }}
-      />
+      {editResource && (
+        <YamlEditorDialog
+          open={!!editResource}
+          onOpenChange={(open) => !open && setEditResource(null)}
+          mode="edit"
+          title={`Edit Tenant: ${editResource.metadata.name}`}
+          resourceKind={RESOURCE_KIND}
+          apiVersion="kubelb.k8c.io/v1alpha1"
+          initialYaml={yaml.dump(sanitizeForEdit(editResource), { noRefs: true, lineWidth: -1 })}
+          lockedFields={{ name: true }}
+          isPending={updateTenant.isPending}
+          onSubmit={(parsed) => {
+            void updateTenant.mutateAsync(parsed as Tenant).then(() => setEditResource(null));
+          }}
+        />
+      )}
 
       {deleteResource && (
         <DeleteDialog
@@ -355,9 +364,9 @@ function Tenants() {
         >
           <p className="text-sm text-muted-foreground">
             This will permanently delete namespace{" "}
-            <strong>tenant-{deleteResource.metadata.name}</strong> and all associated resources
-            including load balancers, routes, and secrets.
+            <strong>tenant-{deleteResource.metadata.name}</strong> and all associated resources.
           </p>
+          <TenantResourceCounts tenantName={deleteResource.metadata.name} />
         </DeleteDialog>
       )}
 

@@ -23,12 +23,11 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Shield } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useDeployments } from "@/hooks/use-deployments";
 import type { Deployment } from "@/types/kubernetes";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { EmptyState } from "@/components/common/empty-state";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
@@ -72,24 +71,36 @@ function EnvoyProxy() {
       accessorFn: (row) => row.metadata.name,
       id: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => (
-        <Link
-          to="/envoy-proxy/$namespace/$name"
-          params={{
-            namespace: row.original.metadata.namespace ?? "default",
-            name: row.original.metadata.name,
-          }}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.original.metadata.name}
-        </Link>
-      ),
+      cell: ({ row }) => {
+        const name = row.original.metadata.name;
+        return (
+          <Link
+            to="/envoy-proxy/$namespace/$name"
+            params={{
+              namespace: row.original.metadata.namespace ?? "default",
+              name,
+            }}
+            className="block max-w-xs truncate font-medium text-primary hover:underline"
+            title={name}
+          >
+            {name}
+          </Link>
+        );
+      },
     },
     {
       accessorFn: (row) => row.metadata.namespace,
       id: "namespace",
       meta: { hideBelow: "md" },
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      cell: ({ row }) => {
+        const ns = row.original.metadata.namespace ?? "";
+        return (
+          <span className="block max-w-40 truncate" title={ns}>
+            {ns}
+          </span>
+        );
+      },
     },
     {
       id: "replicas",
@@ -148,19 +159,14 @@ function EnvoyProxy() {
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
-      ) : !isLoading && items.length === 0 ? (
-        <EmptyState
-          icon={Shield}
-          title={
-            selectedTenant ? `No envoy proxies in ${selectedTenant}` : "No envoy proxies found"
-          }
-          description="Envoy proxy deployments will appear here once provisioned."
-        />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
+          emptyMessage={
+            selectedTenant ? `No envoy proxies in ${selectedTenant}` : "No envoy proxies found."
+          }
           searchColumn="name"
           searchPlaceholder="Filter by name..."
           onRefresh={() => void refetch()}

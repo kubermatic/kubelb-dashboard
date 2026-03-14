@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+import { Badge } from "@/components/ui/badge";
 import { AgeCell } from "@/components/common/age-cell";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { EmptyState } from "@/components/common/empty-state";
 import { ManagedToggle } from "@/components/common/managed-toggle";
 import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
@@ -37,7 +37,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowLeft, FileText, Server } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/load-balancers/services")({
@@ -88,21 +88,58 @@ function Services() {
       accessorFn: (row) => row.metadata.name,
       id: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => (
-        <span className="font-medium font-mono text-sm">{row.original.metadata.name}</span>
-      ),
+      cell: ({ row }) => {
+        const name = row.original.metadata.name;
+        return (
+          <span className="block max-w-xs truncate font-medium font-mono text-sm" title={name}>
+            {name}
+          </span>
+        );
+      },
     },
     {
       accessorFn: (row) => row.metadata.namespace,
       id: "namespace",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      cell: ({ row }) => {
+        const ns = row.original.metadata.namespace ?? "";
+        return (
+          <span className="block max-w-40 truncate" title={ns}>
+            {ns}
+          </span>
+        );
+      },
     },
-    {
-      accessorFn: (row) => (managed ? namespaceToTenant(row.metadata.namespace ?? "") : "\u2014"),
-      id: "tenant",
-      meta: { hideBelow: "md" },
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
-    },
+    ...(managed
+      ? [
+          {
+            accessorFn: (row: GenericResource) => namespaceToTenant(row.metadata.namespace ?? ""),
+            id: "tenant",
+            meta: { hideBelow: "md" },
+            header: ({
+              column,
+            }: {
+              column: import("@tanstack/react-table").Column<GenericResource>;
+            }) => <DataTableColumnHeader column={column} title="Tenant" />,
+          } satisfies ColumnDef<GenericResource>,
+        ]
+      : [
+          {
+            id: "managed",
+            meta: { hideBelow: "md" },
+            header: ({
+              column,
+            }: {
+              column: import("@tanstack/react-table").Column<GenericResource>;
+            }) => <DataTableColumnHeader column={column} title="Managed" />,
+            cell: ({ row }) => {
+              const labels = row.original.metadata.labels ?? {};
+              const isManaged = !!labels["kubelb.k8c.io/managed-by"];
+              if (!isManaged) return <Badge variant="outline">External</Badge>;
+              return <Badge className="bg-success/10 text-success">Managed</Badge>;
+            },
+          } satisfies ColumnDef<GenericResource>,
+        ]),
     {
       accessorFn: getServiceType,
       id: "type",
@@ -112,13 +149,27 @@ function Services() {
       accessorFn: getClusterIP,
       id: "clusterIP",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Cluster IP" />,
-      cell: ({ row }) => <span className="font-mono text-xs">{getClusterIP(row.original)}</span>,
+      cell: ({ row }) => {
+        const ip = getClusterIP(row.original);
+        return (
+          <span className="block max-w-40 truncate font-mono text-xs" title={ip}>
+            {ip}
+          </span>
+        );
+      },
     },
     {
       accessorFn: getServicePorts,
       id: "ports",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
-      cell: ({ row }) => <span className="font-mono text-xs">{getServicePorts(row.original)}</span>,
+      cell: ({ row }) => {
+        const ports = getServicePorts(row.original);
+        return (
+          <span className="block max-w-40 truncate font-mono text-xs" title={ports}>
+            {ports}
+          </span>
+        );
+      },
     },
     {
       id: "age",
@@ -166,17 +217,12 @@ function Services() {
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
-      ) : !isLoading && items.length === 0 ? (
-        <EmptyState
-          icon={Server}
-          title={selectedTenant ? `No services in ${selectedTenant}` : "No services found"}
-          description="Services will appear here once created."
-        />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
+          emptyMessage={selectedTenant ? `No services in ${selectedTenant}` : "No services found."}
           searchColumn="name"
           searchPlaceholder="Search services..."
           onRefresh={() => void refetch()}

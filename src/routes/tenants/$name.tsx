@@ -33,6 +33,7 @@ import {
 import { KubeApiError } from "@/api/kube";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
+import { TenantResourceCounts } from "@/components/common/tenant-resource-counts";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
@@ -136,17 +137,13 @@ function TenantDetail() {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <OverviewTab tenant={tenant} />
-        </TabsContent>
-
-        <TabsContent value="resources" className="space-y-4">
           <ResourcesTab tenantName={name} />
+          <OverviewTab tenant={tenant} />
         </TabsContent>
 
         <TabsContent value="configuration" className="space-y-4">
@@ -196,9 +193,11 @@ function TenantDetail() {
             );
         }}
       >
-        <p className="text-sm text-destructive">
-          Deleting this tenant will also delete its namespace and all resources within it.
+        <p className="text-sm text-muted-foreground">
+          This will permanently delete namespace <strong>tenant-{name}</strong> and all associated
+          resources.
         </p>
+        <TenantResourceCounts tenantName={name} />
       </DeleteDialog>
     </div>
   );
@@ -217,35 +216,38 @@ function ResourcesTab({ tenantName }: { tenantName: string }) {
   const queries = [useLoadBalancers(namespace), useRoutes(namespace), useSyncSecrets(namespace)];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {RESOURCE_CARDS.map((card, i) => {
-        const { data, isLoading } = queries[i];
-        const count = data?.items?.length ?? 0;
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-muted-foreground">Resources</h3>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {RESOURCE_CARDS.map((card, i) => {
+          const { data, isLoading } = queries[i];
+          const count = data?.items?.length ?? 0;
 
-        return (
-          <Card key={card.label}>
-            <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-              <card.icon className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">{card.label}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-end justify-between">
-              {isLoading ? (
-                <Skeleton className="h-8 w-12" />
-              ) : (
-                <span className="text-3xl font-bold">{count}</span>
-              )}
-              <Link
-                to={card.href}
-                search={{ search: "", page: 0, pageSize: 10 }}
-                onClick={() => setSelectedTenant(tenantName)}
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                View all <ArrowRight className="h-4 w-4" />
-              </Link>
-            </CardContent>
-          </Card>
-        );
-      })}
+          return (
+            <Card key={card.label} className="border-l-2 border-l-primary">
+              <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+                <card.icon className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">{card.label}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-end justify-between">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-12" />
+                ) : (
+                  <span className="text-3xl font-bold">{count}</span>
+                )}
+                <Link
+                  to={card.href}
+                  search={{ search: "", page: 0, pageSize: 10 }}
+                  onClick={() => setSelectedTenant(tenantName)}
+                  className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  View all <ArrowRight className="h-4 w-4" />
+                </Link>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }

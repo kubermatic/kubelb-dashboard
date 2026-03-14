@@ -23,12 +23,11 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Route as RouteIcon } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { EmptyState } from "@/components/common/empty-state";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
@@ -138,14 +137,24 @@ function Routes() {
       id: "source",
       accessorFn: getSourceName,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
-      cell: ({ row }) => <span className="font-mono text-xs">{getSourceName(row.original)}</span>,
+      cell: ({ row }) => {
+        const source = getSourceName(row.original);
+        return (
+          <span className="block max-w-48 truncate font-mono text-xs" title={source}>
+            {source}
+          </span>
+        );
+      },
     },
     {
       id: "endpoints",
       accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
       cell: ({ row }) => (
-        <span className="max-w-48 truncate font-mono text-xs">
+        <span
+          className="block max-w-48 truncate font-mono text-xs"
+          title={getEndpointsSummary(row.original)}
+        >
           {getEndpointsSummary(row.original)}
         </span>
       ),
@@ -242,17 +251,12 @@ function Routes() {
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
-      ) : !isLoading && items.length === 0 ? (
-        <EmptyState
-          icon={RouteIcon}
-          title={selectedTenant ? `No routes in ${selectedTenant}` : "No routes found"}
-          description="Routes will appear here once created."
-        />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
+          emptyMessage={selectedTenant ? `No routes in ${selectedTenant}` : "No routes found."}
           searchColumn="name"
           searchPlaceholder="Search routes..."
           onRefresh={() => void refetch()}

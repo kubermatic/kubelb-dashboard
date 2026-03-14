@@ -320,7 +320,16 @@ export function DataTable<T>({
                 <TableRow
                   key={row.id}
                   className={cn("group/row", onRowClick && "cursor-pointer")}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onClick={
+                    onRowClick
+                      ? (e: React.MouseEvent) => {
+                          const target = e.target as HTMLElement;
+                          if (target.closest('[data-slot^="dropdown-menu"]')) return;
+                          if (target.closest("a")) return;
+                          onRowClick(row);
+                        }
+                      : undefined
+                  }
                 >
                   {row.getVisibleCells().map((cell, cellIndex) => (
                     <TableCell key={cell.id} className={cn(cellIndex === 0 && "relative pl-8")}>

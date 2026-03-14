@@ -155,14 +155,27 @@ function DownstreamResources() {
       accessorFn: (row) => row.metadata.name,
       id: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => (
-        <span className="font-medium font-mono text-sm">{row.original.metadata.name}</span>
-      ),
+      cell: ({ row }) => {
+        const name = row.original.metadata.name;
+        return (
+          <span className="block max-w-xs truncate font-medium font-mono text-sm" title={name}>
+            {name}
+          </span>
+        );
+      },
     },
     {
       accessorFn: (row) => row.metadata.namespace,
       id: "namespace",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namespace" />,
+      cell: ({ row }) => {
+        const ns = row.original.metadata.namespace ?? "";
+        return (
+          <span className="block max-w-40 truncate" title={ns}>
+            {ns}
+          </span>
+        );
+      },
     },
     {
       id: "kind",
@@ -170,13 +183,36 @@ function DownstreamResources() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Kind" />,
       cell: ({ row }) => <Badge variant="outline">{row.original.kind}</Badge>,
     },
-    {
-      accessorFn: (row) =>
-        managedOnly ? namespaceToTenant(row.metadata.namespace ?? "") : "\u2014",
-      id: "tenant",
-      meta: { hideBelow: "md" },
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Tenant" />,
-    },
+    ...(managedOnly
+      ? [
+          {
+            accessorFn: (row: GenericResource) => namespaceToTenant(row.metadata.namespace ?? ""),
+            id: "tenant",
+            meta: { hideBelow: "md" },
+            header: ({
+              column,
+            }: {
+              column: import("@tanstack/react-table").Column<GenericResource>;
+            }) => <DataTableColumnHeader column={column} title="Tenant" />,
+          } satisfies ColumnDef<GenericResource>,
+        ]
+      : [
+          {
+            id: "managed",
+            meta: { hideBelow: "md" },
+            header: ({
+              column,
+            }: {
+              column: import("@tanstack/react-table").Column<GenericResource>;
+            }) => <DataTableColumnHeader column={column} title="Managed" />,
+            cell: ({ row }) => {
+              const labels = row.original.metadata.labels ?? {};
+              const isManaged = !!labels["kubelb.k8c.io/managed-by"];
+              if (!isManaged) return <Badge variant="outline">External</Badge>;
+              return <Badge className="bg-success/10 text-success">Managed</Badge>;
+            },
+          } satisfies ColumnDef<GenericResource>,
+        ]),
     {
       id: "status",
       accessorFn: (row) => resolveHealthByKind(row.kind, row.status ?? {}).state,

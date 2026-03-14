@@ -91,7 +91,10 @@ function NavLinks({
                   ? "bg-primary/10 text-primary"
                   : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
               )}
-              onClick={onNavigate}
+              onClick={() => {
+                setManualExpanded((prev) => new Set([...prev, item.to]));
+                onNavigate?.();
+              }}
             >
               {active && (
                 <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />

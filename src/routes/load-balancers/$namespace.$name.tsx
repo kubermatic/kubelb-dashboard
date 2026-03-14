@@ -15,14 +15,13 @@
  */
 
 import React, { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { FileCode } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, FileCode, Server } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { KUBELB_ANNOTATIONS as KUBELB_ANNOTATION_KEYS } from "@/lib/constants";
 import { CopyButton } from "@/components/common/copy-button";
 import { MetadataSection } from "@/components/common/metadata-section";
-import { LoadBalancerResourceLinkage } from "@/components/common/resource-linkage";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -42,6 +41,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEdition } from "@/hooks/use-edition";
 import { useLoadBalancer } from "@/hooks/use-load-balancers";
+import { getLoadBalancerHealthStatus } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 import type { LoadBalancer } from "@/types/kubelb";
 
 export const Route = createFileRoute("/load-balancers/$namespace/$name")({
@@ -97,21 +98,13 @@ function LoadBalancerDetail() {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="status">Status</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          <ResourcesSection lb={lb} />
           <OverviewTab lb={lb} />
-        </TabsContent>
-
-        <TabsContent value="status" className="space-y-4">
-          <StatusTab lb={lb} />
-        </TabsContent>
-
-        <TabsContent value="resources" className="space-y-4">
-          <LoadBalancerResourceLinkage lb={lb} />
+          <StatusSection lb={lb} />
         </TabsContent>
 
         <TabsContent value="metadata">
@@ -125,6 +118,43 @@ function LoadBalancerDetail() {
         resource={lb}
         title={`LoadBalancer: ${namespace}/${name}`}
       />
+    </div>
+  );
+}
+
+function ResourcesSection({ lb }: { lb: LoadBalancer }) {
+  const health = getLoadBalancerHealthStatus(lb);
+  const portCount = lb.spec.ports?.length ?? 0;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-muted-foreground">Resources</h3>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-l-2 border-l-primary">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+            <Server className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Services</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-end justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-3xl font-bold">{portCount}</span>
+              <span className="text-sm text-muted-foreground">
+                port{portCount !== 1 ? "s" : ""}
+              </span>
+              <Badge variant="outline" className={statusStyles[health.state]}>
+                {health.state}
+              </Badge>
+            </div>
+            <Link
+              to="/load-balancers/services"
+              search={{ search: lb.metadata.name, page: 0, pageSize: 10 }}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              View <ArrowRight className="h-4 w-4" />
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -281,10 +311,12 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
   );
 }
 
-function StatusTab({ lb }: { lb: LoadBalancer }) {
+function StatusSection({ lb }: { lb: LoadBalancer }) {
   const servicePorts = lb.status?.service?.ports ?? [];
   const hostname = lb.status?.hostname;
   const ingress = lb.status?.loadBalancer?.ingress ?? [];
+
+  if (!servicePorts.length && !hostname && !ingress.length) return null;
 
   return (
     <>
@@ -373,10 +405,6 @@ function StatusTab({ lb }: { lb: LoadBalancer }) {
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {!servicePorts.length && !hostname && !ingress.length && (
-        <p className="text-sm text-muted-foreground">No status information available.</p>
       )}
     </>
   );

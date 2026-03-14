@@ -23,13 +23,12 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
-import { EmptyState } from "@/components/common/empty-state";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
@@ -133,9 +132,14 @@ function SyncSecrets() {
       meta: { hideBelow: "md" },
       accessorFn: (row) => getOriginSource(row.metadata.labels),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
-      cell: ({ row }) => (
-        <span className="font-mono text-xs">{getOriginSource(row.original.metadata.labels)}</span>
-      ),
+      cell: ({ row }) => {
+        const source = getOriginSource(row.original.metadata.labels);
+        return (
+          <span className="block max-w-48 truncate font-mono text-xs" title={source}>
+            {source}
+          </span>
+        );
+      },
     },
     {
       id: "age",
@@ -189,23 +193,14 @@ function SyncSecrets() {
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
-      ) : !isLoading && items.length === 0 ? (
-        <EmptyState
-          icon={KeyRound}
-          title={selectedTenant ? `No sync secrets in ${selectedTenant}` : "No sync secrets found"}
-          description="Get started by creating your first sync secret."
-          action={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Create Sync Secret
-            </Button>
-          }
-        />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
+          emptyMessage={
+            selectedTenant ? `No sync secrets in ${selectedTenant}` : "No sync secrets found."
+          }
           searchColumn="name"
           searchPlaceholder="Search sync secrets..."
           toolbarLeading={

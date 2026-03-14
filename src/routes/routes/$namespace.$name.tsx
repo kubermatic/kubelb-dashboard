@@ -15,13 +15,12 @@
  */
 
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { FileCode, Globe, Lock } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, FileCode, Globe, Lock, Network, Server } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
 import { MetadataSection } from "@/components/common/metadata-section";
-import { RouteResourceLinkage } from "@/components/common/resource-linkage";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -32,6 +31,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KUBELB_ANNOTATIONS } from "@/lib/constants";
+import { getRouteHealthStatus } from "@/lib/status-mapper";
+import { statusStyles } from "@/lib/status-styles";
 import { useRoute as useRouteResource } from "@/hooks/use-routes";
 import type { Route as RouteResource } from "@/types/kubelb";
 
@@ -82,21 +83,13 @@ function RouteDetail() {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="status">Status</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          <ResourcesSection route={route} />
           <OverviewTab route={route} />
-        </TabsContent>
-
-        <TabsContent value="status" className="space-y-4">
-          <StatusTab route={route} />
-        </TabsContent>
-
-        <TabsContent value="resources" className="space-y-4">
-          <RouteResourceLinkage route={route} />
+          <StatusSection route={route} />
         </TabsContent>
 
         <TabsContent value="metadata">
@@ -110,6 +103,65 @@ function RouteDetail() {
         resource={route}
         title={`Route: ${namespace}/${name}`}
       />
+    </div>
+  );
+}
+
+function ResourcesSection({ route }: { route: RouteResource }) {
+  const routeResource = route.status?.resources?.route;
+  const services = route.status?.resources?.services ?? {};
+  const serviceCount = Object.keys(services).length;
+  const health = getRouteHealthStatus(route);
+  const routeKind = routeResource?.kind ?? "Unknown";
+  const generatedName = routeResource?.generatedName;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-muted-foreground">Resources</h3>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-l-2 border-l-primary">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+            <Network className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Downstream</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-end justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{routeKind}</Badge>
+              <Badge variant="outline" className={statusStyles[health.state]}>
+                {health.state}
+              </Badge>
+            </div>
+            {generatedName && (
+              <Link
+                to="/routes/downstream"
+                search={{ search: generatedName, page: 0, pageSize: 10 }}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                View <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-2 border-l-primary">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+            <Server className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Services</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-end justify-between">
+            <span className="text-3xl font-bold">{serviceCount}</span>
+            {serviceCount > 0 && (
+              <Link
+                to="/load-balancers/services"
+                search={{ search: route.metadata.name, page: 0, pageSize: 10 }}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                View all <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -227,11 +279,13 @@ function OverviewTab({ route }: { route: RouteResource }) {
   );
 }
 
-function StatusTab({ route }: { route: RouteResource }) {
+function StatusSection({ route }: { route: RouteResource }) {
   const resources = route.status?.resources;
   const routeConditions = resources?.route?.conditions ?? [];
   const services = resources?.services ?? {};
   const serviceEntries = Object.entries(services);
+
+  if (!routeConditions.length && !serviceEntries.length && !resources?.source) return null;
 
   return (
     <>
@@ -246,14 +300,16 @@ function StatusTab({ route }: { route: RouteResource }) {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Route Conditions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ConditionsTable conditions={routeConditions} />
-        </CardContent>
-      </Card>
+      {routeConditions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Route Conditions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConditionsTable conditions={routeConditions} />
+          </CardContent>
+        </Card>
+      )}
 
       {serviceEntries.length > 0 && (
         <Card>
@@ -287,10 +343,6 @@ function StatusTab({ route }: { route: RouteResource }) {
             ))}
           </CardContent>
         </Card>
-      )}
-
-      {!routeConditions.length && !serviceEntries.length && !resources?.source && (
-        <p className="text-sm text-muted-foreground">No status information available.</p>
       )}
     </>
   );

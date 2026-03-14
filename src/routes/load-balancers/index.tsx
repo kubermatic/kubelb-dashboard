@@ -18,7 +18,6 @@ import { AgeCell } from "@/components/common/age-cell";
 import { CopyButton } from "@/components/common/copy-button";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
@@ -36,7 +35,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Network } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useState } from "react";
 import { getLoadBalancerHealthStatus } from "@/lib/status-mapper";
 import { statusStyles } from "@/lib/status-styles";
@@ -119,17 +118,27 @@ function LoadBalancers() {
       id: "source",
       accessorFn: (row) => getOriginSource(row.metadata.labels),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
-      cell: ({ row }) => (
-        <span className="font-mono text-xs">{getOriginSource(row.original.metadata.labels)}</span>
-      ),
+      cell: ({ row }) => {
+        const source = getOriginSource(row.original.metadata.labels);
+        return (
+          <span className="block max-w-48 truncate font-mono text-xs" title={source}>
+            {source}
+          </span>
+        );
+      },
     },
     {
       id: "ports",
       accessorFn: formatPorts,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
-      cell: ({ row }) => (
-        <span className="font-mono text-xs">{formatPorts(row.original) || "\u2014"}</span>
-      ),
+      cell: ({ row }) => {
+        const ports = formatPorts(row.original) || "\u2014";
+        return (
+          <span className="block max-w-40 truncate font-mono text-xs" title={ports}>
+            {ports}
+          </span>
+        );
+      },
     },
     {
       id: "externalIP",
@@ -156,7 +165,10 @@ function LoadBalancers() {
       accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
       cell: ({ row }) => (
-        <span className="max-w-48 truncate font-mono text-xs">
+        <span
+          className="block max-w-48 truncate font-mono text-xs"
+          title={getEndpointsSummary(row.original)}
+        >
           {getEndpointsSummary(row.original)}
         </span>
       ),
@@ -208,19 +220,14 @@ function LoadBalancers() {
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
-      ) : !isLoading && items.length === 0 ? (
-        <EmptyState
-          icon={Network}
-          title={
-            selectedTenant ? `No load balancers in ${selectedTenant}` : "No load balancers found"
-          }
-          description="Load balancers will appear here once created."
-        />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
+          emptyMessage={
+            selectedTenant ? `No load balancers in ${selectedTenant}` : "No load balancers found."
+          }
           searchColumn="name"
           searchPlaceholder="Search load balancers..."
           onRefresh={() => void refetch()}
