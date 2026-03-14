@@ -72,11 +72,15 @@ export function YamlEditor({
   const theme = useMonacoTheme();
   const disposableRef = useRef<IDisposable | null>(null);
   const monacoRef = useRef<MonacoInstance | null>(null);
+  const callIdRef = useRef(0);
+  const initializedRef = useRef(false);
 
   const configureSchema = useCallback((monaco: MonacoInstance, s?: Record<string, unknown>) => {
     disposableRef.current?.dispose();
+    const callId = ++callIdRef.current;
 
     void import("monaco-yaml").then(({ configureMonacoYaml: configure }) => {
+      if (callIdRef.current !== callId) return;
       disposableRef.current = configure(monaco, {
         enableSchemaRequest: false,
         schemas: s
@@ -100,14 +104,15 @@ export function YamlEditor({
   }, []);
 
   useEffect(() => {
-    if (monacoRef.current) {
-      configureSchema(monacoRef.current, schema);
-    }
+    if (!initializedRef.current) return;
+    if (!monacoRef.current) return;
+    configureSchema(monacoRef.current, schema);
   }, [schema, configureSchema]);
 
   const handleMount: OnMount = (_, monaco) => {
     monacoRef.current = monaco as MonacoInstance;
     configureSchema(monacoRef.current, schema);
+    initializedRef.current = true;
   };
 
   return (
