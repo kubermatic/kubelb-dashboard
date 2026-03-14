@@ -15,7 +15,6 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
-import { LoginPage } from "@/pages/login";
 
 interface LoginSearch {
   return_to?: string;
@@ -25,5 +24,4 @@ export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     return_to: typeof search.return_to === "string" ? search.return_to : undefined,
   }),
-  component: LoginPage,
 });

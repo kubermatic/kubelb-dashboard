@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createLazyFileRoute } from "@tanstack/react-router";
+import { LoginPage } from "@/pages/login";
 
-export const Route = createFileRoute("/routes/$namespace/$name")({});
+export const Route = createLazyFileRoute("/login")({
+  component: LoginPage,
+});
