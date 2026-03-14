@@ -39,6 +39,17 @@ import type { Tenant, TenantSpec } from "@/types/kubelb";
 
 const RFC1123_LABEL_REGEX = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
 
+const optionalRFC1123 = z
+  .string()
+  .refine((v) => !v || RFC1123_LABEL_REGEX.test(v), {
+    message: "Lowercase alphanumeric and hyphens only, must start/end with alphanumeric",
+  })
+  .refine((v) => !v || v.length <= 63, { message: "Max 63 characters" });
+
+const optionalNonNegativeInt = z.string().refine((v) => !v || (/^\d+$/.test(v) && Number(v) >= 0), {
+  message: "Must be a non-negative integer",
+});
+
 const tenantSchema = z.object({
   name: z
     .string()
@@ -51,14 +62,14 @@ const tenantSchema = z.object({
   propagateAllAnnotations: z.boolean(),
   lbEnabled: z.boolean(),
   lbClass: z.string(),
-  lbLimit: z.string(),
+  lbLimit: optionalNonNegativeInt,
   ingressEnabled: z.boolean(),
   ingressClass: z.string(),
   gwEnabled: z.boolean(),
   gwClass: z.string(),
-  gwDefaultName: z.string(),
-  gwDefaultNamespace: z.string(),
-  gwLimit: z.string(),
+  gwDefaultName: optionalRFC1123,
+  gwDefaultNamespace: optionalRFC1123,
+  gwLimit: optionalNonNegativeInt,
   wildcardDomain: z.string(),
   allowExplicitHostnames: z.boolean(),
   useDNSAnnotations: z.boolean(),
@@ -283,8 +294,8 @@ export function TenantFormDialog({
                         <Controller
                           control={form.control}
                           name="lbLimit"
-                          render={({ field }) => (
-                            <Field>
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
                               <FieldLabel htmlFor="lb-limit">Limit</FieldLabel>
                               <Input
                                 {...field}
@@ -292,10 +303,12 @@ export function TenantFormDialog({
                                 type="number"
                                 min={0}
                                 placeholder="0"
+                                aria-invalid={fieldState.invalid}
                               />
                               <FieldDescription>
                                 Max load balancers (0 = unlimited)
                               </FieldDescription>
+                              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                             </Field>
                           )}
                         />
@@ -342,24 +355,36 @@ export function TenantFormDialog({
                         <Controller
                           control={form.control}
                           name="gwDefaultName"
-                          render={({ field }) => (
-                            <Field>
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
                               <FieldLabel htmlFor="gw-default-name">
                                 Default Gateway Name
                               </FieldLabel>
-                              <Input {...field} id="gw-default-name" placeholder="default" />
+                              <Input
+                                {...field}
+                                id="gw-default-name"
+                                placeholder="default"
+                                aria-invalid={fieldState.invalid}
+                              />
+                              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                             </Field>
                           )}
                         />
                         <Controller
                           control={form.control}
                           name="gwDefaultNamespace"
-                          render={({ field }) => (
-                            <Field>
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
                               <FieldLabel htmlFor="gw-default-ns">
                                 Default Gateway Namespace
                               </FieldLabel>
-                              <Input {...field} id="gw-default-ns" placeholder="kubelb" />
+                              <Input
+                                {...field}
+                                id="gw-default-ns"
+                                placeholder="kubelb"
+                                aria-invalid={fieldState.invalid}
+                              />
+                              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                             </Field>
                           )}
                         />
@@ -368,8 +393,8 @@ export function TenantFormDialog({
                         <Controller
                           control={form.control}
                           name="gwLimit"
-                          render={({ field }) => (
-                            <Field>
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
                               <FieldLabel htmlFor="gw-limit">Gateway Limit</FieldLabel>
                               <Input
                                 {...field}
@@ -377,8 +402,10 @@ export function TenantFormDialog({
                                 type="number"
                                 min={0}
                                 placeholder="0"
+                                aria-invalid={fieldState.invalid}
                               />
                               <FieldDescription>Max gateways (0 = unlimited)</FieldDescription>
+                              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                             </Field>
                           )}
                         />

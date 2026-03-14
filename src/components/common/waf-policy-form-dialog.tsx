@@ -40,7 +40,12 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { YamlEditor } from "@/components/common/yaml-editor";
-import { validateRFC1123Name } from "@/lib/validators";
+import {
+  validateRFC1123Name,
+  validateOptionalRFC1123Name,
+  validateLabelKey,
+  validateLabelValue,
+} from "@/lib/validators";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import type { WAFPolicy, WAFPolicySpec, WAFFailureMode, WAFTargetRef } from "@/types/kubelb";
 import type { ObjectMeta } from "@/types/kubernetes";
@@ -204,8 +209,26 @@ export function WAFPolicyFormDialog({
   }, []);
 
   const nameError = useMemo(() => validateRFC1123Name(form.name), [form.name]);
-  const refNameError =
-    form.targetingMode === "targetRef" && !form.refName.trim() ? "Target name is required" : null;
+  const refNameError = useMemo(() => {
+    if (form.targetingMode !== "targetRef") return null;
+    if (!form.refName.trim()) return "Target name is required";
+    return validateOptionalRFC1123Name(form.refName.trim());
+  }, [form.targetingMode, form.refName]);
+  const refNamespaceError = useMemo(
+    () =>
+      form.targetingMode === "targetRef"
+        ? validateOptionalRFC1123Name(form.refNamespace.trim())
+        : null,
+    [form.targetingMode, form.refNamespace],
+  );
+
+  const labelErrors = useMemo(() => {
+    if (form.targetingMode !== "targetSelector") return [];
+    return form.labels.map((entry) => ({
+      key: entry.key.trim() ? validateLabelKey(entry.key.trim()) : null,
+      value: entry.value.trim() ? validateLabelValue(entry.value.trim()) : null,
+    }));
+  }, [form.targetingMode, form.labels]);
 
   const currentYaml = useMemo(() => {
     const p = formToPolicy(form, editMetadata);
@@ -281,7 +304,9 @@ export function WAFPolicyFormDialog({
     setSubmitted(true);
     if (mode === "create" && nameError) return;
     if (refNameError) return;
+    if (refNamespaceError) return;
     if (form.targetingMode === "targetSelector" && duplicateKeys.size > 0) return;
+    if (labelErrors.some((e) => e.key || e.value)) return;
     onSubmit(formToPolicy(form, editMetadata));
   };
 
@@ -401,10 +426,16 @@ export function WAFPolicyFormDialog({
                     <FieldGroup
                       label="Namespace"
                       description="Leave empty to match across all namespaces"
+                      error={
+                        shouldShowError("refNamespace", blurred, submitted)
+                          ? refNamespaceError
+                          : null
+                      }
                     >
                       <Input
                         value={form.refNamespace}
                         onChange={(e) => set("refNamespace", e.target.value)}
+                        onBlur={() => markBlurred("refNamespace")}
                         placeholder="tenant-primary"
                       />
                     </FieldGroup>
@@ -416,30 +447,50 @@ export function WAFPolicyFormDialog({
                     <p className="text-xs font-medium text-muted-foreground">Match Labels</p>
                     {form.labels.map((entry, i) => {
                       const isDupe = entry.key.trim() !== "" && duplicateKeys.has(entry.key.trim());
+                      const keyErr = labelErrors[i]?.key;
+                      const valErr = labelErrors[i]?.value;
+                      const showKeyErr =
+                        isDupe || (shouldShowError(`label-key-${i}`, blurred, submitted) && keyErr);
+                      const showValErr =
+                        shouldShowError(`label-val-${i}`, blurred, submitted) && valErr;
                       return (
                         <div key={i} className="flex items-start gap-2">
                           <div className="flex-1 space-y-1">
                             <Input
                               value={entry.key}
                               onChange={(e) => updateLabel(i, "key", e.target.value)}
+                              onBlur={() => markBlurred(`label-key-${i}`)}
                               placeholder="key"
                               aria-label={`Label key ${i + 1}`}
-                              aria-invalid={isDupe || undefined}
-                              className={isDupe ? "border-destructive" : ""}
+                              aria-invalid={!!showKeyErr || undefined}
+                              className={showKeyErr ? "border-destructive" : ""}
                             />
                             {isDupe && (
                               <p className="text-xs text-destructive" role="alert">
                                 Duplicate key
                               </p>
                             )}
+                            {!isDupe && showKeyErr && keyErr && (
+                              <p className="text-xs text-destructive" role="alert">
+                                {keyErr}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 space-y-1">
                             <Input
                               value={entry.value}
                               onChange={(e) => updateLabel(i, "value", e.target.value)}
+                              onBlur={() => markBlurred(`label-val-${i}`)}
                               placeholder="value"
                               aria-label={`Label value ${i + 1}`}
+                              aria-invalid={!!showValErr || undefined}
+                              className={showValErr ? "border-destructive" : ""}
                             />
+                            {showValErr && valErr && (
+                              <p className="text-xs text-destructive" role="alert">
+                                {valErr}
+                              </p>
+                            )}
                           </div>
                           <Button
                             type="button"
