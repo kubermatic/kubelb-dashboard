@@ -15,7 +15,9 @@
  */
 
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/common/page-header";
 import { AgeCell } from "@/components/common/age-cell";
+import { MonoCell } from "@/components/common/mono-cell";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { ManagedToggle } from "@/components/common/managed-toggle";
@@ -144,11 +146,7 @@ function Services() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Cluster IP" />,
       cell: ({ row }) => {
         const ip = getClusterIP(row.original);
-        return (
-          <span className="block max-w-40 truncate font-mono text-xs" title={ip}>
-            {ip}
-          </span>
-        );
+        return <MonoCell value={ip} maxWidth="max-w-40" />;
       },
     },
     {
@@ -157,11 +155,7 @@ function Services() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
       cell: ({ row }) => {
         const ports = getServicePorts(row.original);
-        return (
-          <span className="block max-w-40 truncate font-mono text-xs" title={ports}>
-            {ports}
-          </span>
-        );
+        return <MonoCell value={ports} maxWidth="max-w-40" />;
       },
     },
     {
@@ -203,10 +197,7 @@ function Services() {
           <ArrowLeft className="size-3.5" />
           Load Balancers
         </Link>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Services</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          View Kubernetes services across tenants.
-        </p>
+        <PageHeader title="Services" description="View Kubernetes services across tenants." />
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />

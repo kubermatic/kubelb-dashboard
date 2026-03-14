@@ -115,3 +115,35 @@ For each task, query, question from my side please weigh out the pros and cons. 
 Use github template for PR description and populate fields that you think are required. Keep the description concise but informative.
 
 For commits, always use meaningful signed commits and follow the conventional commit format. We don't want excessive commits that don't add value to the history. Each commit should represent a logical unit of work that can be easily understood and reviewed.
+
+## Design Context
+
+### Users
+
+Mixed technical audience — platform engineers managing KubeLB infrastructure and app developers needing visibility into their load balancer configs. Users are Kubernetes-literate but vary in depth. They need fast orientation, clear status, and efficient management workflows.
+
+### Brand Personality
+
+**Modern, clean, efficient.** A contemporary developer tool that respects the user's time and technical competence. No unnecessary decoration — every element earns its place.
+
+### Aesthetic Direction
+
+- **Primary references:** Kubermatic KKP dashboard (brand consistency), Linear/Vercel (polish, minimalism, strong typography)
+- **Anti-references:** Cluttered enterprise dashboards with excessive chrome, gratuitous animations, or infantilizing UX
+- **Theme:** Dark sidebar (#1b2530) with cyan accent (#3db8e5), light/dark mode parity. Navy primary (#004066 light, #3db8e5 dark). IBM Plex Sans family throughout. Tight border radius (4px base) for sharp, modern feel.
+- **Visual tone:** Information-dense but not overwhelming. Generous whitespace. Clear visual hierarchy via typography weight and color, not borders or boxes.
+
+### Design Principles
+
+1. **Clarity over decoration** — Every pixel communicates. No ornamental elements. Status, hierarchy, and actions must be instantly scannable.
+2. **Density with breathing room** — Show what matters without scrolling, but don't crowd. Tables, stats, and nav should feel spacious despite high information density.
+3. **Consistent vocabulary** — Same colors, spacing, and patterns for the same concepts everywhere. Success is always teal, destructive is always red, primary actions are always navy/cyan.
+4. **Keyboard-first, mouse-friendly** — Command palette, focus rings, logical tab order. Power users shouldn't need a mouse; casual users shouldn't need a keyboard.
+5. **Quiet confidence** — Subtle transitions (200-300ms), no bouncing or attention-grabbing animation. The interface should feel solid and trustworthy, like well-maintained infrastructure.
+
+### Accessibility
+
+- WCAG AA compliance (contrast ratios, keyboard navigation, screen reader support)
+- Focus-visible rings on all interactive elements (3px ring, 50% opacity)
+- Reduced motion support via `prefers-reduced-motion`
+- Status communicated through shape/text in addition to color (badge dots + labels)

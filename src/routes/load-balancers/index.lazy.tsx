@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+import { PageHeader } from "@/components/common/page-header";
 import { AgeCell } from "@/components/common/age-cell";
 import { CopyButton } from "@/components/common/copy-button";
+import { MonoCell } from "@/components/common/mono-cell";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { QueryError } from "@/components/common/query-error";
@@ -111,11 +113,7 @@ function LoadBalancers() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
       cell: ({ row }) => {
         const source = getOriginSource(row.original.metadata.labels);
-        return (
-          <span className="block max-w-48 truncate font-mono text-xs" title={source}>
-            {source}
-          </span>
-        );
+        return <MonoCell value={source} />;
       },
     },
     {
@@ -124,11 +122,7 @@ function LoadBalancers() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Ports" />,
       cell: ({ row }) => {
         const ports = formatPorts(row.original) || "\u2014";
-        return (
-          <span className="block max-w-40 truncate font-mono text-xs" title={ports}>
-            {ports}
-          </span>
-        );
+        return <MonoCell value={ports} maxWidth="max-w-40" />;
       },
     },
     {
@@ -155,14 +149,7 @@ function LoadBalancers() {
       meta: { hideBelow: "md" },
       accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
-      cell: ({ row }) => (
-        <span
-          className="block max-w-48 truncate font-mono text-xs"
-          title={getEndpointsSummary(row.original)}
-        >
-          {getEndpointsSummary(row.original)}
-        </span>
-      ),
+      cell: ({ row }) => <MonoCell value={getEndpointsSummary(row.original)} />,
     },
     {
       id: "status",
@@ -203,12 +190,10 @@ function LoadBalancers() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Load Balancers</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          View and manage load balancer services across tenants.
-        </p>
-      </div>
+      <PageHeader
+        title="Load Balancers"
+        description="View and manage load balancer services across tenants."
+      />
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : (

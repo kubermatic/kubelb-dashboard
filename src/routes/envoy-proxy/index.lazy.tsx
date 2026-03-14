@@ -20,6 +20,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { FileText } from "lucide-react";
 import { useDeployments } from "@/hooks/use-deployments";
 import type { Deployment } from "@/types/kubernetes";
+import { PageHeader } from "@/components/common/page-header";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { RowActions } from "@/components/common/row-actions";
@@ -145,10 +146,10 @@ function EnvoyProxy() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Envoy Proxies</h1>
-        <p className="mt-1 text-muted-foreground">Inspect and configure Envoy proxy instances.</p>
-      </div>
+      <PageHeader
+        title="Envoy Proxies"
+        description="Inspect and configure Envoy proxy instances."
+      />
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : (

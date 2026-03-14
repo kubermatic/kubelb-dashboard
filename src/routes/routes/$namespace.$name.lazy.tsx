@@ -29,7 +29,7 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { type HealthState, getRouteHealthStatus } from "@/lib/status-mapper";
@@ -47,13 +47,7 @@ function RouteDetail() {
   const [yamlOpen, setYamlOpen] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-6 w-96" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (error) {

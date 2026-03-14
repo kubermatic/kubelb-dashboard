@@ -31,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import {
   Table,
   TableBody,
@@ -57,13 +57,7 @@ function LoadBalancerDetail() {
   const [yamlOpen, setYamlOpen] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-6 w-96" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (error) {

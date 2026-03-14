@@ -20,6 +20,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PageHeader } from "@/components/common/page-header";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { RowActions } from "@/components/common/row-actions";
@@ -29,6 +30,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useRoutes } from "@/hooks/use-routes";
 import { AgeCell } from "@/components/common/age-cell";
+import { MonoCell } from "@/components/common/mono-cell";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { getRouteHealthStatus, healthToConditionStatus } from "@/lib/status-mapper";
 import type { ListSearchParams } from "@/lib/search-params";
@@ -131,25 +133,14 @@ function Routes() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
       cell: ({ row }) => {
         const source = getSourceName(row.original);
-        return (
-          <span className="block max-w-48 truncate font-mono text-xs" title={source}>
-            {source}
-          </span>
-        );
+        return <MonoCell value={source} />;
       },
     },
     {
       id: "endpoints",
       accessorFn: (row) => getEndpointsSummary(row),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
-      cell: ({ row }) => (
-        <span
-          className="block max-w-48 truncate font-mono text-xs"
-          title={getEndpointsSummary(row.original)}
-        >
-          {getEndpointsSummary(row.original)}
-        </span>
-      ),
+      cell: ({ row }) => <MonoCell value={getEndpointsSummary(row.original)} />,
     },
     {
       id: "dns",
@@ -237,12 +228,7 @@ function Routes() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Routes</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage HTTP and gRPC route configurations.
-        </p>
-      </div>
+      <PageHeader title="Routes" description="Manage HTTP and gRPC route configurations." />
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : (

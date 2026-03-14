@@ -88,8 +88,8 @@ function NavLinks({
               className={cn(
                 "group relative flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 active
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
+                  ? "bg-sidebar-accent/15 text-sidebar-accent"
+                  : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white",
               )}
               onClick={() => {
                 setManualExpanded((prev) => new Set([...prev, item.to]));
@@ -97,14 +97,14 @@ function NavLinks({
               }}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+                <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 bg-sidebar-accent" />
               )}
-              <item.icon className={cn("size-[18px] shrink-0", active && "text-primary")} />
+              <item.icon className={cn("size-[18px] shrink-0", active && "text-sidebar-accent")} />
               <span>{item.label}</span>
             </Link>
             <button
               onClick={() => toggleExpanded(item.to)}
-              className="mr-1 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-hover hover:text-foreground"
+              className="mr-1 rounded-md p-1.5 text-sidebar-foreground/60 transition-colors hover:bg-sidebar-hover hover:text-white"
             >
               <ChevronRight
                 className={cn(
@@ -115,7 +115,7 @@ function NavLinks({
             </button>
           </div>
           {isExpanded && (
-            <div className="ml-5 mt-1 space-y-0.5 border-l-2 border-border/40 pl-3">
+            <div className="ml-5 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
               {item.children!.map((child) => {
                 const childActive = pathname.startsWith(child.to);
                 return (
@@ -126,8 +126,8 @@ function NavLinks({
                     className={cn(
                       "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-all duration-200",
                       childActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-sidebar-hover hover:text-foreground",
+                        ? "bg-sidebar-accent/15 text-sidebar-accent"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-hover hover:text-white",
                     )}
                     onClick={onNavigate}
                   >
@@ -153,15 +153,15 @@ function NavLinks({
                 className={cn(
                   "group relative flex items-center justify-center rounded-lg p-2.5 transition-all duration-200",
                   active
-                    ? "bg-primary/10 text-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
+                    ? "bg-sidebar-accent/15 text-sidebar-accent"
+                    : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white",
                 )}
                 onClick={onNavigate}
               />
             }
           >
             {active && (
-              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+              <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 bg-sidebar-accent" />
             )}
             <item.icon className="size-[18px] shrink-0" />
           </TooltipTrigger>
@@ -180,15 +180,15 @@ function NavLinks({
         className={cn(
           "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
           active
-            ? "bg-primary/10 text-primary"
-            : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
+            ? "bg-sidebar-accent/15 text-sidebar-accent"
+            : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white",
         )}
         onClick={onNavigate}
       >
         {active && (
-          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+          <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 bg-sidebar-accent" />
         )}
-        <item.icon className={cn("size-[18px] shrink-0", active && "text-primary")} />
+        <item.icon className={cn("size-[18px] shrink-0", active && "text-sidebar-accent")} />
         <span>{item.label}</span>
       </Link>
     );
@@ -207,7 +207,7 @@ function NavLinks({
   const sectionLabel = (label: string) =>
     collapsed ? null : (
       <div className="px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/40">
           {label}
         </span>
       </div>
@@ -261,10 +261,10 @@ export function Sidebar() {
     >
       <NavLinks collapsed={collapsed} ee={isEE} />
 
-      <div className="shrink-0 border-t border-border">
+      <div className="shrink-0 border-t border-sidebar-border">
         {!collapsed && !editionLoading && (
-          <div className="flex items-center justify-center gap-1.5 border-b border-primary/15 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <div className="flex items-center justify-center gap-1.5 border-b border-sidebar-border bg-sidebar-accent/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-accent/80">
+            <span className="h-1.5 w-1.5 rounded-full bg-sidebar-accent/60" />
             {isEE ? "Enterprise Edition" : "Community Edition"}
           </div>
         )}
@@ -273,7 +273,7 @@ export function Sidebar() {
             onClick={toggleSidebar}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg py-2 text-muted-foreground transition-all duration-200 hover:bg-sidebar-hover hover:text-foreground",
+              "flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sidebar-foreground/50 transition-all duration-200 hover:bg-sidebar-hover hover:text-white",
               !collapsed && "px-3",
             )}
           >
@@ -313,15 +313,15 @@ export function MobileSidebar() {
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={close} />
       <aside className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-sidebar shadow-2xl transition-transform duration-300">
         {/* Mobile Header */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-4">
+        <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
           <div className="flex items-center gap-2">
             <img src="/kubermatic-logo.png" alt="Kubermatic" className="h-7 w-7" />
-            <span className="text-sm font-semibold text-foreground">KubeLB</span>
+            <span className="text-sm font-semibold text-white">KubeLB</span>
           </div>
           <button
             onClick={close}
             aria-label="Close navigation"
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-sidebar-hover hover:text-foreground"
+            className="rounded-lg p-2 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-hover hover:text-white"
           >
             <X className="size-5" />
           </button>

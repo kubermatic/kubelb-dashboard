@@ -85,7 +85,7 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4">
       {/* Left Section */}
       <div className="flex items-center gap-3">
         {/* Mobile Menu Button */}
@@ -117,7 +117,7 @@ export function Header() {
       <div className="hidden flex-1 justify-center px-4 md:flex">
         <button
           onClick={openSearch}
-          className="group flex h-9 w-full max-w-lg items-center gap-3 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-muted"
+          className="group flex h-8 w-full max-w-lg items-center gap-3 rounded border border-border bg-muted/40 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-muted"
         >
           <Search className="size-4" />
           <span className="flex-1 text-left">Search resources...</span>

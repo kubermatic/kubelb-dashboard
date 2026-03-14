@@ -20,6 +20,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
+import { PageHeader } from "@/components/common/page-header";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
@@ -38,6 +39,7 @@ import {
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
 import { AgeCell } from "@/components/common/age-cell";
+import { MonoCell } from "@/components/common/mono-cell";
 import { StatusBadge } from "@/components/common/status-badge";
 import { getSyncSecretHealthStatus, healthToConditionStatus } from "@/lib/status-mapper";
 import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
@@ -124,11 +126,7 @@ function SyncSecrets() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
       cell: ({ row }) => {
         const source = getOriginSource(row.original.metadata.labels);
-        return (
-          <span className="block max-w-48 truncate font-mono text-xs" title={source}>
-            {source}
-          </span>
-        );
+        return <MonoCell value={source} />;
       },
     },
     {
@@ -186,10 +184,7 @@ function SyncSecrets() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Sync Secrets</h1>
-        <p className="mt-1 text-sm text-muted-foreground">View synced secrets across tenants.</p>
-      </div>
+      <PageHeader title="Sync Secrets" description="View synced secrets across tenants." />
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : (

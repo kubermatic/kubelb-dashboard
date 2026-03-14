@@ -68,7 +68,9 @@ export function ClusterHealthBanner({ health, summary }: ClusterHealthBannerProp
       ) : (
         <Icon className={cn("size-3.5 shrink-0", c.text)} />
       )}
-      <span className={cn("text-xs font-medium", c.text)}>{labels[health]}</span>
+      <span className={cn("text-xs font-bold uppercase tracking-wide", c.text)}>
+        {labels[health]}
+      </span>
       {summary && health !== "healthy" && (
         <span className="text-[11px] text-muted-foreground">{summary}</span>
       )}

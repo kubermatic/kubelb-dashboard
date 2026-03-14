@@ -21,6 +21,7 @@ import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lu
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
+import { PageHeader } from "@/components/common/page-header";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -252,12 +253,10 @@ function Tenants() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Tenants</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage tenant namespaces and their resource allocations.
-        </p>
-      </div>
+      <PageHeader
+        title="Tenants"
+        description="Manage tenant namespaces and their resource allocations."
+      />
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (

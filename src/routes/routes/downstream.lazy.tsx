@@ -20,6 +20,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowLeft, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { PageHeader } from "@/components/common/page-header";
 import { AgeCell } from "@/components/common/age-cell";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
@@ -258,10 +259,10 @@ function DownstreamResources() {
           <ArrowLeft className="size-3.5" />
           Routes
         </Link>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">Downstream Resources</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          View Gateway API and Ingress resources across tenants.
-        </p>
+        <PageHeader
+          title="Downstream Resources"
+          description="View Gateway API and Ingress resources across tenants."
+        />
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={refetch} />

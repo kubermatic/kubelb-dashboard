@@ -23,6 +23,7 @@ import { useEdition } from "@/hooks/use-edition";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
 import yaml from "js-yaml";
 import type { Config, EnvoyProxy, ConfigSpec } from "@/types/kubelb";
+import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
@@ -373,12 +374,10 @@ function Configuration() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="font-condensed text-2xl font-bold tracking-tight">Configuration</h1>
-          <p className="mt-1 text-muted-foreground">
-            Global KubeLB settings and cluster configuration.
-          </p>
-        </div>
+        <PageHeader
+          title="Configuration"
+          description="Global KubeLB settings and cluster configuration."
+        />
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-32 w-full" />
@@ -391,12 +390,10 @@ function Configuration() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="font-condensed text-2xl font-bold tracking-tight">Configuration</h1>
-          <p className="mt-1 text-muted-foreground">
-            Global KubeLB settings and cluster configuration.
-          </p>
-        </div>
+        <PageHeader
+          title="Configuration"
+          description="Global KubeLB settings and cluster configuration."
+        />
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           <p>{error?.message ?? "Failed to load configuration"}</p>
           <Button variant="outline" size="sm" className="mt-2" onClick={() => void refetch()}>
@@ -412,12 +409,10 @@ function Configuration() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-condensed text-2xl font-bold tracking-tight">Configuration</h1>
-          <p className="mt-1 text-muted-foreground">
-            Global KubeLB settings and cluster configuration.
-          </p>
-        </div>
+        <PageHeader
+          title="Configuration"
+          description="Global KubeLB settings and cluster configuration."
+        />
         {config && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>

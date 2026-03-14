@@ -19,6 +19,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { createLazyFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowUpDown, FileText, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 
+import { PageHeader } from "@/components/common/page-header";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
@@ -179,10 +180,7 @@ function WAFPolicies() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="font-condensed text-2xl font-bold tracking-tight">WAF Policies</h1>
-        <p className="mt-1 text-muted-foreground">Manage Web Application Firewall policies.</p>
-      </div>
+      <PageHeader title="WAF Policies" description="Manage Web Application Firewall policies." />
       {isError && error ? (
         <QueryError error={error} onRetry={() => void refetch()} />
       ) : !isLoading && items.length === 0 ? (

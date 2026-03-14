@@ -29,6 +29,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { PageHeader } from "@/components/common/page-header";
 import { AttentionPanel } from "@/components/common/attention-panel";
 import { ClusterHealthBanner } from "@/components/common/cluster-health-banner";
 import { ResourceCounterRow } from "@/components/common/resource-counter-row";
@@ -391,12 +392,7 @@ function Overview() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-condensed text-2xl font-bold tracking-tight">Overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            KubeLB cluster overview and health summary.
-          </p>
-        </div>
+        <PageHeader title="Overview" description="KubeLB cluster overview and health summary." />
         {(allLoaded || anyError) && (
           <ClusterHealthBanner health={clusterHealth.health} summary={clusterHealth.summary} />
         )}
