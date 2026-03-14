@@ -23,19 +23,12 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowLeft, FileText, GitBranch } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { AgeCell } from "@/components/common/age-cell";
 import { DataTable } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
-import { EmptyState } from "@/components/common/empty-state";
 import { ManagedToggle } from "@/components/common/managed-toggle";
 import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
@@ -243,21 +236,12 @@ function DownstreamResources() {
       </div>
       {isError && error ? (
         <QueryError error={error} onRetry={refetch} />
-      ) : !isLoading && items.length === 0 ? (
-        <EmptyState
-          icon={GitBranch}
-          title={
-            selectedTenant
-              ? `No downstream resources in ${selectedTenant}`
-              : "No downstream resources found"
-          }
-          description="Downstream resources will appear here once created."
-        />
       ) : (
         <DataTable
           columns={columns}
           data={items}
           isLoading={isLoading}
+          emptyMessage="No downstream resources found."
           searchColumn="name"
           searchPlaceholder="Search resources..."
           onRefresh={refetch}
@@ -269,7 +253,9 @@ function DownstreamResources() {
               {managedOnly ? <TenantSelector /> : <NamespaceSelector />}
               <Select value={kindFilter} onValueChange={(v) => setKindFilter(v ?? "__all__")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Kinds" />
+                  <span>
+                    {KIND_OPTIONS.find((o) => o.value === kindFilter)?.label ?? "All Kinds"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {KIND_OPTIONS.map((opt) => (

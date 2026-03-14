@@ -19,13 +19,7 @@ import type { Table } from "@tanstack/react-table";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WatchConnectionStatus } from "@/hooks/use-kube-watch";
 import { WatchStatusIndicator } from "@/components/common/watch-status-indicator";
@@ -85,7 +79,7 @@ export function DataTableToolbar<T>({
               onValueChange={(val) => col.setFilterValue(val === "__all__" ? undefined : val)}
             >
               <SelectTrigger className="w-36">
-                <SelectValue placeholder={title} />
+                <span>{options.find((o) => o.value === col.getFilterValue())?.label ?? title}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">All</SelectItem>

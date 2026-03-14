@@ -15,13 +15,7 @@
  */
 
 import { Loader2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { useNamespaces } from "@/hooks/use-namespaces";
 import { useUIStore } from "@/stores/ui";
 
@@ -46,7 +40,7 @@ export function NamespaceSelector() {
             Loading...
           </span>
         ) : (
-          <SelectValue placeholder="All Namespaces" />
+          <span>{selectedNamespace ?? "All Namespaces"}</span>
         )}
       </SelectTrigger>
       <SelectContent>

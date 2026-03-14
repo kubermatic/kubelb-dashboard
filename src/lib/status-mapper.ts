@@ -69,9 +69,6 @@ function resolveGatewayRouteHealth(status: Record<string, unknown>): HealthStatu
 
     const resolvedRefs = findCondition(parent.conditions, "ResolvedRefs");
     if (resolvedRefs?.status === "False") return { state: "Error", reason: resolvedRefs.reason };
-
-    const backends = findCondition(parent.conditions, "BackendsAvailable");
-    if (backends?.status === "False") return { state: "Degraded", reason: backends.reason };
   }
 
   return { state: "Ready" };
