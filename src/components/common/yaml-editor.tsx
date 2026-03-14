@@ -14,10 +14,26 @@
  * limitations under the License.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { Loader2 } from "lucide-react";
 import type { IDisposable } from "monaco-editor";
+import type { configureMonacoYaml } from "monaco-yaml";
+
+type MonacoInstance = Parameters<typeof configureMonacoYaml>[0];
+
+window.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === "yaml") {
+      return new Worker(new URL("monaco-yaml/yaml.worker.js", import.meta.url), {
+        type: "module",
+      });
+    }
+    return new Worker(new URL("monaco-editor/esm/vs/editor/editor.worker.js", import.meta.url), {
+      type: "module",
+    });
+  },
+};
 
 interface YamlEditorProps {
   value: string;
@@ -55,6 +71,26 @@ export function YamlEditor({
 }: YamlEditorProps) {
   const theme = useMonacoTheme();
   const disposableRef = useRef<IDisposable | null>(null);
+  const monacoRef = useRef<MonacoInstance | null>(null);
+
+  const configureSchema = useCallback((monaco: MonacoInstance, s?: Record<string, unknown>) => {
+    disposableRef.current?.dispose();
+
+    void import("monaco-yaml").then(({ configureMonacoYaml: configure }) => {
+      disposableRef.current = configure(monaco, {
+        enableSchemaRequest: false,
+        schemas: s
+          ? [
+              {
+                uri: "inmemory://schema/resource.json",
+                fileMatch: ["*"],
+                schema: s as object,
+              },
+            ]
+          : [],
+      });
+    });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -63,40 +99,15 @@ export function YamlEditor({
     };
   }, []);
 
+  useEffect(() => {
+    if (monacoRef.current) {
+      configureSchema(monacoRef.current, schema);
+    }
+  }, [schema, configureSchema]);
+
   const handleMount: OnMount = (_, monaco) => {
-    disposableRef.current?.dispose();
-
-    window.MonacoEnvironment = {
-      getWorker(_, label) {
-        if (label === "yaml") {
-          return new Worker(new URL("monaco-yaml/yaml.worker.js", import.meta.url), {
-            type: "module",
-          });
-        }
-        return new Worker(
-          new URL("monaco-editor/esm/vs/editor/editor.worker.js", import.meta.url),
-          { type: "module" },
-        );
-      },
-    };
-
-    void import("monaco-yaml").then(({ configureMonacoYaml }) => {
-      disposableRef.current = configureMonacoYaml(
-        monaco as Parameters<typeof configureMonacoYaml>[0],
-        {
-          enableSchemaRequest: false,
-          schemas: schema
-            ? [
-                {
-                  uri: "inmemory://schema/resource.json",
-                  fileMatch: ["*"],
-                  schema: schema as object,
-                },
-              ]
-            : [],
-        },
-      );
-    });
+    monacoRef.current = monaco as MonacoInstance;
+    configureSchema(monacoRef.current, schema);
   };
 
   return (
