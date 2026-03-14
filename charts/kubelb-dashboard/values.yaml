@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   # -- Dashboard (nginx) image repository
-  repository: ghcr.io/kubermatic/kubelb-dashboard
+  repository: quay.io/kubermatic/kubelb-dashboard
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag (defaults to chart appVersion)
@@ -12,7 +12,7 @@ image:
 api:
   image:
     # -- API server image repository
-    repository: ghcr.io/kubermatic/kubelb-dashboard-api
+    repository: quay.io/kubermatic/kubelb-dashboard-api
     # -- Image pull policy
     pullPolicy: IfNotPresent
     # -- Image tag (defaults to chart appVersion)
