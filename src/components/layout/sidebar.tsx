@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { ChevronRight, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
@@ -86,7 +87,7 @@ function NavLinks({
               to={item.to}
               activeOptions={{ exact: false }}
               className={cn(
-                "group relative flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "group relative flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98]",
                 active
                   ? "bg-sidebar-accent/15 text-sidebar-accent"
                   : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white",
@@ -151,7 +152,7 @@ function NavLinks({
                 to={item.to}
                 activeOptions={{ exact: item.to === "/" }}
                 className={cn(
-                  "group relative flex items-center justify-center rounded-lg p-2.5 transition-all duration-200",
+                  "group relative flex items-center justify-center rounded-lg p-2.5 transition-all duration-200 active:scale-[0.98]",
                   active
                     ? "bg-sidebar-accent/15 text-sidebar-accent"
                     : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white",
@@ -178,7 +179,7 @@ function NavLinks({
         to={item.to}
         activeOptions={{ exact: item.to === "/" }}
         className={cn(
-          "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+          "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98]",
           active
             ? "bg-sidebar-accent/15 text-sidebar-accent"
             : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white",
@@ -217,11 +218,19 @@ function NavLinks({
     <TooltipProvider>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {/* Main */}
-        <div className="space-y-1">{mainItems.map(renderItem)}</div>
+        <div
+          className="animate-enter space-y-1"
+          style={{ "--enter-delay": "0ms" } as React.CSSProperties}
+        >
+          {mainItems.map(renderItem)}
+        </div>
 
         {/* Resources */}
         {resourceItems.length > 0 && (
-          <div className="mt-6">
+          <div
+            className="animate-enter mt-6"
+            style={{ "--enter-delay": "60ms" } as React.CSSProperties}
+          >
             {sectionLabel("Resources")}
             <div className="space-y-1">{resourceItems.map(renderItem)}</div>
           </div>
@@ -229,7 +238,10 @@ function NavLinks({
 
         {/* Security (EE only) */}
         {securityItems.length > 0 && (
-          <div className="mt-6">
+          <div
+            className="animate-enter mt-6"
+            style={{ "--enter-delay": "120ms" } as React.CSSProperties}
+          >
             {sectionLabel("Security")}
             <div className="space-y-1">{securityItems.map(renderItem)}</div>
           </div>
@@ -237,7 +249,10 @@ function NavLinks({
 
         {/* Infrastructure */}
         {infraItems.length > 0 && (
-          <div className="mt-6">
+          <div
+            className="animate-enter mt-6"
+            style={{ "--enter-delay": "180ms" } as React.CSSProperties}
+          >
             {sectionLabel("Infrastructure")}
             <div className="space-y-1">{infraItems.map(renderItem)}</div>
           </div>
@@ -266,6 +281,12 @@ export function Sidebar() {
           <div className="flex items-center justify-center gap-1.5 border-b border-sidebar-border bg-sidebar-accent/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-accent/80">
             <span className="h-1.5 w-1.5 rounded-full bg-sidebar-accent/60" />
             {isEE ? "Enterprise Edition" : "Community Edition"}
+            {import.meta.env.VITE_MOCK === "true" && (
+              <>
+                <span className="text-sidebar-foreground/20">|</span>
+                <span className="text-amber-400/80">Mock Mode</span>
+              </>
+            )}
           </div>
         )}
         <div className="p-3">

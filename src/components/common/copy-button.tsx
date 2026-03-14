@@ -45,13 +45,26 @@ export function CopyButton({ value, className }: CopyButtonProps) {
           <Button
             variant="ghost"
             size="icon-xs"
-            className={cn("text-muted-foreground", className)}
+            className={cn("relative text-muted-foreground", className)}
             onClick={handleCopy}
             aria-label={copied ? "Copied" : "Copy to clipboard"}
           />
         }
       >
-        {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+        <span className="grid [&>*]:col-start-1 [&>*]:row-start-1">
+          <Copy
+            className={cn(
+              "size-3 transition-[opacity,transform] duration-200",
+              copied ? "scale-75 opacity-0" : "scale-100 opacity-100",
+            )}
+          />
+          <Check
+            className={cn(
+              "size-3 text-success transition-[opacity,transform] duration-200",
+              copied ? "scale-100 opacity-100" : "scale-75 opacity-0",
+            )}
+          />
+        </span>
       </TooltipTrigger>
       <TooltipContent>{copied ? "Copied" : "Copy"}</TooltipContent>
     </Tooltip>

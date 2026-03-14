@@ -117,7 +117,7 @@ export function Header() {
       <div className="hidden flex-1 justify-center px-4 md:flex">
         <button
           onClick={openSearch}
-          className="group flex h-8 w-full max-w-lg items-center gap-3 rounded border border-border bg-muted/40 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-muted"
+          className="group flex h-8 w-full max-w-lg items-center gap-3 rounded border border-border bg-muted/40 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-muted hover:ring-3 hover:ring-ring/8"
         >
           <Search className="size-4" />
           <span className="flex-1 text-left">Search resources...</span>

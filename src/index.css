@@ -5,18 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #f0f2f5;
+  --background: #eef1f6;
   --foreground: #151a20;
-  --card: #fafbfc;
+  --card: #f8f9fc;
   --card-foreground: #151a20;
-  --popover: #fafbfc;
+  --popover: #f8f9fc;
   --popover-foreground: #151a20;
   --primary: #004066;
   --primary-foreground: #f0f7ff;
   --primary-hover: #002e4a;
   --secondary: #00b3b3;
   --secondary-foreground: #ffffff;
-  --muted: #e8ecf0;
+  --muted: #e4e8f0;
   --muted-foreground: #556373;
   --accent: #00b3b3;
   --accent-foreground: #ffffff;
@@ -36,22 +36,22 @@
   --sidebar-border: #2a3744;
   --sidebar-ring: #3db8e5;
   --sidebar-hover: #243240;
-  --surface-hover: #eaecf0;
+  --surface-hover: #e6e9f2;
 }
 
 .dark {
-  --background: #080c10;
+  --background: #0a0e14;
   --foreground: #e0e6ec;
-  --card: #111820;
+  --card: #131a24;
   --card-foreground: #e0e6ec;
-  --popover: #111820;
+  --popover: #131a24;
   --popover-foreground: #e0e6ec;
   --primary: #3db8e5;
-  --primary-foreground: #080c10;
+  --primary-foreground: #0a0e14;
   --primary-hover: #5ec8ed;
   --secondary: #10a8a8;
   --secondary-foreground: #ffffff;
-  --muted: #1a2230;
+  --muted: #1a2232;
   --muted-foreground: #8898a8;
   --accent: #10a8a8;
   --accent-foreground: #ffffff;
@@ -70,7 +70,7 @@
   --sidebar-border: #1a2230;
   --sidebar-ring: #3db8e5;
   --sidebar-hover: #131c28;
-  --surface-hover: #1a2230;
+  --surface-hover: #1c2436;
 }
 
 @theme inline {
@@ -189,4 +189,53 @@
 
 .command-item:active {
   @apply bg-muted;
+}
+
+/* Entrance animation — use with --enter-delay CSS var for stagger */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: enter 350ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Skeleton wave — replaces plain pulse with gradient sweep */
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-skeleton-wave {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    color-mix(in srgb, var(--muted) 60%, transparent) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.5s ease-in-out infinite;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

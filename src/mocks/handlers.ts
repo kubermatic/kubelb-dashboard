@@ -36,7 +36,23 @@ import { udpRouteHandlers } from "./handlers/udproutes";
 import { wafPolicyHandlers } from "./handlers/waf-policies";
 
 export const handlers = [
-  http.get("/api/config", () => HttpResponse.json({ authEnabled: false })),
+  http.get("/api/config", () => HttpResponse.json({ authEnabled: true })),
+
+  http.get("/auth/session", () => {
+    const entered = sessionStorage.getItem("kubelb-mock-session");
+    if (entered) {
+      return HttpResponse.json({
+        authenticated: true,
+        user: { email: "admin@kubelb.local", name: "Mock Admin", groups: ["admin"] },
+      });
+    }
+    return HttpResponse.json({ authenticated: false });
+  }),
+
+  http.post("/auth/logout", () => {
+    sessionStorage.removeItem("kubelb-mock-session");
+    return HttpResponse.json({ ok: true });
+  }),
   ...addressHandlers,
   ...tenantHandlers,
   ...configHandlers,

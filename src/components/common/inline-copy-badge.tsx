@@ -17,6 +17,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface InlineCopyBadgeProps {
   value: string;
@@ -41,7 +42,20 @@ export function InlineCopyBadge({ value }: InlineCopyBadgeProps) {
       aria-label={`Copy "${value}" to clipboard`}
     >
       {value}
-      {copied ? <Check className="size-3" /> : <Copy className="size-3 text-muted-foreground" />}
+      <span className="grid [&>*]:col-start-1 [&>*]:row-start-1">
+        <Copy
+          className={cn(
+            "size-3 text-muted-foreground transition-[opacity,transform] duration-200",
+            copied ? "scale-75 opacity-0" : "scale-100 opacity-100",
+          )}
+        />
+        <Check
+          className={cn(
+            "size-3 text-success transition-[opacity,transform] duration-200",
+            copied ? "scale-100 opacity-100" : "scale-75 opacity-0",
+          )}
+        />
+      </span>
     </button>
   );
 }

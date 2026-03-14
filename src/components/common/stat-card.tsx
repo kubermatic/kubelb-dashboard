@@ -38,7 +38,7 @@ interface StatCardProps {
 
 export function StatCard({ icon: Icon, label, count, accent = "primary" }: StatCardProps) {
   return (
-    <Card>
+    <Card className="transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="flex items-center gap-4">
         <div
           className={cn(

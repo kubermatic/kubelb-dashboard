@@ -122,7 +122,7 @@ function TableEmptyState({
   const DisplayIcon = hasActiveFilters ? SearchX : Icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-6 text-center">
+    <div className="animate-enter flex flex-col items-center justify-center py-6 text-center">
       {DisplayIcon && <DisplayIcon className="mb-2.5 size-8 text-muted-foreground/30" />}
       <p className="text-sm font-medium text-muted-foreground">
         {hasActiveFilters ? "No matching results" : message}
@@ -365,10 +365,11 @@ export function DataTable<T>({
                 </TableRow>
               ))
             ) : table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row, rowIndex) => (
                 <TableRow
                   key={row.id}
-                  className={cn("group/row", onRowClick && "cursor-pointer")}
+                  className={cn("animate-enter group/row", onRowClick && "cursor-pointer")}
+                  style={{ "--enter-delay": `${rowIndex * 30}ms` } as React.CSSProperties}
                   onClick={
                     onRowClick
                       ? (e: React.MouseEvent) => {

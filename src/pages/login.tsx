@@ -15,14 +15,20 @@
  */
 
 import { useAuth } from "@/hooks/use-auth";
+import { invalidateAuthCache } from "@/lib/auth-cache";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/api/query-keys";
 import { useCallback, useEffect } from "react";
+
+const isMock = import.meta.env.VITE_MOCK === "true";
 
 const FEATURE_PILLS = ["Multi-cluster", "Cloud-native", "Gateway API"];
 
 export function LoginPage() {
   const { isAuthenticated, authEnabled, loading } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const search: { return_to?: string } = useSearch({ strict: false });
 
   useEffect(() => {
@@ -35,6 +41,13 @@ export function LoginPage() {
   }, [loading, authEnabled, isAuthenticated, navigate, search.return_to]);
 
   const handleLogin = () => {
+    if (isMock) {
+      sessionStorage.setItem("kubelb-mock-session", "true");
+      invalidateAuthCache();
+      queryClient.removeQueries({ queryKey: queryKeys.auth.session() });
+      void navigate({ to: search.return_to ?? "/" });
+      return;
+    }
     const params = search.return_to ? `?return_to=${encodeURIComponent(search.return_to)}` : "";
     window.location.href = `/auth/login${params}`;
   };
