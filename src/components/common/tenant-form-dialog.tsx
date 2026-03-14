@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import yaml from "js-yaml";
 
 import { Button } from "@/components/ui/button";
@@ -27,45 +30,45 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Field, FieldLabel, FieldDescription, FieldError, FieldGroup } from "@/components/ui/field";
 import { YamlEditor } from "@/components/common/yaml-editor";
 import type { Tenant, TenantSpec } from "@/types/kubelb";
 
-const K8S_NAME_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
-const MAX_NAME_LENGTH = 243;
+const RFC1123_LABEL_REGEX = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
 
-function validateName(name: string): string | null {
-  if (!name) return "Name is required";
-  if (name.length > MAX_NAME_LENGTH) return `Max ${MAX_NAME_LENGTH} characters`;
-  if (!K8S_NAME_REGEX.test(name))
-    return "Lowercase alphanumeric and hyphens only, must start/end with alphanumeric";
-  return null;
-}
+const tenantSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(243, "Max 243 characters")
+    .regex(
+      RFC1123_LABEL_REGEX,
+      "Lowercase alphanumeric and hyphens only, must start/end with alphanumeric",
+    ),
+  propagateAllAnnotations: z.boolean(),
+  lbEnabled: z.boolean(),
+  lbClass: z.string(),
+  lbLimit: z.string(),
+  ingressEnabled: z.boolean(),
+  ingressClass: z.string(),
+  gwEnabled: z.boolean(),
+  gwClass: z.string(),
+  gwDefaultName: z.string(),
+  gwDefaultNamespace: z.string(),
+  gwLimit: z.string(),
+  wildcardDomain: z.string(),
+  allowExplicitHostnames: z.boolean(),
+  useDNSAnnotations: z.boolean(),
+  useCertificateAnnotations: z.boolean(),
+  defaultClusterIssuer: z.string(),
+});
 
-interface FormState {
-  name: string;
-  propagateAllAnnotations: boolean;
-  lbEnabled: boolean;
-  lbClass: string;
-  lbLimit: string;
-  ingressEnabled: boolean;
-  ingressClass: string;
-  gwEnabled: boolean;
-  gwClass: string;
-  gwDefaultName: string;
-  gwDefaultNamespace: string;
-  gwLimit: string;
-  wildcardDomain: string;
-  allowExplicitHostnames: boolean;
-  useDNSAnnotations: boolean;
-  useCertificateAnnotations: boolean;
-  defaultClusterIssuer: string;
-}
+type TenantFormValues = z.infer<typeof tenantSchema>;
 
-const INITIAL_STATE: FormState = {
+const DEFAULT_VALUES: TenantFormValues = {
   name: "",
   propagateAllAnnotations: false,
   lbEnabled: true,
@@ -85,53 +88,57 @@ const INITIAL_STATE: FormState = {
   defaultClusterIssuer: "",
 };
 
-function buildTenant(form: FormState): Tenant {
+function buildTenant(values: TenantFormValues): Tenant {
   const spec: TenantSpec = {};
 
-  if (form.propagateAllAnnotations) spec.propagateAllAnnotations = true;
+  if (values.propagateAllAnnotations) spec.propagateAllAnnotations = true;
 
   spec.loadBalancer = {
-    ...(form.lbClass && { class: form.lbClass }),
-    ...(form.lbEnabled === false && { disable: true }),
-    ...(form.lbLimit && { limit: Number(form.lbLimit) }),
+    ...(values.lbClass && { class: values.lbClass }),
+    ...(values.lbEnabled === false && { disable: true }),
+    ...(values.lbLimit && { limit: Number(values.lbLimit) }),
   };
 
   spec.ingress = {
-    ...(form.ingressClass && { class: form.ingressClass }),
-    ...(form.ingressEnabled === false && { disable: true }),
+    ...(values.ingressClass && { class: values.ingressClass }),
+    ...(values.ingressEnabled === false && { disable: true }),
   };
 
   spec.gatewayAPI = {
-    ...(form.gwClass && { class: form.gwClass }),
-    ...(form.gwEnabled === false && { disable: true }),
-    ...(form.gwDefaultName && {
-      defaultGateway: { name: form.gwDefaultName, namespace: form.gwDefaultNamespace || undefined },
+    ...(values.gwClass && { class: values.gwClass }),
+    ...(values.gwEnabled === false && { disable: true }),
+    ...(values.gwDefaultName && {
+      defaultGateway: {
+        name: values.gwDefaultName,
+        namespace: values.gwDefaultNamespace || undefined,
+      },
     }),
-    ...(form.gwLimit && { gatewaySettings: { limit: Number(form.gwLimit) } }),
+    ...(values.gwLimit && {
+      gatewaySettings: { limit: Number(values.gwLimit) },
+    }),
   };
 
   const dns: TenantSpec["dns"] = {};
-  if (form.wildcardDomain) dns.wildcardDomain = form.wildcardDomain;
-  if (form.allowExplicitHostnames) dns.allowExplicitHostnames = true;
-  if (form.useDNSAnnotations) dns.useDNSAnnotations = true;
-  if (form.useCertificateAnnotations) dns.useCertificateAnnotations = true;
+  if (values.wildcardDomain) dns.wildcardDomain = values.wildcardDomain;
+  if (values.allowExplicitHostnames) dns.allowExplicitHostnames = true;
+  if (values.useDNSAnnotations) dns.useDNSAnnotations = true;
+  if (values.useCertificateAnnotations) dns.useCertificateAnnotations = true;
   if (Object.keys(dns).length > 0) spec.dns = dns;
 
-  if (form.defaultClusterIssuer) {
-    spec.certificates = { defaultClusterIssuer: form.defaultClusterIssuer };
+  if (values.defaultClusterIssuer) {
+    spec.certificates = { defaultClusterIssuer: values.defaultClusterIssuer };
   }
 
   return {
     apiVersion: "kubelb.k8c.io/v1alpha1",
     kind: "Tenant",
-    metadata: { name: form.name },
+    metadata: { name: values.name },
     spec,
   };
 }
 
-function tenantToYaml(form: FormState): string {
-  const tenant = buildTenant(form);
-  return yaml.dump(tenant, { noRefs: true, lineWidth: -1 });
+function valuesToYaml(values: TenantFormValues): string {
+  return yaml.dump(buildTenant(values), { noRefs: true, lineWidth: -1 });
 }
 
 interface TenantFormDialogProps {
@@ -150,19 +157,17 @@ export function TenantFormDialog({
   onSubmit,
 }: TenantFormDialogProps) {
   const [mode, setMode] = useState<"form" | "yaml">("form");
-  const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [yamlValue, setYamlValue] = useState("");
   const [yamlError, setYamlError] = useState<string | null>(null);
-  const [nameBlurred, setNameBlurred] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
-  const nameError = useMemo(() => validateName(form.name), [form.name]);
+  const form = useForm<TenantFormValues>({
+    resolver: zodResolver(tenantSchema),
+    defaultValues: DEFAULT_VALUES,
+    mode: "onBlur",
+  });
 
-  const set = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  const currentYaml = useMemo(() => tenantToYaml(form), [form]);
+  const watchedValues = form.watch();
+  const currentYaml = useMemo(() => valuesToYaml(watchedValues), [watchedValues]);
 
   const handleModeChange = (next: string) => {
     if (next === "yaml") {
@@ -174,11 +179,9 @@ export function TenantFormDialog({
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
-      setForm(INITIAL_STATE);
+      form.reset(DEFAULT_VALUES);
       setYamlError(null);
       setYamlValue("");
-      setNameBlurred(false);
-      setSubmitted(false);
       setMode("form");
     }
     onOpenChange(next);
@@ -200,10 +203,12 @@ export function TenantFormDialog({
       return;
     }
 
-    setSubmitted(true);
-    if (nameError) return;
-    onSubmit(buildTenant(form));
+    void form.handleSubmit((values) => onSubmit(buildTenant(values)))();
   };
+
+  const lbEnabled = form.watch("lbEnabled");
+  const ingressEnabled = form.watch("ingressEnabled");
+  const gwEnabled = form.watch("gwEnabled");
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -225,159 +230,217 @@ export function TenantFormDialog({
           <TabsContent value="form" className="min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-6 py-2">
               <FormSection title="General">
-                <FormField
-                  label="Name"
-                  error={nameBlurred || submitted ? nameError : null}
-                  required
-                >
-                  <Input
-                    value={form.name}
-                    onChange={(e) => set("name", e.target.value.toLowerCase())}
-                    onBlur={() => setNameBlurred(true)}
-                    placeholder="my-tenant"
-                    autoFocus
+                <FieldGroup>
+                  <Controller
+                    control={form.control}
+                    name="name"
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="tenant-name">
+                          Name
+                          <span className="text-destructive" aria-hidden>
+                            *
+                          </span>
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="tenant-name"
+                          onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                          placeholder="my-tenant"
+                          autoFocus
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
                   />
-                </FormField>
-                <SwitchField
-                  label="Propagate All Annotations"
-                  description="Forward all annotations to downstream resources"
-                  checked={form.propagateAllAnnotations}
-                  onCheckedChange={(v) => set("propagateAllAnnotations", v)}
-                />
+
+                  <SwitchField
+                    control={form.control}
+                    name="propagateAllAnnotations"
+                    label="Propagate All Annotations"
+                    description="Forward all annotations to downstream resources"
+                  />
+                </FieldGroup>
               </FormSection>
 
               <FormSection title="Layer 4 (Load Balancer)">
-                <SwitchField
-                  label="Enabled"
-                  checked={form.lbEnabled}
-                  onCheckedChange={(v) => set("lbEnabled", v)}
-                />
-                {form.lbEnabled && (
-                  <>
-                    <FormField label="Class">
-                      <Input
-                        value={form.lbClass}
-                        onChange={(e) => set("lbClass", e.target.value)}
-                        placeholder="e.g. metallb"
+                <FieldGroup>
+                  <SwitchField control={form.control} name="lbEnabled" label="Enabled" />
+                  {lbEnabled && (
+                    <>
+                      <Controller
+                        control={form.control}
+                        name="lbClass"
+                        render={({ field }) => (
+                          <Field>
+                            <FieldLabel htmlFor="lb-class">Class</FieldLabel>
+                            <Input {...field} id="lb-class" placeholder="e.g. metallb" />
+                          </Field>
+                        )}
                       />
-                    </FormField>
-                    {isEE && (
-                      <FormField label="Limit" description="Max load balancers (0 = unlimited)">
-                        <Input
-                          type="number"
-                          min={0}
-                          value={form.lbLimit}
-                          onChange={(e) => set("lbLimit", e.target.value)}
-                          placeholder="0"
+                      {isEE && (
+                        <Controller
+                          control={form.control}
+                          name="lbLimit"
+                          render={({ field }) => (
+                            <Field>
+                              <FieldLabel htmlFor="lb-limit">Limit</FieldLabel>
+                              <Input
+                                {...field}
+                                id="lb-limit"
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                              />
+                              <FieldDescription>
+                                Max load balancers (0 = unlimited)
+                              </FieldDescription>
+                            </Field>
+                          )}
                         />
-                      </FormField>
-                    )}
-                  </>
-                )}
+                      )}
+                    </>
+                  )}
+                </FieldGroup>
               </FormSection>
 
               <FormSection title="Ingress">
-                <SwitchField
-                  label="Enabled"
-                  checked={form.ingressEnabled}
-                  onCheckedChange={(v) => set("ingressEnabled", v)}
-                />
-                {form.ingressEnabled && (
-                  <FormField label="Class">
-                    <Input
-                      value={form.ingressClass}
-                      onChange={(e) => set("ingressClass", e.target.value)}
-                      placeholder="e.g. nginx"
+                <FieldGroup>
+                  <SwitchField control={form.control} name="ingressEnabled" label="Enabled" />
+                  {ingressEnabled && (
+                    <Controller
+                      control={form.control}
+                      name="ingressClass"
+                      render={({ field }) => (
+                        <Field>
+                          <FieldLabel htmlFor="ingress-class">Class</FieldLabel>
+                          <Input {...field} id="ingress-class" placeholder="e.g. nginx" />
+                        </Field>
+                      )}
                     />
-                  </FormField>
-                )}
+                  )}
+                </FieldGroup>
               </FormSection>
 
               <FormSection title="Gateway API">
-                <SwitchField
-                  label="Enabled"
-                  checked={form.gwEnabled}
-                  onCheckedChange={(v) => set("gwEnabled", v)}
-                />
-                {form.gwEnabled && (
-                  <>
-                    <FormField label="Class">
-                      <Input
-                        value={form.gwClass}
-                        onChange={(e) => set("gwClass", e.target.value)}
-                        placeholder="e.g. eg"
+                <FieldGroup>
+                  <SwitchField control={form.control} name="gwEnabled" label="Enabled" />
+                  {gwEnabled && (
+                    <>
+                      <Controller
+                        control={form.control}
+                        name="gwClass"
+                        render={({ field }) => (
+                          <Field>
+                            <FieldLabel htmlFor="gw-class">Class</FieldLabel>
+                            <Input {...field} id="gw-class" placeholder="e.g. eg" />
+                          </Field>
+                        )}
                       />
-                    </FormField>
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField label="Default Gateway Name">
-                        <Input
-                          value={form.gwDefaultName}
-                          onChange={(e) => set("gwDefaultName", e.target.value)}
-                          placeholder="default"
+                      <div className="grid grid-cols-2 gap-3">
+                        <Controller
+                          control={form.control}
+                          name="gwDefaultName"
+                          render={({ field }) => (
+                            <Field>
+                              <FieldLabel htmlFor="gw-default-name">
+                                Default Gateway Name
+                              </FieldLabel>
+                              <Input {...field} id="gw-default-name" placeholder="default" />
+                            </Field>
+                          )}
                         />
-                      </FormField>
-                      <FormField label="Default Gateway Namespace">
-                        <Input
-                          value={form.gwDefaultNamespace}
-                          onChange={(e) => set("gwDefaultNamespace", e.target.value)}
-                          placeholder="kubelb"
+                        <Controller
+                          control={form.control}
+                          name="gwDefaultNamespace"
+                          render={({ field }) => (
+                            <Field>
+                              <FieldLabel htmlFor="gw-default-ns">
+                                Default Gateway Namespace
+                              </FieldLabel>
+                              <Input {...field} id="gw-default-ns" placeholder="kubelb" />
+                            </Field>
+                          )}
                         />
-                      </FormField>
-                    </div>
-                    {isEE && (
-                      <FormField label="Gateway Limit" description="Max gateways (0 = unlimited)">
-                        <Input
-                          type="number"
-                          min={0}
-                          value={form.gwLimit}
-                          onChange={(e) => set("gwLimit", e.target.value)}
-                          placeholder="0"
+                      </div>
+                      {isEE && (
+                        <Controller
+                          control={form.control}
+                          name="gwLimit"
+                          render={({ field }) => (
+                            <Field>
+                              <FieldLabel htmlFor="gw-limit">Gateway Limit</FieldLabel>
+                              <Input
+                                {...field}
+                                id="gw-limit"
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                              />
+                              <FieldDescription>Max gateways (0 = unlimited)</FieldDescription>
+                            </Field>
+                          )}
                         />
-                      </FormField>
-                    )}
-                  </>
-                )}
+                      )}
+                    </>
+                  )}
+                </FieldGroup>
               </FormSection>
 
               <FormSection title="DNS">
-                <FormField label="Wildcard Domain">
-                  <Input
-                    value={form.wildcardDomain}
-                    onChange={(e) => set("wildcardDomain", e.target.value)}
-                    placeholder="**.apps.example.com"
+                <FieldGroup>
+                  <Controller
+                    control={form.control}
+                    name="wildcardDomain"
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel htmlFor="wildcard-domain">Wildcard Domain</FieldLabel>
+                        <Input {...field} id="wildcard-domain" placeholder="**.apps.example.com" />
+                      </Field>
+                    )}
                   />
-                </FormField>
-                <SwitchField
-                  label="Allow Explicit Hostnames"
-                  checked={form.allowExplicitHostnames}
-                  onCheckedChange={(v) => set("allowExplicitHostnames", v)}
-                />
-                <SwitchField
-                  label="Use DNS Annotations"
-                  checked={form.useDNSAnnotations}
-                  onCheckedChange={(v) => set("useDNSAnnotations", v)}
-                />
-                <SwitchField
-                  label="Use Certificate Annotations"
-                  checked={form.useCertificateAnnotations}
-                  onCheckedChange={(v) => set("useCertificateAnnotations", v)}
-                />
+                  <SwitchField
+                    control={form.control}
+                    name="allowExplicitHostnames"
+                    label="Allow Explicit Hostnames"
+                  />
+                  <SwitchField
+                    control={form.control}
+                    name="useDNSAnnotations"
+                    label="Use DNS Annotations"
+                  />
+                  <SwitchField
+                    control={form.control}
+                    name="useCertificateAnnotations"
+                    label="Use Certificate Annotations"
+                  />
+                </FieldGroup>
               </FormSection>
 
               <FormSection title="Certificates">
-                <FormField label="Default Cluster Issuer">
-                  <Input
-                    value={form.defaultClusterIssuer}
-                    onChange={(e) => set("defaultClusterIssuer", e.target.value)}
-                    placeholder="e.g. letsencrypt-staging-dns"
+                <FieldGroup>
+                  <Controller
+                    control={form.control}
+                    name="defaultClusterIssuer"
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel htmlFor="cluster-issuer">Default Cluster Issuer</FieldLabel>
+                        <Input
+                          {...field}
+                          id="cluster-issuer"
+                          placeholder="e.g. letsencrypt-staging-dns"
+                        />
+                      </Field>
+                    )}
                   />
-                </FormField>
+                </FieldGroup>
               </FormSection>
             </div>
           </TabsContent>
 
-          <TabsContent value="yaml" className="min-h-0 flex-1 flex flex-col">
-            <div className="flex-1 min-h-0">
+          <TabsContent value="yaml" className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1">
               <YamlEditor
                 value={yamlValue}
                 onChange={(v) => {
@@ -416,95 +479,34 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
-let fieldCounter = 0;
-
-function FormField({
-  label,
-  description,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  description?: string;
-  error?: string | null;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  const [id] = useState(() => `field-${++fieldCounter}`);
-  const descId = description ? `${id}-desc` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
-  const describedBy = [descId, errorId].filter(Boolean).join(" ") || undefined;
-
-  let cloned = false;
-  const enhanced = React.Children.map(children, (child) => {
-    if (!cloned && React.isValidElement(child)) {
-      cloned = true;
-      return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
-        id,
-        "aria-describedby": describedBy,
-        "aria-invalid": !!error || undefined,
-        "aria-required": required || undefined,
-      });
-    }
-    return child;
-  });
-
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>
-        {label}
-        {required && (
-          <span className="text-destructive" aria-hidden="true">
-            *
-          </span>
-        )}
-      </Label>
-      {enhanced}
-      {description && (
-        <p id={descId} className="text-xs text-muted-foreground">
-          {description}
-        </p>
-      )}
-      {error && (
-        <p id={errorId} className="text-xs text-destructive" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
 function SwitchField({
+  control,
+  name,
   label,
   description,
-  checked,
-  onCheckedChange,
 }: {
+  control: ReturnType<typeof useForm<TenantFormValues>>["control"];
+  name: keyof TenantFormValues;
   label: string;
   description?: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
 }) {
-  const [id] = useState(() => `switch-${++fieldCounter}`);
-  const descId = description ? `${id}-desc` : undefined;
-
   return (
-    <div className="flex items-center justify-between">
-      <div className="space-y-0.5">
-        <Label htmlFor={id}>{label}</Label>
-        {description && (
-          <p id={descId} className="text-xs text-muted-foreground">
-            {description}
-          </p>
-        )}
-      </div>
-      <Switch
-        id={id}
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        aria-describedby={descId}
-      />
-    </div>
+    <Controller
+      control={control}
+      name={name as never}
+      render={({ field }) => (
+        <Field orientation="horizontal">
+          <div className="space-y-0.5">
+            <FieldLabel htmlFor={`switch-${name}`}>{label}</FieldLabel>
+            {description && <FieldDescription>{description}</FieldDescription>}
+          </div>
+          <Switch
+            id={`switch-${name}`}
+            checked={field.value as boolean}
+            onCheckedChange={field.onChange}
+          />
+        </Field>
+      )}
+    />
   );
 }

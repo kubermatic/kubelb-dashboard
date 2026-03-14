@@ -60,26 +60,6 @@ function getSourceName(route: RouteType): string {
   return name ?? "\u2014";
 }
 
-function getEndpointsSummary(route: RouteType): string {
-  if (!route.spec.endpoints?.length) return "\u2014";
-  const parts: string[] = [];
-  for (const ep of route.spec.endpoints) {
-    if (ep.addressesReference) {
-      parts.push(ep.addressesReference.name ?? "ref");
-    } else if (ep.addresses?.length) {
-      const ports = ep.ports?.map((p) => p.port) ?? [];
-      for (const addr of ep.addresses) {
-        if (ports.length) {
-          parts.push(...ports.map((port) => `${addr.ip}:${String(port)}`));
-        } else {
-          parts.push(addr.ip);
-        }
-      }
-    }
-  }
-  return parts.length ? parts.join(", ") : "\u2014";
-}
-
 function getSourceAnnotations(route: RouteType): Record<string, string> {
   const resource = route.spec.source?.kubernetes?.resource;
   if (!resource) return {};
@@ -108,7 +88,8 @@ function Routes() {
           <Link
             to="/routes/$namespace/$name"
             params={{ namespace: namespace ?? "default", name }}
-            className="font-medium text-primary hover:underline"
+            className="block max-w-64 truncate font-medium text-primary hover:underline"
+            title={name}
           >
             {name}
           </Link>
@@ -135,12 +116,6 @@ function Routes() {
         const source = getSourceName(row.original);
         return <MonoCell value={source} />;
       },
-    },
-    {
-      id: "endpoints",
-      accessorFn: (row) => getEndpointsSummary(row),
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
-      cell: ({ row }) => <MonoCell value={getEndpointsSummary(row.original)} />,
     },
     {
       id: "dns",

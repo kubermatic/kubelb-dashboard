@@ -53,26 +53,6 @@ function getExternalIPs(lb: LoadBalancer): string[] {
   );
 }
 
-function getEndpointsSummary(lb: LoadBalancer): string {
-  if (!lb.spec.endpoints?.length) return "\u2014";
-  const parts: string[] = [];
-  for (const ep of lb.spec.endpoints) {
-    if (ep.addressesReference) {
-      parts.push(ep.addressesReference.name ?? "ref");
-    } else if (ep.addresses?.length) {
-      const ports = ep.ports?.map((p) => p.port) ?? [];
-      for (const addr of ep.addresses) {
-        if (ports.length) {
-          parts.push(...ports.map((port) => `${addr.ip}:${String(port)}`));
-        } else {
-          parts.push(addr.ip);
-        }
-      }
-    }
-  }
-  return parts.length ? parts.join(", ") : "\u2014";
-}
-
 function LoadBalancers() {
   const selectedTenant = useUIStore((s) => s.selectedTenant);
   const namespace = selectedTenant ? tenantToNamespace(selectedTenant) : undefined;
@@ -94,7 +74,8 @@ function LoadBalancers() {
           <Link
             to="/load-balancers/$namespace/$name"
             params={{ namespace: namespace ?? "default", name }}
-            className="font-medium text-primary hover:underline"
+            className="block max-w-64 truncate font-medium text-primary hover:underline"
+            title={name}
           >
             {name}
           </Link>
@@ -143,13 +124,6 @@ function LoadBalancers() {
           </div>
         );
       },
-    },
-    {
-      id: "endpoints",
-      meta: { hideBelow: "md" },
-      accessorFn: (row) => getEndpointsSummary(row),
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Endpoints" />,
-      cell: ({ row }) => <MonoCell value={getEndpointsSummary(row.original)} />,
     },
     {
       id: "status",
