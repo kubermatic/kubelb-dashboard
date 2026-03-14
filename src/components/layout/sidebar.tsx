@@ -23,6 +23,14 @@ import { cn } from "@/lib/utils";
 import { navItems, type NavItem } from "@/lib/nav-items";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Group nav items by category
+const navGroups = {
+  main: ["Overview"],
+  resources: ["Tenants", "Load Balancers", "Routes", "Sync Secrets"],
+  infrastructure: ["Envoy Proxy", "Configuration"],
+  security: ["WAF Policies"],
+};
+
 function NavLinks({
   collapsed,
   onNavigate,
@@ -60,15 +68,15 @@ function NavLinks({
     });
   };
 
-  const linkClass = (isCollapsed: boolean) =>
-    cn(
-      "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-hover",
-      isCollapsed && "justify-center px-0",
-    );
+  const isActive = (item: NavItem) => {
+    if (item.to === "/") return pathname === "/";
+    return pathname.startsWith(item.to);
+  };
 
   const renderItem = (item: NavItem) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expanded.has(item.to);
+    const active = isActive(item);
 
     if (hasChildren && !collapsed) {
       return (
@@ -77,41 +85,54 @@ function NavLinks({
             <Link
               to={item.to}
               activeOptions={{ exact: false }}
-              className={cn(linkClass(false), "flex-1")}
-              activeProps={{
-                className: "bg-sidebar-accent text-sidebar-accent-foreground",
-              }}
+              className={cn(
+                "group relative flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                active
+                  ? "bg-primary/10 text-primary"
+                  : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
+              )}
               onClick={onNavigate}
             >
-              <item.icon className="size-5 shrink-0" />
+              {active && (
+                <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+              )}
+              <item.icon className={cn("size-[18px] shrink-0", active && "text-primary")} />
               <span>{item.label}</span>
             </Link>
             <button
               onClick={() => toggleExpanded(item.to)}
-              className="rounded-md p-1.5 text-sidebar-foreground hover:bg-sidebar-hover"
+              className="mr-1 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-hover hover:text-foreground"
             >
               <ChevronRight
-                className={cn("size-4 transition-transform", isExpanded && "rotate-90")}
+                className={cn(
+                  "size-4 transition-transform duration-200",
+                  isExpanded && "rotate-90",
+                )}
               />
             </button>
           </div>
           {isExpanded && (
-            <div className="ml-4 space-y-1 border-l border-border/50 pl-2">
-              {item.children!.map((child) => (
-                <Link
-                  key={child.to}
-                  to={child.to}
-                  activeOptions={{ exact: false }}
-                  className={cn(linkClass(false), "gap-2 py-1.5 text-xs")}
-                  activeProps={{
-                    className: "bg-sidebar-accent text-sidebar-accent-foreground",
-                  }}
-                  onClick={onNavigate}
-                >
-                  <child.icon className="size-4 shrink-0" />
-                  <span>{child.label}</span>
-                </Link>
-              ))}
+            <div className="ml-5 mt-1 space-y-0.5 border-l-2 border-border/40 pl-3">
+              {item.children!.map((child) => {
+                const childActive = pathname.startsWith(child.to);
+                return (
+                  <Link
+                    key={child.to}
+                    to={child.to}
+                    activeOptions={{ exact: false }}
+                    className={cn(
+                      "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-all duration-200",
+                      childActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-sidebar-hover hover:text-foreground",
+                    )}
+                    onClick={onNavigate}
+                  >
+                    <child.icon className="size-4 shrink-0" />
+                    <span>{child.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
@@ -126,17 +147,24 @@ function NavLinks({
               <Link
                 to={item.to}
                 activeOptions={{ exact: item.to === "/" }}
-                className={linkClass(true)}
-                activeProps={{
-                  className: "bg-sidebar-accent text-sidebar-accent-foreground",
-                }}
+                className={cn(
+                  "group relative flex items-center justify-center rounded-lg p-2.5 transition-all duration-200",
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
+                )}
                 onClick={onNavigate}
               />
             }
           >
-            <item.icon className="size-5 shrink-0" />
+            {active && (
+              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+            )}
+            <item.icon className="size-[18px] shrink-0" />
           </TooltipTrigger>
-          <TooltipContent side="right">{item.label}</TooltipContent>
+          <TooltipContent side="right" className="font-medium">
+            {item.label}
+          </TooltipContent>
         </Tooltip>
       );
     }
@@ -146,21 +174,68 @@ function NavLinks({
         key={item.to}
         to={item.to}
         activeOptions={{ exact: item.to === "/" }}
-        className={linkClass(false)}
-        activeProps={{
-          className: "bg-sidebar-accent text-sidebar-accent-foreground",
-        }}
+        className={cn(
+          "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+          active
+            ? "bg-primary/10 text-primary"
+            : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground",
+        )}
         onClick={onNavigate}
       >
-        <item.icon className="size-5 shrink-0" />
+        {active && (
+          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+        )}
+        <item.icon className={cn("size-[18px] shrink-0", active && "text-primary")} />
         <span>{item.label}</span>
       </Link>
     );
   };
 
+  // Group items
+  const mainItems = filtered.filter((item) => navGroups.main.includes(item.label));
+  const resourceItems = filtered.filter((item) => navGroups.resources.includes(item.label));
+  const infraItems = filtered.filter((item) => navGroups.infrastructure.includes(item.label));
+  const securityItems = filtered.filter((item) => navGroups.security.includes(item.label));
+
+  const sectionLabel = (label: string) =>
+    collapsed ? null : (
+      <div className="px-3 py-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          {label}
+        </span>
+      </div>
+    );
+
   return (
     <TooltipProvider>
-      <nav className="flex-1 space-y-1 p-2">{filtered.map(renderItem)}</nav>
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        {/* Main */}
+        <div className="space-y-1">{mainItems.map(renderItem)}</div>
+
+        {/* Resources */}
+        {resourceItems.length > 0 && (
+          <div className="mt-6">
+            {sectionLabel("Resources")}
+            <div className="space-y-1">{resourceItems.map(renderItem)}</div>
+          </div>
+        )}
+
+        {/* Infrastructure */}
+        {infraItems.length > 0 && (
+          <div className="mt-6">
+            {sectionLabel("Infrastructure")}
+            <div className="space-y-1">{infraItems.map(renderItem)}</div>
+          </div>
+        )}
+
+        {/* Security (EE only) */}
+        {securityItems.length > 0 && (
+          <div className="mt-6">
+            {sectionLabel("Security")}
+            <div className="space-y-1">{securityItems.map(renderItem)}</div>
+          </div>
+        )}
+      </nav>
     </TooltipProvider>
   );
 }
@@ -174,17 +249,47 @@ export function Sidebar() {
     <aside
       className={cn(
         "hidden shrink-0 flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out md:flex",
-        collapsed ? "w-[70px]" : "w-[264px]",
+        collapsed ? "w-[72px]" : "w-[260px]",
       )}
     >
+      {/* Logo Section */}
+      <div
+        className={cn(
+          "flex h-16 shrink-0 items-center border-b border-border px-4",
+          collapsed ? "justify-center" : "gap-3",
+        )}
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <span className="text-sm font-bold text-primary-foreground">K</span>
+        </div>
+        {!collapsed && (
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-foreground">KubeLB</span>
+            <span className="text-[10px] text-muted-foreground">Dashboard</span>
+          </div>
+        )}
+      </div>
+
       <NavLinks collapsed={collapsed} ee={isEE} />
-      <div className="border-t border-border p-2">
+
+      {/* Collapse Toggle */}
+      <div className="shrink-0 border-t border-border p-3">
         <button
           onClick={toggleSidebar}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex w-full items-center justify-center rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-hover"
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-lg py-2 text-muted-foreground transition-all duration-200 hover:bg-sidebar-hover hover:text-foreground",
+            !collapsed && "px-3",
+          )}
         >
-          {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          {collapsed ? (
+            <PanelLeftOpen className="size-[18px]" />
+          ) : (
+            <>
+              <PanelLeftClose className="size-[18px]" />
+              <span className="text-xs font-medium">Collapse</span>
+            </>
+          )}
         </button>
       </div>
     </aside>
@@ -210,13 +315,22 @@ export function MobileSidebar() {
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={close} />
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col bg-sidebar shadow-lg transition-transform duration-300">
-        <div className="flex h-[60px] items-center justify-between border-b border-border px-4">
-          <span className="text-lg font-semibold text-sidebar-foreground">KubeLB</span>
+      <aside className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-sidebar shadow-2xl transition-transform duration-300">
+        {/* Mobile Header */}
+        <div className="flex h-16 items-center justify-between border-b border-border px-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <span className="text-sm font-bold text-primary-foreground">K</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-foreground">KubeLB</span>
+              <span className="text-[10px] text-muted-foreground">Dashboard</span>
+            </div>
+          </div>
           <button
             onClick={close}
             aria-label="Close navigation"
-            className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-hover"
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-sidebar-hover hover:text-foreground"
           >
             <X className="size-5" />
           </button>

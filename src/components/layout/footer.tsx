@@ -15,14 +15,47 @@
  */
 
 import { useEdition } from "@/hooks/use-edition";
+import { cn } from "@/lib/utils";
 
 export function Footer() {
   const { isEE } = useEdition();
 
   return (
-    <footer className="border-t px-3 py-2 md:px-5">
-      <div className="flex items-center justify-center text-xs text-muted-foreground">
-        <span>{isEE ? "Enterprise Edition" : "Community Edition"}</span>
+    <footer className="shrink-0 border-t border-border bg-muted/30 px-4 py-3">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-foreground/70">KubeLB</span>
+          <span className="text-border">|</span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium",
+              isEE ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary",
+            )}
+          >
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full", isEE ? "bg-secondary" : "bg-primary")}
+            />
+            {isEE ? "Enterprise" : "Community"}
+          </span>
+        </div>
+        <div className="hidden items-center gap-4 sm:flex">
+          <a
+            href="https://kubelb.io/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-foreground"
+          >
+            Documentation
+          </a>
+          <a
+            href="https://github.com/kubermatic/kubelb"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-foreground"
+          >
+            GitHub
+          </a>
+        </div>
       </div>
     </footer>
   );

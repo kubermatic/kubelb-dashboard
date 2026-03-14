@@ -22,12 +22,12 @@ import { CommandPalette } from "@/components/common/command-palette";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-auto">
-          <main className="flex-1 p-3 md:p-5">{children}</main>
+          <main className="flex-1 p-4 md:p-6">{children}</main>
           <Footer />
         </div>
       </div>

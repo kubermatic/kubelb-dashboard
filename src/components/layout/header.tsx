@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Menu, Moon, Search, Sun } from "lucide-react";
+import { Command, Menu, Moon, Search, Sun } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -33,50 +33,93 @@ export function Header() {
 
   const toggleTheme = useCallback(() => setDark((d) => !d), []);
 
+  const openSearch = () => {
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+  };
+
   return (
-    <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border bg-card px-4">
-      <div className="flex items-center gap-2">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-sm">
+      {/* Left Section */}
+      <div className="flex items-center gap-3">
+        {/* Mobile Menu Button */}
         <button
           onClick={openMobileSidebar}
-          className="rounded-md p-2 text-foreground hover:bg-surface-hover md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground md:hidden"
         >
           <Menu className="size-5" />
         </button>
-        <span className="text-lg font-semibold text-foreground">
-          <span className="md:hidden">KubeLB</span>
-          <span className="hidden md:inline">KubeLB Dashboard</span>
-        </span>
+
+        {/* Mobile Logo */}
+        <div className="flex items-center gap-2 md:hidden">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">K</span>
+          </div>
+          <span className="text-sm font-semibold text-foreground">KubeLB</span>
+        </div>
       </div>
+
+      {/* Center Section - Search (Desktop) */}
+      <div className="hidden flex-1 justify-center px-4 md:flex">
+        <button
+          onClick={openSearch}
+          className="group flex h-9 w-full max-w-md items-center gap-3 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-muted"
+        >
+          <Search className="size-4" />
+          <span className="flex-1 text-left">Search resources...</span>
+          <kbd className="hidden items-center gap-0.5 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
+            {navigator.platform.includes("Mac") ? (
+              <>
+                <Command className="size-2.5" />K
+              </>
+            ) : (
+              "Ctrl K"
+            )}
+          </kbd>
+        </button>
+      </div>
+
+      {/* Right Section */}
       <TooltipProvider>
         <div className="flex items-center gap-1">
+          {/* Mobile Search Button */}
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() =>
-                    document.dispatchEvent(
-                      new KeyboardEvent("keydown", { key: "k", metaKey: true }),
-                    )
-                  }
+                  onClick={openSearch}
+                  className="h-9 w-9 text-muted-foreground hover:text-foreground md:hidden"
                 />
               }
             >
-              <Search className="size-5" />
+              <Search className="size-[18px]" />
             </TooltipTrigger>
-            <TooltipContent>
-              Search{" "}
-              <kbd className="ml-1 rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
-                {navigator.platform.includes("Mac") ? "\u2318" : "Ctrl"}K
-              </kbd>
-            </TooltipContent>
+            <TooltipContent>Search</TooltipContent>
           </Tooltip>
+
+          {/* Divider */}
+          <div className="mx-1 hidden h-5 w-px bg-border md:block" />
+
+          {/* Help Menu */}
           <HelpMenu />
+
+          {/* User Menu */}
           <UserMenu />
+
+          {/* Theme Toggle */}
           <Tooltip>
-            <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={toggleTheme} />}>
-              {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                />
+              }
+            >
+              {dark ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
             </TooltipTrigger>
             <TooltipContent>{dark ? "Light mode" : "Dark mode"}</TooltipContent>
           </Tooltip>
