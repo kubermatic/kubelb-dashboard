@@ -128,13 +128,6 @@ function EnvoyProxySection({ envoy }: { envoy?: EnvoyProxy }) {
           </div>
         </div>
       )}
-
-      <div className="text-sm">
-        <span className="text-muted-foreground">Pod Monitor</span>
-        <div className="mt-1">
-          <EnabledBadge enabled={envoy.podMonitor?.enabled} />
-        </div>
-      </div>
     </div>
   );
 }
@@ -362,47 +355,6 @@ function ConfigView({ config }: { config: Config }) {
                   value={spec.circuitBreaker.perEndpoint.maxConnections}
                 />
               )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {isEE && spec.loadBalancerPolicy && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Load Balancer Policy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ConfigField label="Policy" value={spec.loadBalancerPolicy} />
-          </CardContent>
-        </Card>
-      )}
-
-      {isEE && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Network Policy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <div className="mt-1">
-                  <EnabledBadge enabled={spec.networkPolicy?.enable} />
-                </div>
-              </div>
-              <ConfigField
-                label="Disabled Policies"
-                value={
-                  spec.networkPolicy?.disabledPolicies?.length
-                    ? spec.networkPolicy.disabledPolicies.join(", ")
-                    : undefined
-                }
-              />
-              <ConfigField
-                label="Additional Policies"
-                value={spec.networkPolicy?.additionalPolicies?.length ?? 0}
-              />
             </div>
           </CardContent>
         </Card>

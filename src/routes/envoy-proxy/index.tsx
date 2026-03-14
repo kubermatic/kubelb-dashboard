@@ -154,7 +154,7 @@ function EnvoyProxy() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Envoy Proxy</h1>
+        <h1 className="text-2xl font-semibold">Envoy Proxies</h1>
         <p className="mt-1 text-muted-foreground">Inspect and configure Envoy proxy instances.</p>
       </div>
       {isError && error ? (
@@ -170,7 +170,7 @@ function EnvoyProxy() {
               : "No envoy proxies found."
           }
           searchColumn="name"
-          searchPlaceholder="Filter by name..."
+          searchPlaceholder="Search envoy proxies..."
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
           dataUpdatedAt={dataUpdatedAt}

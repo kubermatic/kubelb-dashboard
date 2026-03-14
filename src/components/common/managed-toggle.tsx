@@ -28,7 +28,7 @@ export function ManagedToggle({ checked, onCheckedChange }: ManagedToggleProps) 
     <Tooltip>
       <TooltipTrigger
         render={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <Switch id="managed-toggle" checked={checked} onCheckedChange={onCheckedChange} />
             <Label htmlFor="managed-toggle" className="text-sm text-muted-foreground">
               Managed by KubeLB

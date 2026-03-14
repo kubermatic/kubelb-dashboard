@@ -48,6 +48,7 @@ import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-t
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
 import { tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
+import { booleanStyles } from "@/lib/status-styles";
 import type { Tenant } from "@/types/kubelb";
 
 const RESOURCE_KIND = "Tenant";
@@ -59,10 +60,7 @@ export const Route = createFileRoute("/tenants/")({
 
 function FeatureBadge({ enabled }: { enabled: boolean }) {
   return (
-    <Badge
-      className={enabled ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}
-      variant="outline"
-    >
+    <Badge className={enabled ? booleanStyles.enabled : booleanStyles.disabled} variant="outline">
       {enabled ? "Enabled" : "Disabled"}
     </Badge>
   );
@@ -287,7 +285,7 @@ function Tenants() {
           data={items}
           isLoading={isLoading}
           searchColumn="name"
-          searchPlaceholder="Filter tenants..."
+          searchPlaceholder="Search tenants..."
           toolbarLeading={
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />

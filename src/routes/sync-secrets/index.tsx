@@ -44,9 +44,8 @@ import {
 } from "@/hooks/use-sync-secret-mutations";
 import { useUIStore } from "@/stores/ui";
 import { AgeCell } from "@/components/common/age-cell";
-import { Badge } from "@/components/ui/badge";
-import { getSyncSecretHealthStatus } from "@/lib/status-mapper";
-import { statusStyles } from "@/lib/status-styles";
+import { StatusBadge } from "@/components/common/status-badge";
+import { getSyncSecretHealthStatus, healthToConditionStatus } from "@/lib/status-mapper";
 import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import type { SyncSecret } from "@/types/kubelb";
@@ -145,12 +144,8 @@ function SyncSecrets() {
       accessorFn: (row) => getSyncSecretHealthStatus(row).state,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => {
-        const { state, reason } = getSyncSecretHealthStatus(row.original);
-        return (
-          <Badge className={statusStyles[state]} title={reason}>
-            {state}
-          </Badge>
-        );
+        const { state } = getSyncSecretHealthStatus(row.original);
+        return <StatusBadge label={state} status={healthToConditionStatus(state)} />;
       },
     },
     {
@@ -219,11 +214,11 @@ function SyncSecrets() {
           searchPlaceholder="Search sync secrets..."
           toolbarLeading={
             <>
-              <TenantSelector />
               <Button size="sm" onClick={() => setCreateOpen(true)}>
                 <Plus />
-                Create
+                Create Sync Secret
               </Button>
+              <TenantSelector />
             </>
           }
           initialSearch={search}

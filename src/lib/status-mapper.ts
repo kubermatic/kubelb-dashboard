@@ -170,6 +170,12 @@ export function getLoadBalancerHealthStatus(lb: LoadBalancer): HealthStatus {
   return { state: "Pending" };
 }
 
+export function healthToConditionStatus(state: HealthState): "True" | "False" | "Unknown" {
+  if (state === "Ready") return "True";
+  if (state === "Degraded" || state === "Pending") return "Unknown";
+  return "False";
+}
+
 export function getSyncSecretHealthStatus(secret: SyncSecret): HealthStatus {
   if (isTerminating(secret.metadata)) return TERMINATING;
   const finalizers = secret.metadata.finalizers ?? [];

@@ -67,6 +67,7 @@ export function DataTableToolbar<T>({
             value={(searchCol.getFilterValue() as string) ?? ""}
             onChange={(e) => searchCol.setFilterValue(e.target.value)}
             className="max-w-sm"
+            aria-label={searchPlaceholder}
           />
         )}
         {filterColumns?.map(({ column, title, options }) => {
@@ -104,7 +105,7 @@ export function DataTableToolbar<T>({
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button variant="ghost" size="icon" onClick={onRefresh}>
+                <Button variant="ghost" size="icon" onClick={onRefresh} aria-label="Refresh data">
                   <RefreshCw className={`size-4 ${isRefetching ? "animate-spin" : ""}`} />
                 </Button>
               }

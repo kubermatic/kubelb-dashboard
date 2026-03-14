@@ -7,6 +7,7 @@
     "dev": "node hack/dev.mjs",
     "dev:frontend": "vite",
     "dev:mock": "VITE_MOCK=true vite",
+    "dev:mock:host": "VITE_MOCK=true vite --host 0.0.0.0",
     "dev:api": "npm run dev --prefix api",
     "build": "tsc -b && vite build",
     "preview": "vite preview",

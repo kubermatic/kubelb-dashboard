@@ -21,9 +21,9 @@ import type { Route } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
-export function useRoutes(namespace?: string) {
+export function useRoutes(namespace?: string, options?: { enabled?: boolean }) {
   const path = namespace ? `${BASE}/namespaces/${namespace}/routes` : `${BASE}/routes`;
-  return useKubeList<Route>(queryKeys.routes.list(namespace), path);
+  return useKubeList<Route>(queryKeys.routes.list(namespace), path, options);
 }
 
 export function useRoute(namespace: string, name: string) {

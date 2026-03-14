@@ -40,7 +40,7 @@ function NavLinks({
   onNavigate?: () => void;
   ee?: boolean;
 }) {
-  const filtered = navItems.filter((item) => !item.ee || ee);
+  const filtered = useMemo(() => navItems.filter((item) => !item.ee || ee), [ee]);
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
   const { pathname } = useLocation();
 
@@ -194,16 +194,20 @@ function NavLinks({
     );
   };
 
-  // Group items
-  const mainItems = filtered.filter((item) => navGroups.main.includes(item.label));
-  const resourceItems = filtered.filter((item) => navGroups.resources.includes(item.label));
-  const infraItems = filtered.filter((item) => navGroups.infrastructure.includes(item.label));
-  const securityItems = filtered.filter((item) => navGroups.security.includes(item.label));
+  const { mainItems, resourceItems, infraItems, securityItems } = useMemo(
+    () => ({
+      mainItems: filtered.filter((item) => navGroups.main.includes(item.label)),
+      resourceItems: filtered.filter((item) => navGroups.resources.includes(item.label)),
+      infraItems: filtered.filter((item) => navGroups.infrastructure.includes(item.label)),
+      securityItems: filtered.filter((item) => navGroups.security.includes(item.label)),
+    }),
+    [filtered],
+  );
 
   const sectionLabel = (label: string) =>
     collapsed ? null : (
       <div className="px-3 py-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
           {label}
         </span>
       </div>
@@ -246,7 +250,7 @@ function NavLinks({
 export function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
-  const { isEE } = useEdition();
+  const { isEE, loading: editionLoading } = useEdition();
 
   return (
     <aside
@@ -255,45 +259,34 @@ export function Sidebar() {
         collapsed ? "w-[72px]" : "w-[260px]",
       )}
     >
-      {/* Logo Section */}
-      <div
-        className={cn(
-          "flex h-16 shrink-0 items-center border-b border-border px-4",
-          collapsed ? "justify-center" : "gap-3",
-        )}
-      >
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <span className="text-sm font-bold text-primary-foreground">K</span>
-        </div>
-        {!collapsed && (
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">KubeLB</span>
-            <span className="text-[10px] text-muted-foreground">Dashboard</span>
-          </div>
-        )}
-      </div>
-
       <NavLinks collapsed={collapsed} ee={isEE} />
 
-      {/* Collapse Toggle */}
-      <div className="shrink-0 border-t border-border p-3">
-        <button
-          onClick={toggleSidebar}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg py-2 text-muted-foreground transition-all duration-200 hover:bg-sidebar-hover hover:text-foreground",
-            !collapsed && "px-3",
-          )}
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="size-[18px]" />
-          ) : (
-            <>
-              <PanelLeftClose className="size-[18px]" />
-              <span className="text-xs font-medium">Collapse</span>
-            </>
-          )}
-        </button>
+      <div className="shrink-0 border-t border-border">
+        {!collapsed && !editionLoading && (
+          <div className="flex items-center justify-center gap-1.5 border-b border-primary/15 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            {isEE ? "Enterprise Edition" : "Community Edition"}
+          </div>
+        )}
+        <div className="p-3">
+          <button
+            onClick={toggleSidebar}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-lg py-2 text-muted-foreground transition-all duration-200 hover:bg-sidebar-hover hover:text-foreground",
+              !collapsed && "px-3",
+            )}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="size-[18px]" />
+            ) : (
+              <>
+                <PanelLeftClose className="size-[18px]" />
+                <span className="text-xs font-medium">Collapse</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </aside>
   );
@@ -321,14 +314,9 @@ export function MobileSidebar() {
       <aside className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-sidebar shadow-2xl transition-transform duration-300">
         {/* Mobile Header */}
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">K</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-foreground">KubeLB</span>
-              <span className="text-[10px] text-muted-foreground">Dashboard</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <img src="/kubermatic-logo.png" alt="Kubermatic" className="h-7 w-7" />
+            <span className="text-sm font-semibold text-foreground">KubeLB</span>
           </div>
           <button
             onClick={close}

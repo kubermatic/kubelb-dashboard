@@ -16,15 +16,14 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeList } from "@/hooks/use-kube-list";
-import type { WAFPolicy } from "@/types/kubelb";
+import type { Addresses } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
-export function useWAFPolicies(options?: { enabled?: boolean }) {
-  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), `${BASE}/wafpolicies`, options);
-}
-
-export function useWAFPolicy(name: string) {
-  return useKubeGet<WAFPolicy>(queryKeys.wafPolicies.detail(name), `${BASE}/wafpolicies/${name}`);
+export function useAddresses(namespace: string, name: string, enabled = true) {
+  return useKubeGet<Addresses>(
+    queryKeys.addresses.detail(namespace, name),
+    `${BASE}/namespaces/${namespace}/addresses/${name}`,
+    { enabled: enabled && !!namespace && !!name },
+  );
 }

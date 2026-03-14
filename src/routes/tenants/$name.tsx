@@ -35,6 +35,7 @@ import { DeleteDialog } from "@/components/common/delete-dialog";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { TenantResourceCounts } from "@/components/common/tenant-resource-counts";
 import { MetadataSection } from "@/components/common/metadata-section";
+import { useUIStore } from "@/stores/ui";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -43,6 +44,7 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEdition } from "@/hooks/use-edition";
@@ -53,7 +55,7 @@ import { useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
 import { useTenant } from "@/hooks/use-tenants";
 import { downloadKubeconfig } from "@/lib/download-kubeconfig";
 import { tenantToNamespace } from "@/lib/format";
-import { useUIStore } from "@/stores/ui";
+import { booleanStyles } from "@/lib/status-styles";
 import type { Tenant } from "@/types/kubelb";
 
 export const Route = createFileRoute("/tenants/$name")({
@@ -62,10 +64,7 @@ export const Route = createFileRoute("/tenants/$name")({
 
 function FeatureBadge({ enabled }: { enabled: boolean }) {
   return (
-    <Badge
-      className={enabled ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}
-      variant="outline"
-    >
+    <Badge className={enabled ? booleanStyles.enabled : booleanStyles.disabled} variant="outline">
       {enabled ? "Enabled" : "Disabled"}
     </Badge>
   );
@@ -241,7 +240,7 @@ function ResourcesTab({ tenantName }: { tenantName: string }) {
                   onClick={() => setSelectedTenant(tenantName)}
                   className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
                 >
-                  View all <ArrowRight className="h-4 w-4" />
+                  View All <ArrowRight className="h-4 w-4" />
                 </Link>
               </CardContent>
             </Card>
@@ -256,98 +255,142 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
   const { spec } = tenant;
   const { isEE } = useEdition();
 
+  const hasGatewayRouteFlags =
+    isEE &&
+    spec.gatewayAPI &&
+    [
+      spec.gatewayAPI.disableHTTPRoute,
+      spec.gatewayAPI.disableGRPCRoute,
+      spec.gatewayAPI.disableTCPRoute,
+      spec.gatewayAPI.disableUDPRoute,
+      spec.gatewayAPI.disableTLSRoute,
+      spec.gatewayAPI.disableBackendTrafficPolicy,
+      spec.gatewayAPI.disableClientTrafficPolicy,
+    ].some(Boolean);
+
+  const routeFlags = hasGatewayRouteFlags
+    ? [
+        { label: "HTTP Route", disabled: spec.gatewayAPI!.disableHTTPRoute },
+        { label: "gRPC Route", disabled: spec.gatewayAPI!.disableGRPCRoute },
+        { label: "TCP Route", disabled: spec.gatewayAPI!.disableTCPRoute },
+        { label: "UDP Route", disabled: spec.gatewayAPI!.disableUDPRoute },
+        { label: "TLS Route", disabled: spec.gatewayAPI!.disableTLSRoute },
+        {
+          label: "Backend Traffic Policy",
+          disabled: spec.gatewayAPI!.disableBackendTrafficPolicy,
+        },
+        {
+          label: "Client Traffic Policy",
+          disabled: spec.gatewayAPI!.disableClientTrafficPolicy,
+        },
+      ].filter((f) => f.disabled)
+    : [];
+
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Features</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-            <span className="text-muted-foreground">Layer 4</span>
-            <FeatureBadge enabled={!spec.loadBalancer?.disable} />
-            {isEE && spec.loadBalancer?.limit != null && (
-              <>
-                <span className="text-muted-foreground">LB Limit</span>
-                <span>{spec.loadBalancer.limit}</span>
-              </>
-            )}
-            <span className="text-muted-foreground">Ingress</span>
-            <FeatureBadge enabled={!spec.ingress?.disable} />
-            <span className="text-muted-foreground">Gateway API</span>
-            <FeatureBadge enabled={!spec.gatewayAPI?.disable} />
-            {isEE && spec.gatewayAPI?.gatewaySettings?.limit != null && (
-              <>
-                <span className="text-muted-foreground">Gateway Limit</span>
-                <span>{spec.gatewayAPI.gatewaySettings.limit}</span>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-5">
+      {/* Features — flat section */}
+      <div>
+        <h3 className="mb-3 text-[15px] font-semibold text-foreground">Features</h3>
+        <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+          <span className="text-muted-foreground">Layer 4</span>
+          <FeatureBadge enabled={!spec.loadBalancer?.disable} />
+          {isEE && spec.loadBalancer?.limit != null && (
+            <>
+              <span className="text-muted-foreground">LB Limit</span>
+              <span>{spec.loadBalancer.limit}</span>
+            </>
+          )}
+          <span className="text-muted-foreground">Ingress</span>
+          <FeatureBadge enabled={!spec.ingress?.disable} />
+          <span className="text-muted-foreground">Gateway API</span>
+          <FeatureBadge enabled={!spec.gatewayAPI?.disable} />
+          {isEE && spec.gatewayAPI?.gatewaySettings?.limit != null && (
+            <>
+              <span className="text-muted-foreground">Gateway Limit</span>
+              <span>{spec.gatewayAPI.gatewaySettings.limit}</span>
+            </>
+          )}
+        </div>
+      </div>
 
-      {isEE &&
-        spec.gatewayAPI &&
-        (() => {
-          const routeFlags = [
-            { label: "HTTP Route", disabled: spec.gatewayAPI.disableHTTPRoute },
-            { label: "gRPC Route", disabled: spec.gatewayAPI.disableGRPCRoute },
-            { label: "TCP Route", disabled: spec.gatewayAPI.disableTCPRoute },
-            { label: "UDP Route", disabled: spec.gatewayAPI.disableUDPRoute },
-            { label: "TLS Route", disabled: spec.gatewayAPI.disableTLSRoute },
-            {
-              label: "Backend Traffic Policy",
-              disabled: spec.gatewayAPI.disableBackendTrafficPolicy,
-            },
-            {
-              label: "Client Traffic Policy",
-              disabled: spec.gatewayAPI.disableClientTrafficPolicy,
-            },
-          ].filter((f) => f.disabled);
-          return routeFlags.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Gateway API Routes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-[200px_1fr] gap-y-2 text-sm">
-                  {routeFlags.map((f) => (
-                    <Fragment key={f.label}>
-                      <span className="text-muted-foreground">{f.label}</span>
-                      <FeatureBadge enabled={false} />
-                    </Fragment>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : null;
-        })()}
+      {/* Gateway API Routes — Card (conditional, complex) */}
+      {routeFlags.length > 0 && (
+        <>
+          <Separator />
+          <Card>
+            <CardHeader>
+              <CardTitle>Gateway API Routes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-[200px_1fr] gap-y-2 text-sm">
+                {routeFlags.map((f) => (
+                  <Fragment key={f.label}>
+                    <span className="text-muted-foreground">{f.label}</span>
+                    <FeatureBadge enabled={false} />
+                  </Fragment>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>DNS</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
-            {isEE && (
-              <>
-                <span className="text-muted-foreground">Status</span>
-                <FeatureBadge enabled={!spec.dns?.disable} />
-              </>
-            )}
-            <span className="text-muted-foreground">Wildcard Domain</span>
-            <span>{spec.dns?.wildcardDomain ?? "—"}</span>
-            <span className="text-muted-foreground">Explicit Hostnames</span>
-            <FeatureBadge enabled={!!spec.dns?.allowExplicitHostnames} />
-            <span className="text-muted-foreground">DNS Annotations</span>
-            <FeatureBadge enabled={!!spec.dns?.useDNSAnnotations} />
-            <span className="text-muted-foreground">Cert Annotations</span>
-            <FeatureBadge enabled={!!spec.dns?.useCertificateAnnotations} />
-            {isEE && spec.dns?.allowedDomains && spec.dns.allowedDomains.length > 0 && (
+      <Separator />
+
+      {/* DNS — flat section */}
+      <div>
+        <h3 className="mb-3 text-[15px] font-semibold text-foreground">DNS</h3>
+        <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+          {isEE && (
+            <>
+              <span className="text-muted-foreground">Status</span>
+              <FeatureBadge enabled={!spec.dns?.disable} />
+            </>
+          )}
+          <span className="text-muted-foreground">Wildcard Domain</span>
+          <span>{spec.dns?.wildcardDomain ?? "—"}</span>
+          <span className="text-muted-foreground">Explicit Hostnames</span>
+          <FeatureBadge enabled={!!spec.dns?.allowExplicitHostnames} />
+          <span className="text-muted-foreground">DNS Annotations</span>
+          <FeatureBadge enabled={!!spec.dns?.useDNSAnnotations} />
+          <span className="text-muted-foreground">Cert Annotations</span>
+          <FeatureBadge enabled={!!spec.dns?.useCertificateAnnotations} />
+          {isEE && spec.dns?.allowedDomains && spec.dns.allowedDomains.length > 0 && (
+            <>
+              <span className="text-muted-foreground">Allowed Domains</span>
+              <div className="flex flex-wrap gap-1">
+                {spec.dns.allowedDomains.map((d) => (
+                  <Badge key={d} variant="outline">
+                    {d}
+                  </Badge>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Certificates — flat section */}
+      <div>
+        <h3 className="mb-3 text-[15px] font-semibold text-foreground">Certificates</h3>
+        <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+          {isEE && (
+            <>
+              <span className="text-muted-foreground">Status</span>
+              <FeatureBadge enabled={!spec.certificates?.disable} />
+            </>
+          )}
+          <span className="text-muted-foreground">Default Cluster Issuer</span>
+          <span>{spec.certificates?.defaultClusterIssuer ?? "—"}</span>
+          {isEE &&
+            spec.certificates?.allowedDomains &&
+            spec.certificates.allowedDomains.length > 0 && (
               <>
                 <span className="text-muted-foreground">Allowed Domains</span>
                 <div className="flex flex-wrap gap-1">
-                  {spec.dns.allowedDomains.map((d) => (
+                  {spec.certificates.allowedDomains.map((d) => (
                     <Badge key={d} variant="outline">
                       {d}
                     </Badge>
@@ -355,64 +398,31 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
                 </div>
               </>
             )}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Certificates</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
-            {isEE && (
-              <>
-                <span className="text-muted-foreground">Status</span>
-                <FeatureBadge enabled={!spec.certificates?.disable} />
-              </>
-            )}
-            <span className="text-muted-foreground">Default Cluster Issuer</span>
-            <span>{spec.certificates?.defaultClusterIssuer ?? "—"}</span>
-            {isEE &&
-              spec.certificates?.allowedDomains &&
-              spec.certificates.allowedDomains.length > 0 && (
-                <>
-                  <span className="text-muted-foreground">Allowed Domains</span>
-                  <div className="flex flex-wrap gap-1">
-                    {spec.certificates.allowedDomains.map((d) => (
-                      <Badge key={d} variant="outline">
-                        {d}
-                      </Badge>
-                    ))}
-                  </div>
-                </>
-              )}
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* Tunnel — flat section (EE only) */}
       {isEE && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Tunnel</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <>
+          <Separator />
+          <div>
+            <h3 className="mb-3 text-[15px] font-semibold text-foreground">Tunnel</h3>
             <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
               <span className="text-muted-foreground">Status</span>
               <FeatureBadge enabled={!spec.tunnel?.disable} />
               <span className="text-muted-foreground">Limit</span>
               <span>{spec.tunnel?.limit ?? "—"}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </>
       )}
 
+      {/* Circuit Breaker — flat section (EE only) */}
       {isEE && spec.circuitBreaker && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Circuit Breaker</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <>
+          <Separator />
+          <div>
+            <h3 className="mb-3 text-[15px] font-semibold text-foreground">Circuit Breaker</h3>
             <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
               <span className="text-muted-foreground">Max Connections</span>
               <span>{spec.circuitBreaker.maxConnections ?? "—"}</span>
@@ -431,60 +441,31 @@ function OverviewTab({ tenant }: { tenant: Tenant }) {
                 </>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </>
       )}
 
-      {isEE && spec.networkPolicy && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Network Policy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
-              <span className="text-muted-foreground">Status</span>
-              <FeatureBadge enabled={!!spec.networkPolicy.enable} />
-              <span className="text-muted-foreground">Disabled Policies</span>
-              <span>
-                {spec.networkPolicy.disabledPolicies?.length
-                  ? spec.networkPolicy.disabledPolicies.join(", ")
-                  : "—"}
-              </span>
-              <span className="text-muted-foreground">Additional Policies</span>
-              <span>{spec.networkPolicy.additionalPolicies?.length ?? 0}</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {isEE && spec.loadBalancerPolicy && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Load Balancer Policy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge variant="outline">{spec.loadBalancerPolicy}</Badge>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Allowed Domains — Card (tags list) */}
       {isEE && spec.allowedDomains && spec.allowedDomains.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Allowed Domains</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {spec.allowedDomains.map((domain: string) => (
-                <Badge key={domain} variant="outline">
-                  {domain}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <Separator />
+          <Card>
+            <CardHeader>
+              <CardTitle>Allowed Domains</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {spec.allowedDomains.map((domain: string) => (
+                  <Badge key={domain} variant="outline">
+                    {domain}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
-    </>
+    </div>
   );
 }
 
@@ -529,21 +510,18 @@ function ConfigurationTab({ tenant }: { tenant: Tenant }) {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Resource Classes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-            <span className="text-muted-foreground">Layer 4 Class</span>
-            <span>{spec.loadBalancer?.class ?? "—"}</span>
-            <span className="text-muted-foreground">Ingress Class</span>
-            <span>{spec.ingress?.class ?? "—"}</span>
-            <span className="text-muted-foreground">Gateway API Class</span>
-            <span>{spec.gatewayAPI?.class ?? "—"}</span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Resource Classes — flat section */}
+      <div>
+        <h3 className="mb-3 text-[15px] font-semibold text-foreground">Resource Classes</h3>
+        <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+          <span className="text-muted-foreground">Layer 4 Class</span>
+          <span>{spec.loadBalancer?.class ?? "—"}</span>
+          <span className="text-muted-foreground">Ingress Class</span>
+          <span>{spec.ingress?.class ?? "—"}</span>
+          <span className="text-muted-foreground">Gateway API Class</span>
+          <span>{spec.gatewayAPI?.class ?? "—"}</span>
+        </div>
+      </div>
     </>
   );
 }

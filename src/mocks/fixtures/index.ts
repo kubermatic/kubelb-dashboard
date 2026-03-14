@@ -15,6 +15,7 @@
  */
 
 export type { GenericResource } from "./types";
+export { addresses } from "./addresses";
 export { backendTrafficPolicies } from "./backend-traffic-policies";
 export { clientTrafficPolicies } from "./client-traffic-policies";
 export { configs } from "./configs";

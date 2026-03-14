@@ -31,12 +31,12 @@ import { DataTableColumnHeader } from "@/components/common/data-table-column-hea
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
+import { StatusBadge } from "@/components/common/status-badge";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useRoutes } from "@/hooks/use-routes";
 import { AgeCell } from "@/components/common/age-cell";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
-import { getRouteHealthStatus } from "@/lib/status-mapper";
-import { statusStyles } from "@/lib/status-styles";
+import { getRouteHealthStatus, healthToConditionStatus } from "@/lib/status-mapper";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { KUBELB_ANNOTATIONS } from "@/lib/constants";
 import { useUIStore } from "@/stores/ui";
@@ -207,9 +207,11 @@ function Routes() {
       cell: ({ row }) => {
         const { state, reason } = getRouteHealthStatus(row.original);
         return (
-          <Badge className={statusStyles[state]} title={reason}>
-            {state}
-          </Badge>
+          <StatusBadge
+            label={state}
+            status={healthToConditionStatus(state)}
+            className={reason ? "cursor-help" : undefined}
+          />
         );
       },
     },

@@ -30,6 +30,7 @@ import { DataTable } from "@/components/common/data-table";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
+import { StatusBadge } from "@/components/common/status-badge";
 import { WAFPolicyFormDialog } from "@/components/common/waf-policy-form-dialog";
 import { RowActions } from "@/components/common/row-actions";
 import { YamlViewer } from "@/components/common/yaml-viewer";
@@ -64,17 +65,7 @@ function validConditionBadge(policy: WAFPolicy) {
   const condition = policy.status?.conditions?.find((c) => c.type === "Valid");
   if (!condition) return <span className="text-sm text-muted-foreground">{"\u2014"}</span>;
 
-  const colorMap = {
-    True: "bg-success/10 text-success",
-    False: "bg-destructive/10 text-destructive",
-    Unknown: "bg-warning/10 text-warning",
-  } as const;
-
-  return (
-    <Badge className={colorMap[condition.status]} variant="outline">
-      {condition.status}
-    </Badge>
-  );
+  return <StatusBadge label={condition.status} status={condition.status} />;
 }
 
 function WAFPolicies() {
@@ -220,7 +211,7 @@ function WAFPolicies() {
           data={items}
           isLoading={isLoading}
           searchColumn="name"
-          searchPlaceholder="Filter WAF policies..."
+          searchPlaceholder="Search WAF policies..."
           toolbarLeading={
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />

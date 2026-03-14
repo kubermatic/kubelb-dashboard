@@ -32,11 +32,11 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const { isEE } = useEdition();
 
-  const { data: tenants } = useTenants();
-  const { data: loadBalancers } = useLoadBalancers();
-  const { data: routes } = useRoutes();
-  const { data: syncSecrets } = useSyncSecrets();
-  const { data: wafPolicies } = useWAFPolicies();
+  const { data: tenants } = useTenants({ enabled: open });
+  const { data: loadBalancers } = useLoadBalancers(undefined, { enabled: open });
+  const { data: routes } = useRoutes(undefined, { enabled: open });
+  const { data: syncSecrets } = useSyncSecrets(undefined, { enabled: open });
+  const { data: wafPolicies } = useWAFPolicies({ enabled: open });
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -65,7 +65,13 @@ export function CommandPalette() {
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+      <button
+        type="button"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={() => setOpen(false)}
+        aria-label="Close command palette"
+        tabIndex={-1}
+      />
       <div className="fixed top-[20%] left-1/2 z-50 w-full max-w-lg -translate-x-1/2">
         <Command
           className="rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl"

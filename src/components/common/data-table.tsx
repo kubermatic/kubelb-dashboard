@@ -28,7 +28,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Settings2, Trash2 } from "lucide-react";
+import { SearchX, Settings2, Trash2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import "@/types/table";
@@ -82,7 +83,9 @@ interface DataTableProps<T> {
   columns: ColumnDef<T, unknown>[];
   data: T[];
   isLoading?: boolean;
+  emptyIcon?: LucideIcon;
   emptyMessage?: string;
+  emptyDescription?: string;
   searchPlaceholder?: string;
   searchColumn?: string;
   filterColumns?: FilterColumn[];
@@ -103,11 +106,48 @@ interface DataTableProps<T> {
   connectionStatus?: WatchConnectionStatus;
 }
 
+function TableEmptyState({
+  icon: Icon,
+  message,
+  description,
+  hasActiveFilters,
+  onClearFilters,
+}: {
+  icon?: LucideIcon;
+  message: string;
+  description?: string;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+}) {
+  const DisplayIcon = hasActiveFilters ? SearchX : Icon;
+
+  return (
+    <div className="flex flex-col items-center justify-center py-6 text-center">
+      {DisplayIcon && <DisplayIcon className="mb-2.5 size-8 text-muted-foreground/30" />}
+      <p className="text-sm font-medium text-muted-foreground">
+        {hasActiveFilters ? "No matching results" : message}
+      </p>
+      {hasActiveFilters ? (
+        <p className="mt-1 text-xs text-muted-foreground/70">
+          Try adjusting your search or filter criteria, or{" "}
+          <button type="button" onClick={onClearFilters} className="text-primary hover:underline">
+            clear all filters
+          </button>
+        </p>
+      ) : (
+        description && <p className="mt-1 text-xs text-muted-foreground/70">{description}</p>
+      )}
+    </div>
+  );
+}
+
 export function DataTable<T>({
   columns,
   data,
   isLoading,
+  emptyIcon,
   emptyMessage = "No results.",
+  emptyDescription,
   searchPlaceholder,
   searchColumn,
   filterColumns,
@@ -285,7 +325,9 @@ export function DataTable<T>({
                       <div
                         className={cn(
                           "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
-                          hasSelection ? "opacity-100" : "opacity-0 group-hover/row:opacity-100",
+                          hasSelection
+                            ? "opacity-100"
+                            : "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100",
                         )}
                       >
                         <Checkbox
@@ -308,10 +350,16 @@ export function DataTable<T>({
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i} style={{ animationDelay: `${i * 75}ms` }}>
+                <TableRow key={i} style={{ "--delay": `${i * 75}ms` } as React.CSSProperties}>
                   {columns.map((_, j) => (
                     <TableCell key={j}>
-                      <Skeleton className="h-4 w-3/4" style={{ animationDelay: `${i * 75}ms` }} />
+                      <Skeleton
+                        className={cn(
+                          "h-4",
+                          j === 0 ? "w-2/3" : j === columns.length - 1 ? "w-8" : "w-1/2",
+                        )}
+                        style={{ animationDelay: "var(--delay)" }}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -341,7 +389,7 @@ export function DataTable<T>({
                             "absolute left-2 top-1/2 -translate-y-1/2 transition-opacity",
                             row.getIsSelected() || hasSelection
                               ? "opacity-100"
-                              : "opacity-0 group-hover/row:opacity-100",
+                              : "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100",
                           )}
                         >
                           <Checkbox
@@ -359,8 +407,17 @@ export function DataTable<T>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  {emptyMessage}
+                <TableCell colSpan={columns.length} className="h-40">
+                  <TableEmptyState
+                    icon={emptyIcon}
+                    message={emptyMessage}
+                    description={emptyDescription}
+                    hasActiveFilters={columnFilters.length > 0}
+                    onClearFilters={() => {
+                      setColumnFilters([]);
+                      onSearchChange?.("");
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             )}

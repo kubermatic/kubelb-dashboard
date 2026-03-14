@@ -24,3 +24,5 @@ bin/
 ## AI generated files
 ai/
 pr-reviews/
+docs/plans/
+*-prototype.html

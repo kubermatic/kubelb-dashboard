@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="status" aria-label="Loading data">
       <div className="flex gap-4">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} className="h-8 flex-1" />

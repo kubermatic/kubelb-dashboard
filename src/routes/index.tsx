@@ -17,7 +17,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  AlertCircle,
   ArrowRight,
   CheckCircle2,
   Clock,
@@ -30,12 +29,15 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { ResourceFormDialog } from "@/components/common/resource-form-dialog";
+import { AttentionPanel } from "@/components/common/attention-panel";
+import { ClusterHealthBanner } from "@/components/common/cluster-health-banner";
+import { ResourceCounterRow } from "@/components/common/resource-counter-row";
+import { TenantFormDialog } from "@/components/common/tenant-form-dialog";
+import { WAFPolicyFormDialog } from "@/components/common/waf-policy-form-dialog";
+import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCRDSchema } from "@/hooks/use-crd-schema";
+import { useAttentionItems } from "@/hooks/use-attention-items";
 import { useCreateSyncSecret } from "@/hooks/use-sync-secret-mutations";
 import { useCreateTenant } from "@/hooks/use-tenant-mutations";
 import { useCreateWAFPolicy } from "@/hooks/use-waf-policy-mutations";
@@ -46,137 +48,15 @@ import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useTenants } from "@/hooks/use-tenants";
 import { useWAFPolicies } from "@/hooks/use-waf-policies";
 import { useEdition } from "@/hooks/use-edition";
-import { buildUiSchema } from "@/lib/kube-ui-schema";
 import { getLoadBalancerHealthStatus, getRouteHealthStatus } from "@/lib/status-mapper";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { Condition, Deployment } from "@/types/kubernetes";
-import type { SyncSecret, Tenant, WAFPolicy } from "@/types/kubelb";
+import type { SyncSecret } from "@/types/kubelb";
 
 export const Route = createFileRoute("/")({
   component: Overview,
 });
-
-interface ResourceQueryResult {
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-  refetch: () => void;
-  data?: { items: unknown[] };
-}
-
-type AccentColor = "primary" | "secondary" | "success" | "warning" | "destructive";
-
-const accentConfig: Record<AccentColor, { border: string; bg: string; icon: string }> = {
-  primary: {
-    border: "border-l-primary",
-    bg: "bg-primary/5",
-    icon: "text-primary",
-  },
-  secondary: {
-    border: "border-l-secondary",
-    bg: "bg-secondary/5",
-    icon: "text-secondary",
-  },
-  success: {
-    border: "border-l-success",
-    bg: "bg-success/5",
-    icon: "text-success",
-  },
-  warning: {
-    border: "border-l-warning",
-    bg: "bg-warning/5",
-    icon: "text-warning",
-  },
-  destructive: {
-    border: "border-l-destructive",
-    bg: "bg-destructive/5",
-    icon: "text-destructive",
-  },
-};
-
-function MetricCard({
-  icon: Icon,
-  label,
-  query,
-  accent = "primary",
-  href,
-  healthSummary,
-}: {
-  icon: LucideIcon;
-  label: string;
-  query: ResourceQueryResult;
-  accent?: AccentColor;
-  href?: string;
-  healthSummary?: string;
-}) {
-  const config = accentConfig[accent];
-
-  if (query.isLoading) {
-    return (
-      <Card className="border-l-4 border-l-muted">
-        <CardContent className="flex items-center justify-between py-5">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-14" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-          <Skeleton className="h-10 w-10 rounded-lg" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (query.isError) {
-    return (
-      <Card className="border-l-4 border-l-destructive">
-        <CardContent className="flex items-center gap-3 py-5">
-          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-destructive">
-              {query.error?.message ?? "Failed to fetch"}
-            </p>
-            <p className="text-xs text-muted-foreground">{label}</p>
-          </div>
-          <button
-            onClick={() => query.refetch()}
-            className="shrink-0 text-xs font-medium text-primary hover:text-primary-hover"
-          >
-            Retry
-          </button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const count = query.data?.items.length ?? 0;
-  const inner = (
-    <Card
-      className={cn(
-        "border-l-4 transition-shadow duration-200",
-        config.border,
-        href && "cursor-pointer hover:shadow-md",
-      )}
-    >
-      <CardContent className="flex items-center justify-between py-5">
-        <div>
-          <p className="font-mono text-3xl font-semibold tracking-tight text-foreground">{count}</p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {label}
-          </p>
-          {healthSummary && <p className="mt-1 text-xs text-muted-foreground">{healthSummary}</p>}
-        </div>
-        <div className={cn("flex h-11 w-11 items-center justify-center rounded-lg", config.bg)}>
-          <Icon className={cn("h-5 w-5", config.icon)} />
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  if (href) {
-    return <Link to={href}>{inner}</Link>;
-  }
-  return inner;
-}
 
 interface ConditionOwner {
   status?: { conditions?: Condition[] };
@@ -248,19 +128,19 @@ function HealthBar({
     >
       {readyPct > 0 && (
         <div
-          className="bg-success transition-all duration-500"
+          className="bg-success transition-[width] duration-500"
           style={{ width: `${String(readyPct)}%` }}
         />
       )}
       {pendingPct > 0 && (
         <div
-          className="bg-warning transition-all duration-500"
+          className="bg-warning transition-[width] duration-500"
           style={{ width: `${String(pendingPct)}%` }}
         />
       )}
       {errorPct > 0 && (
         <div
-          className="bg-destructive transition-all duration-500"
+          className="bg-destructive transition-[width] duration-500"
           style={{ width: `${String(errorPct)}%` }}
         />
       )}
@@ -331,47 +211,32 @@ function ResourceHealthRow({
   return <div className={className}>{content}</div>;
 }
 
-function ClusterStatus({ isHealthy }: { isHealthy: boolean }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className={cn("relative flex h-2.5 w-2.5")}>
-        {isHealthy && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-        )}
-        <span
-          className={cn(
-            "relative inline-flex h-2.5 w-2.5 rounded-full",
-            isHealthy ? "bg-success" : "bg-destructive",
-          )}
-        />
-      </span>
-      <span className="text-xs font-medium text-muted-foreground">
-        {isHealthy ? "Cluster Healthy" : "Cluster Degraded"}
-      </span>
-    </div>
-  );
+type ClusterHealth = "healthy" | "degraded" | "critical";
+
+function deriveClusterHealth(counts: { error: number; pending: number }): {
+  health: ClusterHealth;
+  summary?: string;
+} {
+  if (counts.error > 0) {
+    const parts: string[] = [];
+    if (counts.error > 0) parts.push(`${String(counts.error)} failing`);
+    if (counts.pending > 0) parts.push(`${String(counts.pending)} pending`);
+    return { health: "critical", summary: parts.join(", ") };
+  }
+  if (counts.pending > 0) {
+    return { health: "degraded", summary: `${String(counts.pending)} pending` };
+  }
+  return { health: "healthy" };
 }
 
-const TENANT_TEMPLATE = {
-  apiVersion: "kubelb.k8c.io/v1alpha1",
-  kind: "Tenant",
-  metadata: { name: "" },
-  spec: {},
-};
-
-const SYNCSECRET_TEMPLATE = {
-  apiVersion: "kubelb.k8c.io/v1alpha1",
-  kind: "SyncSecret",
-  metadata: { name: "", namespace: "" },
-  spec: {},
-};
-
-const WAF_POLICY_TEMPLATE = {
-  apiVersion: "kubelb.k8c.io/v1alpha1",
-  kind: "WAFPolicy",
-  metadata: { name: "" },
-  spec: {},
-};
+const SYNCSECRET_TEMPLATE = `apiVersion: kubelb.k8c.io/v1alpha1
+kind: SyncSecret
+metadata:
+  name: ""
+  namespace: ""
+type: Opaque
+data: {}
+`;
 
 function Overview() {
   const { isEE } = useEdition();
@@ -389,36 +254,17 @@ function Overview() {
   const [createSyncSecretOpen, setCreateSyncSecretOpen] = useState(false);
   const [createWafOpen, setCreateWafOpen] = useState(false);
 
-  const { data: tenantCrdSchema, isLoading: isTenantSchemaLoading } = useCRDSchema(
-    "tenants.kubelb.k8c.io",
-    "v1alpha1",
-    createTenantOpen,
-  );
-  const { data: syncSecretCrdSchema, isLoading: isSyncSecretSchemaLoading } = useCRDSchema(
-    "syncsecrets.kubelb.k8c.io",
-    "v1alpha1",
-    createSyncSecretOpen,
-  );
-  const { data: wafCrdSchema, isLoading: isWafSchemaLoading } = useCRDSchema(
-    "wafpolicies.kubelb.k8c.io",
-    "v1alpha1",
-    createWafOpen,
-  );
-
   const createTenant = useCreateTenant();
   const createSyncSecret = useCreateSyncSecret();
   const createWafPolicy = useCreateWAFPolicy();
 
-  const tenantUiSchema = useMemo(() => buildUiSchema("Tenant", "create"), []);
-  const syncSecretUiSchema = useMemo(() => buildUiSchema("SyncSecret", "create"), []);
-  const wafUiSchema = useMemo(() => buildUiSchema("WAFPolicy", "create"), []);
-
-  const tenantItems = tenantQuery.data?.items ?? [];
-  const lbItems = lbQuery.data?.items ?? [];
-  const routeItems = routeQuery.data?.items ?? [];
-  const deploymentItems = deploymentQuery.data?.items ?? [];
-  const syncSecretItems = syncSecretQuery.data?.items ?? [];
-  const wafItems = wafQuery.data?.items ?? [];
+  const emptyItems: never[] = [];
+  const tenantItems = tenantQuery.data?.items ?? emptyItems;
+  const lbItems = lbQuery.data?.items ?? emptyItems;
+  const routeItems = routeQuery.data?.items ?? emptyItems;
+  const deploymentItems = deploymentQuery.data?.items ?? emptyItems;
+  const syncSecretItems = syncSecretQuery.data?.items ?? emptyItems;
+  const wafItems = wafQuery.data?.items ?? emptyItems;
 
   const allLoaded =
     !tenantQuery.isLoading &&
@@ -436,40 +282,111 @@ function Overview() {
     syncSecretQuery.isError ||
     (isEE && wafQuery.isError);
 
-  const lbCounts = { ready: 0, pending: 0, error: 0 };
-  for (const lb of lbItems) {
-    const { state } = getLoadBalancerHealthStatus(lb);
-    if (state === "Ready") lbCounts.ready++;
-    else if (state === "Error") lbCounts.error++;
-    else lbCounts.pending++;
-  }
+  const lbCounts = useMemo(() => {
+    const counts = { ready: 0, pending: 0, error: 0 };
+    for (const lb of lbItems) {
+      const { state } = getLoadBalancerHealthStatus(lb);
+      if (state === "Ready") counts.ready++;
+      else if (state === "Error") counts.error++;
+      else counts.pending++;
+    }
+    return counts;
+  }, [lbItems]);
 
-  const routeCounts = { ready: 0, pending: 0, error: 0 };
-  for (const r of routeItems) {
-    const { state } = getRouteHealthStatus(r);
-    if (state === "Ready") routeCounts.ready++;
-    else if (state === "Error") routeCounts.error++;
-    else routeCounts.pending++;
-  }
+  const routeCounts = useMemo(() => {
+    const counts = { ready: 0, pending: 0, error: 0 };
+    for (const r of routeItems) {
+      const { state } = getRouteHealthStatus(r);
+      if (state === "Ready") counts.ready++;
+      else if (state === "Error") counts.error++;
+      else counts.pending++;
+    }
+    return counts;
+  }, [routeItems]);
 
-  const tenantCounts = { ready: tenantItems.length, pending: 0, error: 0 };
-  const syncSecretCounts = { ready: syncSecretItems.length, pending: 0, error: 0 };
-  const envoyProxyCounts = countDeploymentReadiness(deploymentItems);
-  const wafCounts = countByConditionStatus(wafItems, "Valid");
+  const tenantCounts = useMemo(
+    () => ({ ready: tenantItems.length, pending: 0, error: 0 }),
+    [tenantItems.length],
+  );
 
-  function formatHealthSummary(counts: {
-    ready: number;
-    pending: number;
-    error: number;
-  }): string | undefined {
-    const total = counts.ready + counts.pending + counts.error;
-    if (total === 0) return undefined;
-    const parts: string[] = [];
-    if (counts.ready > 0) parts.push(`${String(counts.ready)} ready`);
-    if (counts.pending > 0) parts.push(`${String(counts.pending)} pending`);
-    if (counts.error > 0) parts.push(`${String(counts.error)} unhealthy`);
-    return parts.join(" / ");
-  }
+  const envoyProxyCounts = useMemo(
+    () => countDeploymentReadiness(deploymentItems),
+    [deploymentItems],
+  );
+  const wafCounts = useMemo(() => countByConditionStatus(wafItems, "Valid"), [wafItems]);
+
+  const totalErrors =
+    lbCounts.error + routeCounts.error + envoyProxyCounts.error + (isEE ? wafCounts.error : 0);
+  const totalPending =
+    lbCounts.pending +
+    routeCounts.pending +
+    envoyProxyCounts.pending +
+    (isEE ? wafCounts.pending : 0);
+  const clusterHealth = deriveClusterHealth({ error: totalErrors, pending: totalPending });
+
+  const counters = [
+    {
+      icon: Users,
+      label: "Tenants",
+      count: tenantItems.length,
+      href: "/tenants",
+      isLoading: tenantQuery.isLoading,
+      isError: tenantQuery.isError,
+    },
+    {
+      icon: Network,
+      label: "Load Balancers",
+      count: lbItems.length,
+      href: "/load-balancers",
+      isLoading: lbQuery.isLoading,
+      isError: lbQuery.isError,
+    },
+    {
+      icon: RouteIcon,
+      label: "Routes",
+      count: routeItems.length,
+      href: "/routes",
+      isLoading: routeQuery.isLoading,
+      isError: routeQuery.isError,
+    },
+    {
+      icon: Shield,
+      label: "Envoy Proxies",
+      count: deploymentItems.length,
+      href: "/envoy-proxy",
+      isLoading: deploymentQuery.isLoading,
+      isError: deploymentQuery.isError,
+    },
+    {
+      icon: KeyRound,
+      label: "Sync Secrets",
+      count: syncSecretItems.length,
+      href: "/sync-secrets",
+      isLoading: syncSecretQuery.isLoading,
+      isError: syncSecretQuery.isError,
+    },
+    ...(isEE
+      ? [
+          {
+            icon: ShieldAlert,
+            label: "WAF Policies",
+            count: wafItems.length,
+            href: "/waf-policies",
+            isLoading: wafQuery.isLoading,
+            isError: wafQuery.isError,
+          },
+        ]
+      : []),
+  ];
+
+  const attentionItems = useAttentionItems({
+    lbs: lbItems,
+    routes: routeItems,
+    deployments: deploymentItems,
+    syncSecrets: syncSecretItems,
+    wafPolicies: wafItems,
+    isEE,
+  });
 
   return (
     <div className="space-y-6">
@@ -480,75 +397,19 @@ function Overview() {
             KubeLB cluster overview and health summary.
           </p>
         </div>
-        {(allLoaded || anyError) && <ClusterStatus isHealthy={!anyError} />}
+        {(allLoaded || anyError) && (
+          <ClusterHealthBanner health={clusterHealth.health} summary={clusterHealth.summary} />
+        )}
       </div>
 
-      <div
-        className={cn(
-          "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3",
-          isEE ? "xl:grid-cols-3 2xl:grid-cols-6" : "xl:grid-cols-3 2xl:grid-cols-5",
-        )}
-      >
-        <MetricCard
-          icon={Users}
-          label="Tenants"
-          accent="primary"
-          query={tenantQuery}
-          href="/tenants"
-          healthSummary={formatHealthSummary(tenantCounts)}
-        />
-        <MetricCard
-          icon={Network}
-          label="Load Balancers"
-          accent="primary"
-          query={lbQuery}
-          href="/load-balancers"
-          healthSummary={formatHealthSummary(lbCounts)}
-        />
-        <MetricCard
-          icon={RouteIcon}
-          label="Routes"
-          accent="secondary"
-          query={routeQuery}
-          href="/routes"
-          healthSummary={formatHealthSummary(routeCounts)}
-        />
-        <MetricCard
-          icon={Shield}
-          label="Envoy Proxies"
-          accent="success"
-          query={deploymentQuery}
-          href="/envoy-proxy"
-          healthSummary={formatHealthSummary(envoyProxyCounts)}
-        />
-        <MetricCard
-          icon={KeyRound}
-          label="Sync Secrets"
-          accent="warning"
-          query={syncSecretQuery}
-          href="/sync-secrets"
-          healthSummary={formatHealthSummary(syncSecretCounts)}
-        />
-        {isEE && (
-          <MetricCard
-            icon={ShieldAlert}
-            label="WAF Policies"
-            accent="warning"
-            query={wafQuery}
-            href="/waf-policies"
-            healthSummary={formatHealthSummary(wafCounts)}
-          />
-        )}
-      </div>
+      <ResourceCounterRow counters={counters} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Resource Health
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 p-2">
+        <div className="flex flex-col">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Resource Health
+          </h2>
+          <div className="flex-1 rounded-lg border border-border bg-card p-2">
             {lbQuery.isLoading ||
             routeQuery.isLoading ||
             deploymentQuery.isLoading ||
@@ -625,105 +486,56 @@ function Overview() {
                 )}
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-2">
-            <div className="flex flex-wrap gap-2 px-4 py-3">
-              <Button size="sm" onClick={() => setCreateTenantOpen(true)}>
-                <Plus className="size-4" />
-                Create Tenant
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setCreateSyncSecretOpen(true)}>
-                <Plus className="size-4" />
-                Create Sync Secret
-              </Button>
-              {isEE && (
-                <Button size="sm" variant="outline" onClick={() => setCreateWafOpen(true)}>
-                  <Plus className="size-4" />
-                  Create WAF Policy
-                </Button>
-              )}
-            </div>
-            <Separator />
-            {[
-              {
-                label: "Tenants",
-                desc: "Manage tenant configurations",
-                icon: Users,
-                href: "/tenants",
-              },
-              {
-                label: "Load Balancers",
-                desc: "View L4 load balancers",
-                icon: Network,
-                href: "/load-balancers",
-              },
-              { label: "Routes", desc: "View L7 routes", icon: RouteIcon, href: "/routes" },
-              {
-                label: "Configuration",
-                desc: "Global cluster settings",
-                icon: Shield,
-                href: "/configuration",
-              },
-              ...(isEE
-                ? [
-                    {
-                      label: "WAF Policies",
-                      desc: "Web Application Firewall policies",
-                      icon: ShieldAlert,
-                      href: "/waf-policies",
-                    },
-                  ]
-                : []),
-            ].map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="group flex items-center gap-3 rounded-lg px-4 py-2.5 transition-colors hover:bg-surface-hover"
-              >
-                <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Needs Attention
+          </h2>
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border bg-card p-2">
+            <AttentionPanel items={attentionItems} isLoading={!allLoaded} />
+          </div>
+        </div>
       </div>
 
-      <ResourceFormDialog
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Quick Actions
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setCreateTenantOpen(true)}>
+            <Plus className="size-4" /> Create Tenant
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setCreateSyncSecretOpen(true)}>
+            <Plus className="size-4" /> Create Sync Secret
+          </Button>
+          {isEE && (
+            <Button size="sm" variant="outline" onClick={() => setCreateWafOpen(true)}>
+              <Plus className="size-4" /> Create WAF Policy
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <TenantFormDialog
         open={createTenantOpen}
         onOpenChange={setCreateTenantOpen}
-        mode="create"
-        title="Create Tenant"
-        schema={tenantCrdSchema}
-        isSchemaLoading={isTenantSchemaLoading}
-        uiSchema={tenantUiSchema}
-        formData={TENANT_TEMPLATE}
         isPending={createTenant.isPending}
-        onSubmit={(parsed) => {
-          void createTenant.mutateAsync(parsed as Tenant).then(() => setCreateTenantOpen(false));
+        isEE={isEE}
+        onSubmit={(tenant) => {
+          void createTenant.mutateAsync(tenant).then(() => setCreateTenantOpen(false));
         }}
       />
 
-      <ResourceFormDialog
+      <YamlEditorDialog
         open={createSyncSecretOpen}
         onOpenChange={setCreateSyncSecretOpen}
         mode="create"
         title="Create Sync Secret"
-        schema={syncSecretCrdSchema}
-        isSchemaLoading={isSyncSecretSchemaLoading}
-        uiSchema={syncSecretUiSchema}
-        formData={SYNCSECRET_TEMPLATE}
+        resourceKind="SyncSecret"
+        apiVersion="kubelb.k8c.io/v1alpha1"
+        initialYaml={SYNCSECRET_TEMPLATE}
         isPending={createSyncSecret.isPending}
         onSubmit={(parsed) => {
           void createSyncSecret
@@ -733,20 +545,14 @@ function Overview() {
       />
 
       {isEE && (
-        <ResourceFormDialog
+        <WAFPolicyFormDialog
           open={createWafOpen}
           onOpenChange={setCreateWafOpen}
           mode="create"
           title="Create WAF Policy"
-          schema={wafCrdSchema}
-          isSchemaLoading={isWafSchemaLoading}
-          uiSchema={wafUiSchema}
-          formData={WAF_POLICY_TEMPLATE}
           isPending={createWafPolicy.isPending}
           onSubmit={(parsed) => {
-            void createWafPolicy
-              .mutateAsync(parsed as WAFPolicy)
-              .then(() => setCreateWafOpen(false));
+            void createWafPolicy.mutateAsync(parsed).then(() => setCreateWafOpen(false));
           }}
         />
       )}

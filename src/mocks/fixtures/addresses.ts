@@ -14,42 +14,37 @@
  * limitations under the License.
  */
 
-import type { Config } from "@/types/kubelb";
+import type { Addresses } from "@/types/kubelb";
 
-export const configs: Config[] = [
+export const addresses: Addresses[] = [
   {
     apiVersion: "kubelb.k8c.io/v1alpha1",
-    kind: "Config",
+    kind: "Addresses",
     metadata: {
-      creationTimestamp: "2026-03-13T07:49:19Z",
-      generation: 1,
       name: "default",
-      namespace: "kubelb",
-      resourceVersion: "1164",
-      uid: "be5e0333-be8e-4e01-b572-b0fea3a186f2",
+      namespace: "tenant-primary",
+      uid: "2afe4942-cc91-441b-8d41-821b672ea4fe",
+      resourceVersion: "1439",
+      creationTimestamp: "2026-03-14T09:54:18Z",
+      generation: 1,
     },
     spec: {
-      certificates: {
-        defaultClusterIssuer: "issuer-self-signed",
-      },
-      defaultAnnotations: {
-        service: {
-          "load-balancer.hetzner.cloud/location": "fsn1",
-        },
-      },
-      envoyProxy: {
-        replicas: 1,
-        topology: "shared",
-      },
-      gatewayAPI: {
-        class: "eg",
-      },
-      ingress: {
-        class: "nginx",
-      },
-      loadBalancer: {
-        limit: 15,
-      },
+      addresses: [{ ip: "172.18.0.2" }, { ip: "172.18.0.4" }, { ip: "172.18.0.7" }],
+    },
+  },
+  {
+    apiVersion: "kubelb.k8c.io/v1alpha1",
+    kind: "Addresses",
+    metadata: {
+      name: "default",
+      namespace: "tenant-secondary",
+      uid: "5f112a18-43de-4c7e-9f0c-75b3f546247c",
+      resourceVersion: "1441",
+      creationTimestamp: "2026-03-14T09:54:18Z",
+      generation: 1,
+    },
+    spec: {
+      addresses: [{ ip: "172.18.0.3" }],
     },
   },
 ];

@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { InlineCopyBadge } from "@/components/common/inline-copy-badge";
 
 interface BulkDeleteDialogProps {
   open: boolean;
@@ -72,7 +73,7 @@ export function BulkDeleteDialog({
 
         <div className="grid gap-2">
           <label htmlFor="bulk-delete-confirmation" className="text-sm text-muted-foreground">
-            Type <span className="font-medium text-foreground">confirm</span> to proceed
+            Type <InlineCopyBadge value="confirm" /> to proceed
           </label>
           <Input
             id="bulk-delete-confirmation"

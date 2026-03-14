@@ -20,6 +20,7 @@ import { ArrowRight, FileCode, Globe, Lock, Network, Server } from "lucide-react
 
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
+import { EndpointsSection } from "@/components/common/endpoints-section";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
@@ -88,6 +89,10 @@ function RouteDetail() {
 
         <TabsContent value="overview" className="space-y-4">
           <ResourcesSection route={route} />
+          <EndpointsSection
+            endpoints={route.spec.endpoints}
+            namespace={route.metadata.namespace ?? "default"}
+          />
           <OverviewTab route={route} />
           <StatusSection route={route} />
         </TabsContent>
@@ -256,38 +261,6 @@ function OverviewTab({ route }: { route: RouteResource }) {
           </div>
         </CardContent>
       </Card>
-
-      {route.spec.endpoints?.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Endpoints</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {route.spec.endpoints.map((ep, i) => (
-              <div key={i} className="space-y-1">
-                {ep.name && <p className="text-sm font-medium">{ep.name}</p>}
-                {ep.addressesReference && (
-                  <Badge variant="outline" className="mr-1 text-xs">
-                    ref: {ep.addressesReference.name}
-                  </Badge>
-                )}
-                {ep.addresses?.map((addr, j) => (
-                  <span key={j} className="mr-2 font-mono text-xs">
-                    {addr.ip}
-                    {addr.hostname ? ` (${addr.hostname})` : ""}
-                  </span>
-                ))}
-                {ep.ports?.map((port, j) => (
-                  <Badge key={j} variant="outline" className="mr-1 text-xs">
-                    {port.name ? `${port.name}:` : ""}
-                    {port.port}/{port.protocol ?? "TCP"}
-                  </Badge>
-                ))}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
 
       {hasDnsCertAnnotations && (
         <Card>

@@ -16,6 +16,15 @@
 
 import type { Condition, ObjectMeta, ObjectReference } from "./kubernetes";
 
+// Addresses
+
+export interface Addresses {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMeta;
+  spec: { addresses?: EndpointAddress[] };
+}
+
 // LoadBalancer
 
 export interface EndpointAddress {
@@ -71,7 +80,6 @@ export interface LoadBalancerSpec {
   hostname?: string;
   type?: "ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName";
   externalTrafficPolicy?: "Cluster" | "Local";
-  loadBalancerPolicy?: LoadBalancerPolicy;
 }
 
 export interface LoadBalancer {
@@ -194,8 +202,6 @@ export interface TenantSpec {
   certificates?: CertificatesSettings;
   tunnel?: TenantTunnelSettings;
   circuitBreaker?: CircuitBreaker;
-  networkPolicy?: NetworkPolicySettings;
-  loadBalancerPolicy?: LoadBalancerPolicy;
   allowedDomains?: string[];
 }
 
@@ -250,10 +256,12 @@ export interface EnvoyProxy {
   image?: string;
   gracefulShutdown?: EnvoyProxyGracefulShutdown;
   overloadManager?: EnvoyProxyOverloadManager;
-  podMonitor?: { enabled?: boolean };
+  maxEndpointsPerCluster?: number;
+  imagePullSecrets?: Array<{ name: string }>;
 }
 
 export interface ConfigDNSSettings {
+  disable?: boolean;
   wildcardDomain?: string;
   allowExplicitHostnames?: boolean;
   useDNSAnnotations?: boolean;
@@ -261,6 +269,7 @@ export interface ConfigDNSSettings {
 }
 
 export interface ConfigCertificatesSettings {
+  disable?: boolean;
   defaultClusterIssuer?: string;
 }
 
@@ -276,9 +285,7 @@ export interface ConfigSpec {
   certificates?: ConfigCertificatesSettings;
   tunnel?: TunnelSettings;
   circuitBreaker?: CircuitBreaker;
-  loadBalancerPolicy?: LoadBalancerPolicy;
   waf?: WAFSettings;
-  networkPolicy?: NetworkPolicySettings;
 }
 
 export interface Config {
@@ -311,19 +318,6 @@ export interface CircuitBreaker {
   maxRequestsPerConnection?: number;
   perEndpoint?: PerEndpointCircuitBreaker;
 }
-
-export interface NamedNetworkPolicy {
-  name: string;
-  spec: Record<string, unknown>;
-}
-
-export interface NetworkPolicySettings {
-  enable?: boolean;
-  disabledPolicies?: string[];
-  additionalPolicies?: NamedNetworkPolicy[];
-}
-
-export type LoadBalancerPolicy = "RoundRobin" | "LeastRequest" | "Random";
 
 export type WAFFailureMode = "Open" | "Closed";
 

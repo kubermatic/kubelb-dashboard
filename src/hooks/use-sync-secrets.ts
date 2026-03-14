@@ -21,9 +21,9 @@ import type { SyncSecret } from "@/types/kubelb";
 
 const BASE = "/apis/kubelb.k8c.io/v1alpha1";
 
-export function useSyncSecrets(namespace?: string) {
+export function useSyncSecrets(namespace?: string, options?: { enabled?: boolean }) {
   const path = namespace ? `${BASE}/namespaces/${namespace}/syncsecrets` : `${BASE}/syncsecrets`;
-  return useKubeList<SyncSecret>(queryKeys.syncSecrets.list(namespace), path);
+  return useKubeList<SyncSecret>(queryKeys.syncSecrets.list(namespace), path, options);
 }
 
 export function useSyncSecret(namespace: string, name: string) {

@@ -74,8 +74,8 @@
 }
 
 @theme inline {
-  --font-sans: "Roboto", sans-serif;
-  --font-mono: "Roboto Mono", monospace;
+  --font-sans: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -143,10 +143,10 @@
 @keyframes hero-logo-glow {
   0%,
   100% {
-    filter: drop-shadow(0 0 8px rgba(79, 209, 197, 0.25));
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--secondary) 25%, transparent));
   }
   50% {
-    filter: drop-shadow(0 0 20px rgba(79, 209, 197, 0.5));
+    filter: drop-shadow(0 0 20px color-mix(in srgb, var(--secondary) 50%, transparent));
   }
 }
 

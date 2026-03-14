@@ -22,7 +22,7 @@ import { QueryError } from "@/components/common/query-error";
 import { RowActions } from "@/components/common/row-actions";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { YamlViewer } from "@/components/common/yaml-viewer";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/status-badge";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { getOriginSource, namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
@@ -37,8 +37,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText } from "lucide-react";
 import { useState } from "react";
-import { getLoadBalancerHealthStatus } from "@/lib/status-mapper";
-import { statusStyles } from "@/lib/status-styles";
+import { getLoadBalancerHealthStatus, healthToConditionStatus } from "@/lib/status-mapper";
 
 import type { LoadBalancer } from "@/types/kubelb";
 
@@ -179,7 +178,7 @@ function LoadBalancers() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => {
         const { state } = getLoadBalancerHealthStatus(row.original);
-        return <Badge className={statusStyles[state]}>{state}</Badge>;
+        return <StatusBadge label={state} status={healthToConditionStatus(state)} />;
       },
     },
     {
@@ -213,7 +212,7 @@ function LoadBalancers() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Load Balancer</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Load Balancers</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           View and manage load balancer services across tenants.
         </p>

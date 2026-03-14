@@ -14,13 +14,60 @@
  * limitations under the License.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { Command, Menu, Moon, Search, Sun } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronRight, Command, Menu, Moon, Search, Sun } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
 import { useUIStore } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpMenu } from "@/components/layout/help-menu";
 import { UserMenu } from "@/components/layout/user-menu";
+import { navItems } from "@/lib/nav-items";
+
+function Breadcrumbs() {
+  const { pathname } = useLocation();
+
+  const crumbs = useMemo(() => {
+    if (pathname === "/") return [{ label: "Overview" }];
+
+    const segments = pathname.split("/").filter(Boolean);
+    const basePath = "/" + segments[0];
+
+    const topItem = navItems.find((item) => item.to === basePath);
+    if (!topItem) {
+      return [{ label: segments[0].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) }];
+    }
+
+    const result: { label: string }[] = [{ label: topItem.label }];
+
+    if (segments.length > 1) {
+      const childPath = "/" + segments.slice(0, 2).join("/");
+      const childItem = topItem.children?.find((c) => c.to === childPath);
+
+      if (childItem) {
+        result.push({ label: childItem.label });
+        if (segments.length > 2) {
+          result.push({ label: segments.slice(2).join("/") });
+        }
+      } else {
+        result.push({ label: segments.slice(1).join("/") });
+      }
+    }
+
+    return result;
+  }, [pathname]);
+
+  return (
+    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      {crumbs.map((crumb, i) => (
+        <span key={i} className="flex items-center gap-1.5">
+          {i > 0 && <ChevronRight className="size-3.5" />}
+          <span className={i === crumbs.length - 1 ? "text-foreground" : ""}>{crumb.label}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export function Header() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -38,7 +85,7 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-sm">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4">
       {/* Left Section */}
       <div className="flex items-center gap-3">
         {/* Mobile Menu Button */}
@@ -51,10 +98,18 @@ export function Header() {
 
         {/* Mobile Logo */}
         <div className="flex items-center gap-2 md:hidden">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">K</span>
-          </div>
+          <img src="/kubermatic-logo.png" alt="Kubermatic" className="h-7 w-7" />
           <span className="text-sm font-semibold text-foreground">KubeLB</span>
+        </div>
+
+        {/* Desktop Logo + Breadcrumbs */}
+        <div className="hidden items-center gap-3 md:flex">
+          <div className="flex items-center gap-2">
+            <img src="/kubermatic-logo.png" alt="Kubermatic" className="h-6 w-6" />
+            <span className="text-sm font-semibold text-foreground">KubeLB</span>
+          </div>
+          <div className="h-5 w-px bg-border" />
+          <Breadcrumbs />
         </div>
       </div>
 
@@ -62,7 +117,7 @@ export function Header() {
       <div className="hidden flex-1 justify-center px-4 md:flex">
         <button
           onClick={openSearch}
-          className="group flex h-9 w-full max-w-md items-center gap-3 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-muted"
+          className="group flex h-9 w-full max-w-lg items-center gap-3 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-muted"
         >
           <Search className="size-4" />
           <span className="flex-1 text-left">Search resources...</span>
@@ -97,9 +152,6 @@ export function Header() {
             </TooltipTrigger>
             <TooltipContent>Search</TooltipContent>
           </Tooltip>
-
-          {/* Divider */}
-          <div className="mx-1 hidden h-5 w-px bg-border md:block" />
 
           {/* Help Menu */}
           <HelpMenu />

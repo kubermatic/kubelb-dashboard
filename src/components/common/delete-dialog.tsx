@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { InlineCopyBadge } from "@/components/common/inline-copy-badge";
 
 interface DeleteDialogProps {
   open: boolean;
@@ -69,16 +70,7 @@ export function DeleteDialog({
 
         <div className="grid gap-2">
           <label htmlFor="delete-confirmation" className="text-sm text-muted-foreground">
-            Type{" "}
-            <button
-              type="button"
-              className="font-medium text-foreground hover:underline cursor-copy"
-              onClick={() => void navigator.clipboard.writeText(resourceName)}
-              title="Click to copy"
-            >
-              {resourceName}
-            </button>{" "}
-            to confirm
+            Type <InlineCopyBadge value={resourceName} /> to confirm
           </label>
           <Input
             id="delete-confirmation"

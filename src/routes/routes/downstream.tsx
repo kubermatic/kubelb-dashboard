@@ -33,6 +33,7 @@ import { ManagedToggle } from "@/components/common/managed-toggle";
 import { NamespaceSelector } from "@/components/common/namespace-selector";
 import { QueryError } from "@/components/common/query-error";
 import { RowActions } from "@/components/common/row-actions";
+import { StatusBadge } from "@/components/common/status-badge";
 import { TenantSelector } from "@/components/common/tenant-selector";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { useGateways } from "@/hooks/use-gateways";
@@ -45,8 +46,7 @@ import { useIngresses } from "@/hooks/use-ingresses";
 import { useBackendTrafficPolicies } from "@/hooks/use-backend-traffic-policies";
 import { useClientTrafficPolicies } from "@/hooks/use-client-traffic-policies";
 import { KUBELB_LABELS } from "@/lib/constants";
-import { resolveHealthByKind } from "@/lib/status-mapper";
-import { statusStyles } from "@/lib/status-styles";
+import { resolveHealthByKind, healthToConditionStatus } from "@/lib/status-mapper";
 import { namespaceToTenant, tenantToNamespace } from "@/lib/format";
 import { type ListSearchParams, listSearchDefaults, validateListSearch } from "@/lib/search-params";
 import { useUIStore } from "@/stores/ui";
@@ -219,16 +219,12 @@ function DownstreamResources() {
       accessorFn: (row) => resolveHealthByKind(row.kind, row.status ?? {}, row.metadata).state,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => {
-        const { state, reason } = resolveHealthByKind(
+        const { state } = resolveHealthByKind(
           row.original.kind,
           row.original.status ?? {},
           row.original.metadata,
         );
-        return (
-          <Badge className={statusStyles[state]} title={reason}>
-            {state}
-          </Badge>
-        );
+        return <StatusBadge label={state} status={healthToConditionStatus(state)} />;
       },
     },
     {

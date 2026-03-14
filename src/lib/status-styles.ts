@@ -15,6 +15,7 @@
  */
 
 import type { HealthState } from "@/lib/status-mapper";
+import type { Condition } from "@/types/kubernetes";
 
 export const statusStyles: Record<HealthState, string> = {
   Ready: "bg-success/10 text-success hover:bg-success/20",
@@ -23,3 +24,14 @@ export const statusStyles: Record<HealthState, string> = {
   Error: "bg-destructive/10 text-destructive hover:bg-destructive/20",
   Terminating: "bg-destructive/10 text-destructive hover:bg-destructive/20",
 };
+
+export const conditionStyles: Record<Condition["status"], string> = {
+  True: "bg-success/10 text-success",
+  False: "bg-destructive/10 text-destructive",
+  Unknown: "bg-warning/10 text-warning",
+};
+
+export const booleanStyles = {
+  enabled: "bg-success/10 text-success",
+  disabled: "bg-muted text-muted-foreground",
+} as const;

@@ -21,6 +21,7 @@ import { ArrowRight, FileCode, Server } from "lucide-react";
 import { KubeApiError } from "@/api/kube";
 import { KUBELB_ANNOTATIONS as KUBELB_ANNOTATION_KEYS } from "@/lib/constants";
 import { CopyButton } from "@/components/common/copy-button";
+import { EndpointsSection } from "@/components/common/endpoints-section";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
@@ -29,6 +30,7 @@ import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -39,7 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEdition } from "@/hooks/use-edition";
+
 import { useLoadBalancer } from "@/hooks/use-load-balancers";
 import { getLoadBalancerHealthStatus } from "@/lib/status-mapper";
 import { statusStyles } from "@/lib/status-styles";
@@ -103,6 +105,10 @@ function LoadBalancerDetail() {
 
         <TabsContent value="overview" className="space-y-4">
           <ResourcesSection lb={lb} />
+          <EndpointsSection
+            endpoints={lb.spec.endpoints}
+            namespace={lb.metadata.namespace ?? "default"}
+          />
           <OverviewTab lb={lb} />
           <StatusSection lb={lb} />
         </TabsContent>
@@ -169,7 +175,6 @@ const KUBELB_ANNOTATIONS: Record<string, string> = {
 };
 
 function OverviewTab({ lb }: { lb: LoadBalancer }) {
-  const { isEE } = useEdition();
   const externalIPs =
     lb.status?.loadBalancer?.ingress?.map((i) => i.ip || i.hostname).filter(Boolean) ?? [];
 
@@ -179,28 +184,23 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Spec</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
-            <span className="text-muted-foreground">Type</span>
-            <span>{lb.spec.type ?? "ClusterIP"}</span>
-            <span className="text-muted-foreground">Hostname</span>
-            <span>{lb.spec.hostname ?? "—"}</span>
-            <span className="text-muted-foreground">Traffic Policy</span>
-            <span>{lb.spec.externalTrafficPolicy ?? "—"}</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div>
+        <h3 className="mb-3 text-[15px] font-semibold text-foreground">Spec</h3>
+        <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
+          <span className="text-muted-foreground">Type</span>
+          <span>{lb.spec.type ?? "ClusterIP"}</span>
+          <span className="text-muted-foreground">Hostname</span>
+          <span>{lb.spec.hostname ?? "—"}</span>
+          <span className="text-muted-foreground">Traffic Policy</span>
+          <span>{lb.spec.externalTrafficPolicy ?? "—"}</span>
+        </div>
+      </div>
 
       {kubelbAnnotations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>KubeLB Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <>
+          <Separator className="my-2" />
+          <div>
+            <h3 className="mb-3 text-[15px] font-semibold text-foreground">KubeLB Configuration</h3>
             <div className="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
               {kubelbAnnotations.map(([key, value]) => (
                 <React.Fragment key={key}>
@@ -209,57 +209,48 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
                 </React.Fragment>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {isEE && lb.spec.loadBalancerPolicy && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Load Balancer Policy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge variant="outline">{lb.spec.loadBalancerPolicy}</Badge>
-          </CardContent>
-        </Card>
+          </div>
+        </>
       )}
 
       {lb.spec.ports?.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Protocol</TableHead>
-                    <TableHead>Port</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lb.spec.ports.map((p, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{p.name ?? "—"}</TableCell>
-                      <TableCell>{p.protocol ?? "TCP"}</TableCell>
-                      <TableCell>{p.port}</TableCell>
+        <>
+          <Separator className="my-2" />
+          <Card>
+            <CardHeader>
+              <CardTitle>Ports</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Protocol</TableHead>
+                      <TableHead>Port</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {lb.spec.ports.map((p, i) => (
+                      <TableRow key={i}>
+                        <TableCell>{p.name ?? "—"}</TableCell>
+                        <TableCell>{p.protocol ?? "TCP"}</TableCell>
+                        <TableCell>{p.port}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       ) : null}
 
       {externalIPs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>External IPs</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <>
+          <Separator className="my-2" />
+          <div>
+            <h3 className="mb-3 text-[15px] font-semibold text-foreground">External IPs</h3>
             <div className="flex flex-wrap gap-1.5">
               {externalIPs.map((ip) => (
                 <Badge
@@ -272,41 +263,9 @@ function OverviewTab({ lb }: { lb: LoadBalancer }) {
                 </Badge>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </>
       )}
-
-      {lb.spec.endpoints?.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Endpoints</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {lb.spec.endpoints.map((ep, i) => (
-              <div key={i} className="space-y-1">
-                {ep.name && <p className="text-sm font-medium">{ep.name}</p>}
-                {ep.addressesReference && (
-                  <Badge variant="outline" className="mr-1 text-xs">
-                    ref: {ep.addressesReference.name}
-                  </Badge>
-                )}
-                {ep.addresses?.map((addr, j) => (
-                  <span key={j} className="mr-2 font-mono text-xs">
-                    {addr.ip}
-                    {addr.hostname ? ` (${addr.hostname})` : ""}
-                  </span>
-                ))}
-                {ep.ports?.map((port, j) => (
-                  <Badge key={j} variant="outline" className="mr-1 text-xs">
-                    {port.name ? `${port.name}:` : ""}
-                    {port.port}/{port.protocol ?? "TCP"}
-                  </Badge>
-                ))}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
     </>
   );
 }
@@ -391,20 +350,16 @@ function StatusSection({ lb }: { lb: LoadBalancer }) {
       )}
 
       {ingress.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-1.5">
-              {ingress.map((ing, i) => (
-                <Badge key={i} variant="outline" className="font-mono text-xs">
-                  {ing.ip || ing.hostname}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <h3 className="mb-3 text-[15px] font-semibold text-foreground">Ingress</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {ingress.map((ing, i) => (
+              <Badge key={i} variant="outline" className="font-mono text-xs">
+                {ing.ip || ing.hostname}
+              </Badge>
+            ))}
+          </div>
+        </div>
       )}
     </>
   );

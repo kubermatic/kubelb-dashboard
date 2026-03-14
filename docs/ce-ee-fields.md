@@ -34,8 +34,6 @@
 | `certificates.disable`, `certificates.allowedDomains`                                               |     | ✓   |
 | `tunnel`                                                                                            |     | ✓   |
 | `circuitBreaker`                                                                                    |     | ✓   |
-| `networkPolicy`                                                                                     |     | ✓   |
-| `loadBalancerPolicy`                                                                                |     | ✓   |
 | `allowedDomains` (top-level)                                                                        |     | ✓   |
 
 ## ConfigSpec
@@ -46,9 +44,7 @@
 | `propagatedAnnotations`, `propagateAllAnnotations`, `defaultAnnotations`     | ✓   | ✓   |
 | `tunnel`                                                                     |     | ✓   |
 | `circuitBreaker`                                                             |     | ✓   |
-| `loadBalancerPolicy`                                                         |     | ✓   |
 | `waf`                                                                        |     | ✓   |
-| `networkPolicy`                                                              |     | ✓   |
 
 ## LoadBalancerSpec
 
@@ -56,7 +52,6 @@
 | ---------------------------------------- | --- | --- |
 | `endpoints`, `ports`, `hostname`, `type` | ✓   | ✓   |
 | `externalTrafficPolicy`                  | ✓   | ✓   |
-| `loadBalancerPolicy`                     |     | ✓   |
 
 ## EE-Only Resources
 

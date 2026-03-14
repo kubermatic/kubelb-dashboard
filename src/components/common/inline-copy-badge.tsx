@@ -18,16 +18,11 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-
-interface CopyButtonProps {
+interface InlineCopyBadgeProps {
   value: string;
-  className?: string;
 }
 
-export function CopyButton({ value, className }: CopyButtonProps) {
+export function InlineCopyBadge({ value }: InlineCopyBadgeProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -39,21 +34,14 @@ export function CopyButton({ value, className }: CopyButtonProps) {
   };
 
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            className={cn("text-muted-foreground", className)}
-            onClick={handleCopy}
-            aria-label={copied ? "Copied" : "Copy to clipboard"}
-          />
-        }
-      >
-        {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-      </TooltipTrigger>
-      <TooltipContent>{copied ? "Copied" : "Copy"}</TooltipContent>
-    </Tooltip>
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex cursor-copy items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-medium text-foreground hover:bg-muted/80"
+      aria-label={`Copy "${value}" to clipboard`}
+    >
+      {value}
+      {copied ? <Check className="size-3" /> : <Copy className="size-3 text-muted-foreground" />}
+    </button>
   );
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import yaml from "js-yaml";
 
 import { Button } from "@/components/ui/button";
@@ -416,6 +416,8 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
+let fieldCounter = 0;
+
 function FormField({
   label,
   description,
@@ -429,15 +431,46 @@ function FormField({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const [id] = useState(() => `field-${++fieldCounter}`);
+  const descId = description ? `${id}-desc` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [descId, errorId].filter(Boolean).join(" ") || undefined;
+
+  let cloned = false;
+  const enhanced = React.Children.map(children, (child) => {
+    if (!cloned && React.isValidElement(child)) {
+      cloned = true;
+      return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
+        id,
+        "aria-describedby": describedBy,
+        "aria-invalid": !!error || undefined,
+        "aria-required": required || undefined,
+      });
+    }
+    return child;
+  });
+
   return (
     <div className="grid gap-1.5">
-      <Label>
+      <Label htmlFor={id}>
         {label}
-        {required && <span className="text-destructive">*</span>}
+        {required && (
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+        )}
       </Label>
-      {children}
-      {description && <p className="text-xs text-muted-foreground">{description}</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {enhanced}
+      {description && (
+        <p id={descId} className="text-xs text-muted-foreground">
+          {description}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -453,13 +486,25 @@ function SwitchField({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
+  const [id] = useState(() => `switch-${++fieldCounter}`);
+  const descId = description ? `${id}-desc` : undefined;
+
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-0.5">
-        <Label>{label}</Label>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        <Label htmlFor={id}>{label}</Label>
+        {description && (
+          <p id={descId} className="text-xs text-muted-foreground">
+            {description}
+          </p>
+        )}
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        aria-describedby={descId}
+      />
     </div>
   );
 }
