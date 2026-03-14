@@ -70,15 +70,20 @@ function resolveGatewayRouteHealth(status: Record<string, unknown>): HealthStatu
   const parents = status["parents"] as ParentStatus[] | undefined;
   if (!parents?.length) return { state: "Pending" };
 
+  let degraded: HealthStatus | undefined;
+
   for (const parent of parents) {
     const accepted = findCondition(parent.conditions, "Accepted");
     if (accepted?.status === "False") return { state: "Error", reason: accepted.reason };
 
     const resolvedRefs = findCondition(parent.conditions, "ResolvedRefs");
     if (resolvedRefs?.status === "False") return { state: "Error", reason: resolvedRefs.reason };
+
+    const backends = findCondition(parent.conditions, "BackendsAvailable");
+    if (backends?.status === "False") degraded = { state: "Degraded", reason: backends.reason };
   }
 
-  return { state: "Ready" };
+  return degraded ?? { state: "Ready" };
 }
 
 function resolveIngressHealth(status: Record<string, unknown>): HealthStatus {
