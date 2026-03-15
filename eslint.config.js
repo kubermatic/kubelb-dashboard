@@ -4,6 +4,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import security from "eslint-plugin-security";
+import noSecrets from "eslint-plugin-no-secrets";
 import licenseHeader from "eslint-plugin-license-header";
 import fs from "node:fs";
 import { defineConfig, globalIgnores } from "eslint/config";
@@ -22,9 +24,11 @@ export default defineConfig([
       tseslint.configs.recommendedTypeChecked,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      security.configs.recommended,
       eslintConfigPrettier,
     ],
     plugins: {
+      "no-secrets": noSecrets,
       "license-header": licenseHeader,
     },
     languageOptions: {
@@ -40,6 +44,8 @@ export default defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "no-secrets/no-secrets": ["error", { tolerance: 4.2 }],
+      "security/detect-object-injection": "off",
       "license-header/header": ["error", licenseHeaderLines],
     },
   },

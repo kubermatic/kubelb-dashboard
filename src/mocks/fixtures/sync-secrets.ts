@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/* eslint-disable no-secrets/no-secrets */
 import type { SyncSecret } from "@/types/kubelb";
 
 export const syncSecrets: SyncSecret[] = [
