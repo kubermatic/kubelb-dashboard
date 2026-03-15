@@ -1,0 +1,37 @@
+apiVersion: kubelb.k8c.io/v1alpha1
+kind: WAFPolicy
+metadata:
+  name: global-owasp-crs
+spec:
+  global: true
+  failureMode: Closed
+---
+apiVersion: kubelb.k8c.io/v1alpha1
+kind: WAFPolicy
+metadata:
+  name: api-rate-limit
+spec:
+  targetSelector:
+    matchLabels:
+      kubelb.k8c.io/origin-name: product-service
+  directives:
+    - "SecRuleEngine On"
+    - "SecRequestBodyAccess On"
+    - "SecRequestBodyLimit 5242880"
+  failureMode: Open
+---
+apiVersion: kubelb.k8c.io/v1alpha1
+kind: WAFPolicy
+metadata:
+  name: staging-protection
+spec:
+  targetSelector:
+    matchLabels:
+      kubelb.k8c.io/origin-resource-kind: Ingress.networking.k8s.io
+  directives:
+    - "SecRuleEngine On"
+    - "SecRequestBodyAccess On"
+    - "SecRequestBodyLimit 13107200"
+    - "Include @crs-setup-conf"
+    - "Include @owasp_crs/*.conf"
+  failureMode: Closed

@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: staging-api-svc
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: staging-api-svc
+  template:
+    metadata:
+      labels:
+        app: staging-api-svc
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=staging-api", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+###############################################################################
+# L7: ClusterIP services (backends)
+###############################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: staging-api-svc
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: staging-api-svc
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+###############################################################################
+# L7: Gateway API resources (CCM propagates as Route CRDs to tenant-secondary)
+###############################################################################
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: kubelb
+  namespace: default
+spec:
+  gatewayClassName: kubelb
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: staging-api
+  namespace: default
+spec:
+  parentRefs:
+    - name: kubelb
+  hostnames:
+    - "staging-api.example.nip.io"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: staging-api-svc
+          port: 8080
+---
+###############################################################################
+# Secrets (label triggers sync to management cluster)
+###############################################################################
+apiVersion: v1
+kind: Secret
+metadata:
+  name: staging-tls
+  namespace: default
+  labels:
+    kubelb.k8c.io/managed-by: kubelb
+type: kubernetes.io/tls
+stringData:
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIICpDCCAYwCCQDU+pQ4pHgSpDANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls
+    dummy-cert-data-for-staging-tls
+    -----END CERTIFICATE-----
+  tls.key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC77a5a+Lk9gRMz
+    dummy-key-data-for-staging-tls
+    -----END PRIVATE KEY-----

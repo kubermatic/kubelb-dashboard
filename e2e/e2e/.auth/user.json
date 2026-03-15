@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "kubelb-theme",
+          "value": "light"
+        },
+        {
+          "name": "kubelb-edition",
+          "value": "ee"
+        }
+      ]
+    }
+  ]
+}

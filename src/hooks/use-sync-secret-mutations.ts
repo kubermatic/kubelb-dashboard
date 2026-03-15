@@ -28,9 +28,9 @@ export function useCreateSyncSecret() {
   return useMutation({
     mutationFn: (syncSecret: SyncSecret) =>
       kubeCreate<SyncSecret>(`${BASE}/${syncSecret.metadata.namespace}/syncsecrets`, syncSecret),
-    onSuccess: () => {
+    onSuccess: (_data, syncSecret) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.syncSecrets.all });
-      toast.success("Sync secret created");
+      toast.success(`Sync secret "${syncSecret.metadata.name}" created`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
@@ -46,9 +46,9 @@ export function useUpdateSyncSecret() {
         `${BASE}/${syncSecret.metadata.namespace}/syncsecrets/${syncSecret.metadata.name}`,
         syncSecret,
       ),
-    onSuccess: () => {
+    onSuccess: (_data, syncSecret) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.syncSecrets.all });
-      toast.success("Sync secret updated");
+      toast.success(`Sync secret "${syncSecret.metadata.name}" updated`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
@@ -61,9 +61,9 @@ export function useDeleteSyncSecret() {
   return useMutation({
     mutationFn: ({ namespace, name }: { namespace: string; name: string }) =>
       kubeDelete(`${BASE}/${namespace}/syncsecrets/${name}`),
-    onSuccess: () => {
+    onSuccess: (_data, { name }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.syncSecrets.all });
-      toast.success("Sync secret deleted");
+      toast.success(`Sync secret "${name}" deleted`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);

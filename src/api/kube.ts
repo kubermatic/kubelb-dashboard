@@ -57,8 +57,8 @@ async function toKubeError(response: Response): Promise<KubeApiError> {
   }
 }
 
-export async function kubeGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${KUBE_PREFIX}${path}`, { credentials: "include" });
+export async function kubeGet<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(`${KUBE_PREFIX}${path}`, { credentials: "include", signal });
   if (!response.ok) {
     throw await toKubeError(response);
   }
@@ -73,6 +73,7 @@ export async function kubeList<T>(
     limit?: number;
     continue?: string;
   },
+  signal?: AbortSignal,
 ): Promise<KubeList<T>> {
   const url = new URL(`${KUBE_PREFIX}${path}`, window.location.origin);
   if (params?.labelSelector) url.searchParams.set("labelSelector", params.labelSelector);
@@ -80,7 +81,7 @@ export async function kubeList<T>(
   if (params?.limit) url.searchParams.set("limit", String(params.limit));
   if (params?.continue) url.searchParams.set("continue", params.continue);
 
-  const response = await fetch(url.toString(), { credentials: "include" });
+  const response = await fetch(url.toString(), { credentials: "include", signal });
   if (!response.ok) {
     throw await toKubeError(response);
   }

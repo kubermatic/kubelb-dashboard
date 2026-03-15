@@ -21,6 +21,11 @@ bin/
 .tanstack/
 .worktrees/
 
+## E2E
+e2e/.auth/
+playwright-report/
+test-results/
+
 ## AI generated files
 ai/
 pr-reviews/

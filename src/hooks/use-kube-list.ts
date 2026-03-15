@@ -26,7 +26,7 @@ export function useKubeList<T>(
 ) {
   return useQuery<KubeList<T>>({
     queryKey,
-    queryFn: () => kubeList<T>(path, { labelSelector: options?.labelSelector }),
+    queryFn: ({ signal }) => kubeList<T>(path, { labelSelector: options?.labelSelector }, signal),
     enabled: options?.enabled,
     refetchInterval: POLL_INTERVAL,
   });

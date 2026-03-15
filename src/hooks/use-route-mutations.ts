@@ -27,9 +27,9 @@ export function useDeleteRoute() {
   return useMutation({
     mutationFn: ({ namespace, name }: { namespace: string; name: string }) =>
       kubeDelete(`${BASE}/${namespace}/routes/${name}`),
-    onSuccess: () => {
+    onSuccess: (_data, { name }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.routes.all });
-      toast.success("Route deleted");
+      toast.success(`Route "${name}" deleted`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
