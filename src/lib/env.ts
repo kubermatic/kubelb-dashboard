@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 
-import { env } from "@/lib/env";
+import { z } from "zod";
 
-export const FORM_EDITOR_ENABLED = env.VITE_ENABLE_FORM_EDITOR;
-export const YAML_EDITOR_ENABLED = env.VITE_ENABLE_YAML_EDITOR;
+const boolFlag = (trueWhen: "true" | "notFalse") =>
+  z
+    .string()
+    .default(trueWhen === "true" ? "false" : "true")
+    .transform((v) => (trueWhen === "true" ? v === "true" : v !== "false"));
+
+const envSchema = z.object({
+  VITE_API_URL: z.string().default(""),
+  VITE_MOCK: boolFlag("true"),
+  VITE_ENABLE_FORM_EDITOR: boolFlag("notFalse"),
+  VITE_ENABLE_YAML_EDITOR: boolFlag("notFalse"),
+});
+
+export const env = envSchema.parse(import.meta.env);

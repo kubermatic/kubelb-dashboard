@@ -20,6 +20,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { routeTree } from "./routeTree.gen";
+import { env } from "@/lib/env";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -40,7 +41,7 @@ declare module "@tanstack/react-router" {
 }
 
 async function enableMocking() {
-  if (import.meta.env.VITE_MOCK !== "true") return;
+  if (!env.VITE_MOCK) return;
   const { worker } = await import("./mocks/browser");
   return worker.start({ onUnhandledRequest: "warn" });
 }
