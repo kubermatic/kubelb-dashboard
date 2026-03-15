@@ -22,6 +22,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Security audit
+        run: npm audit --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -57,6 +60,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Security audit
+        run: npm audit --audit-level=high
+
       - name: Type check
         run: npm run typecheck
 
@@ -81,6 +87,15 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          push: false
+          load: true
+          tags: ${{ matrix.name }}:latest
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.name }}:latest
+          format: table
+          exit-code: 1
+          severity: CRITICAL
