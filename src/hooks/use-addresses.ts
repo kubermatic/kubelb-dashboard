@@ -17,13 +17,12 @@
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import type { Addresses } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_PATHS } from "@/lib/constants";
 
 export function useAddresses(namespace: string, name: string, enabled = true) {
   return useKubeGet<Addresses>(
     queryKeys.addresses.detail(namespace, name),
-    `${BASE}/namespaces/${namespace}/addresses/${name}`,
+    `${API_PATHS.addresses(namespace)}/${name}`,
     { enabled: enabled && !!namespace && !!name },
   );
 }

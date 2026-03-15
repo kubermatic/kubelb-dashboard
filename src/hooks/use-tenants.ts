@@ -18,13 +18,12 @@ import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { Tenant } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_PATHS } from "@/lib/constants";
 
 export function useTenants(options?: { enabled?: boolean }) {
-  return useKubeList<Tenant>(queryKeys.tenants.list(), `${BASE}/tenants`, options);
+  return useKubeList<Tenant>(queryKeys.tenants.list(), API_PATHS.tenants, options);
 }
 
 export function useTenant(name: string) {
-  return useKubeGet<Tenant>(queryKeys.tenants.detail(name), `${BASE}/tenants/${name}`);
+  return useKubeGet<Tenant>(queryKeys.tenants.detail(name), `${API_PATHS.tenants}/${name}`);
 }

@@ -18,17 +18,16 @@ import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { Route } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_BASE, API_PATHS } from "@/lib/constants";
 
 export function useRoutes(namespace?: string, options?: { enabled?: boolean }) {
-  const path = namespace ? `${BASE}/namespaces/${namespace}/routes` : `${BASE}/routes`;
+  const path = namespace ? API_PATHS.routes(namespace) : `${API_BASE}/routes`;
   return useKubeList<Route>(queryKeys.routes.list(namespace), path, options);
 }
 
 export function useRoute(namespace: string, name: string) {
   return useKubeGet<Route>(
     queryKeys.routes.detail(namespace, name),
-    `${BASE}/namespaces/${namespace}/routes/${name}`,
+    `${API_PATHS.routes(namespace)}/${name}`,
   );
 }

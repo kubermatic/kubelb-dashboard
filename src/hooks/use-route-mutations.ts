@@ -19,14 +19,13 @@ import { toast } from "sonner";
 
 import { kubeDelete, type KubeApiError } from "@/api/kube";
 import { queryKeys } from "@/api/query-keys";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1/namespaces";
+import { API_PATHS } from "@/lib/constants";
 
 export function useDeleteRoute() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ namespace, name }: { namespace: string; name: string }) =>
-      kubeDelete(`${BASE}/${namespace}/routes/${name}`),
+      kubeDelete(`${API_PATHS.routes(namespace)}/${name}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.routes.all });
       toast.success("Route deleted");

@@ -18,13 +18,15 @@ import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { WAFPolicy } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_PATHS } from "@/lib/constants";
 
 export function useWAFPolicies(options?: { enabled?: boolean }) {
-  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), `${BASE}/wafpolicies`, options);
+  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), API_PATHS.wafPolicies, options);
 }
 
 export function useWAFPolicy(name: string) {
-  return useKubeGet<WAFPolicy>(queryKeys.wafPolicies.detail(name), `${BASE}/wafpolicies/${name}`);
+  return useKubeGet<WAFPolicy>(
+    queryKeys.wafPolicies.detail(name),
+    `${API_PATHS.wafPolicies}/${name}`,
+  );
 }

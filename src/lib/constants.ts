@@ -20,6 +20,19 @@ export const POLL_INTERVAL = 10_000;
 export const API_GROUP = "kubelb.k8c.io";
 export const API_VERSION = `${API_GROUP}/v1alpha1`;
 
+export const API_BASE = `/apis/${API_VERSION}`;
+
+export const API_PATHS = {
+  tenants: `${API_BASE}/tenants`,
+  configs: (ns: string) => `${API_BASE}/namespaces/${ns}/configs`,
+  routes: (ns: string) => `${API_BASE}/namespaces/${ns}/routes`,
+  syncSecrets: (ns: string) => `${API_BASE}/namespaces/${ns}/syncsecrets`,
+  loadBalancers: (ns: string) => `${API_BASE}/namespaces/${ns}/loadbalancers`,
+  addresses: (ns: string) => `${API_BASE}/namespaces/${ns}/addresses`,
+  wafPolicies: `${API_BASE}/wafpolicies`,
+  namespaces: `${API_BASE}/namespaces`,
+} as const;
+
 export const KUBELB_LABELS = {
   ORIGIN_NAME: `${API_GROUP}/origin-name`,
   ORIGIN_NS: `${API_GROUP}/origin-ns`,

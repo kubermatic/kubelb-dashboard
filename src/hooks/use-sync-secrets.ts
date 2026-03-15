@@ -18,17 +18,16 @@ import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { SyncSecret } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_BASE, API_PATHS } from "@/lib/constants";
 
 export function useSyncSecrets(namespace?: string, options?: { enabled?: boolean }) {
-  const path = namespace ? `${BASE}/namespaces/${namespace}/syncsecrets` : `${BASE}/syncsecrets`;
+  const path = namespace ? API_PATHS.syncSecrets(namespace) : `${API_BASE}/syncsecrets`;
   return useKubeList<SyncSecret>(queryKeys.syncSecrets.list(namespace), path, options);
 }
 
 export function useSyncSecret(namespace: string, name: string) {
   return useKubeGet<SyncSecret>(
     queryKeys.syncSecrets.detail(namespace, name),
-    `${BASE}/namespaces/${namespace}/syncsecrets/${name}`,
+    `${API_PATHS.syncSecrets(namespace)}/${name}`,
   );
 }

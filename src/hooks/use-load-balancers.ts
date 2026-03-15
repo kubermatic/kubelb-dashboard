@@ -18,19 +18,16 @@ import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { LoadBalancer } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_BASE, API_PATHS } from "@/lib/constants";
 
 export function useLoadBalancers(namespace?: string, options?: { enabled?: boolean }) {
-  const path = namespace
-    ? `${BASE}/namespaces/${namespace}/loadbalancers`
-    : `${BASE}/loadbalancers`;
+  const path = namespace ? API_PATHS.loadBalancers(namespace) : `${API_BASE}/loadbalancers`;
   return useKubeList<LoadBalancer>(queryKeys.loadBalancers.list(namespace), path, options);
 }
 
 export function useLoadBalancer(namespace: string, name: string) {
   return useKubeGet<LoadBalancer>(
     queryKeys.loadBalancers.detail(namespace, name),
-    `${BASE}/namespaces/${namespace}/loadbalancers/${name}`,
+    `${API_PATHS.loadBalancers(namespace)}/${name}`,
   );
 }
