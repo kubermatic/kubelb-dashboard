@@ -18,6 +18,9 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
+    "test:e2e:headed": "playwright test --config e2e/playwright.config.ts --headed",
     "license:check": "bash hack/check-licenses.sh",
     "fixtures:capture": "npx tsx hack/capture-fixtures.ts",
     "prepare": "husky"
@@ -66,6 +69,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-router-devtools": "^1.166.7",
     "@tanstack/router-plugin": "^1.166.7",

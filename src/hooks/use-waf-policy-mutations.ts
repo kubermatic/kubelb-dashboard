@@ -28,9 +28,9 @@ export function useCreateWAFPolicy() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (policy: WAFPolicy) => kubeCreate<WAFPolicy>(BASE, policy),
-    onSuccess: () => {
+    onSuccess: (_data, policy) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.wafPolicies.all });
-      toast.success("WAF Policy created");
+      toast.success(`WAF Policy "${policy.metadata.name}" created`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
@@ -43,9 +43,9 @@ export function useUpdateWAFPolicy() {
   return useMutation({
     mutationFn: (policy: WAFPolicy) =>
       kubeUpdate<WAFPolicy>(`${BASE}/${policy.metadata.name}`, policy),
-    onSuccess: () => {
+    onSuccess: (_data, policy) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.wafPolicies.all });
-      toast.success("WAF Policy updated");
+      toast.success(`WAF Policy "${policy.metadata.name}" updated`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
@@ -57,9 +57,9 @@ export function useDeleteWAFPolicy() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => kubeDelete(`${BASE}/${name}`),
-    onSuccess: () => {
+    onSuccess: (_data, name) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.wafPolicies.all });
-      toast.success("WAF Policy deleted");
+      toast.success(`WAF Policy "${name}" deleted`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);

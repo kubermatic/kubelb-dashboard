@@ -270,6 +270,7 @@ export function Sidebar() {
 
   return (
     <aside
+      data-testid="sidebar"
       className={cn(
         "hidden shrink-0 flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out md:flex",
         collapsed ? "w-[72px]" : "w-[260px]",

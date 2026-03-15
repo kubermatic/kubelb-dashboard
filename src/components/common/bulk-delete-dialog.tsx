@@ -57,7 +57,7 @@ export function BulkDeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent data-testid="bulk-delete-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle>
             Delete {count} {resourceKind}

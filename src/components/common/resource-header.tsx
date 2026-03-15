@@ -43,7 +43,7 @@ export function ResourceHeader({
   backLabel,
 }: ResourceHeaderProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid="page-header">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm">
         <Link to={backHref} className="text-muted-foreground hover:text-foreground">
           {backLabel}

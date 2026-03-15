@@ -21,7 +21,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description }: PageHeaderProps) {
   return (
-    <div>
+    <div data-testid="page-header">
       <h1 className="font-condensed text-2xl font-bold tracking-tight">{title}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{description}</p>
     </div>

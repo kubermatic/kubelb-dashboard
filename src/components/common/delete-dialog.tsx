@@ -57,7 +57,7 @@ export function DeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent data-testid="delete-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {resourceKind}</AlertDialogTitle>
           <AlertDialogDescription>
