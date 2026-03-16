@@ -26,3 +26,30 @@ export function validateRFC1123Name(value: string): string | null {
     return "Must start and end with a lowercase letter or number, and may contain hyphens in between";
   return null;
 }
+
+export function validateOptionalRFC1123Name(value: string): string | null {
+  if (!value) return null;
+  return validateRFC1123Name(value);
+}
+
+const K8S_LABEL_KEY_REGEX =
+  /^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/)?[a-zA-Z0-9]([-a-zA-Z0-9_.]*[a-zA-Z0-9])?$/;
+const K8S_LABEL_VALUE_REGEX = /^([a-zA-Z0-9]([-a-zA-Z0-9_.]*[a-zA-Z0-9])?)?$/;
+const K8S_LABEL_VALUE_MAX_LENGTH = 63;
+
+export function validateLabelKey(value: string): string | null {
+  if (!value) return null;
+  if (value.length > 253) return "Label key must not exceed 253 characters";
+  if (!K8S_LABEL_KEY_REGEX.test(value))
+    return "Invalid label key format (e.g. app, example.com/tier)";
+  return null;
+}
+
+export function validateLabelValue(value: string): string | null {
+  if (!value) return null;
+  if (value.length > K8S_LABEL_VALUE_MAX_LENGTH)
+    return `Label value must not exceed ${K8S_LABEL_VALUE_MAX_LENGTH} characters`;
+  if (!K8S_LABEL_VALUE_REGEX.test(value))
+    return "Must start/end with alphanumeric, may contain hyphens, underscores, and dots";
+  return null;
+}

@@ -17,13 +17,14 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { createLazyFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowUpDown, Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
 import yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
 import { PageHeader } from "@/components/common/page-header";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";
 import { DataTable } from "@/components/common/data-table";
+import { DataTableColumnHeader } from "@/components/common/data-table-column-header";
 import { DeleteDialog } from "@/components/common/delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
@@ -98,15 +99,7 @@ function Tenants() {
     {
       accessorKey: "metadata.name",
       id: "name",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="ml-1 size-3" />
-        </Button>
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
       cell: ({ row }) => (
         <Link
           to="/tenants/$name"
@@ -198,15 +191,7 @@ function Tenants() {
     {
       accessorKey: "metadata.creationTimestamp",
       id: "age",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Age
-          <ArrowUpDown className="ml-1 size-3" />
-        </Button>
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
       cell: ({ row }) => <AgeCell timestamp={row.original.metadata.creationTimestamp} />,
     },
     {

@@ -314,7 +314,7 @@ export function DataTable<T>({
           </DropdownMenu>
         </DataTableToolbar>
       )}
-      <div className="overflow-x-auto rounded-md border">
+      <div className="rounded-md border">
         <Table className="min-w-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
