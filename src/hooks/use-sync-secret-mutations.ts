@@ -26,7 +26,10 @@ export function useCreateSyncSecret() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (syncSecret: SyncSecret) =>
-      kubeCreate<SyncSecret>(`${API_PATHS.syncSecrets(syncSecret.metadata.namespace!)}`, syncSecret),
+      kubeCreate<SyncSecret>(
+        `${API_PATHS.syncSecrets(syncSecret.metadata.namespace!)}`,
+        syncSecret,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.syncSecrets.all });
       toast.success("Sync secret created");
