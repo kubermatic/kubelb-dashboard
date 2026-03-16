@@ -9,5 +9,9 @@ dist
 .prettierignore
 docs
 hack
+.env*
+e2e
+charts
 *.md
+*.log
 LICENSE

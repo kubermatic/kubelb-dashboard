@@ -14,5 +14,7 @@
  * limitations under the License.
  */
 
-export const FORM_EDITOR_ENABLED = import.meta.env.VITE_ENABLE_FORM_EDITOR !== "false";
-export const YAML_EDITOR_ENABLED = import.meta.env.VITE_ENABLE_YAML_EDITOR !== "false";
+import { env } from "@/lib/env";
+
+export const FORM_EDITOR_ENABLED = env.VITE_ENABLE_FORM_EDITOR;
+export const YAML_EDITOR_ENABLED = env.VITE_ENABLE_YAML_EDITOR;

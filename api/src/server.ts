@@ -23,37 +23,14 @@ import { initOidc } from "./auth/oidc.js";
 import { initSession } from "./auth/session.js";
 import { authRoutes } from "./auth/routes.js";
 import { initAuthMiddleware, authMiddleware } from "./auth/middleware.js";
+import { env, authEnabled } from "./env.js";
 
-const port = parseInt(process.env["PORT"] ?? "3001", 10);
-
+const port = env.PORT;
 const config = loadKubeProxyConfig();
 
-const oidcIssuer = process.env["OIDC_ISSUER"];
-const oidcClientId = process.env["OIDC_CLIENT_ID"];
-const oidcClientSecret = process.env["OIDC_CLIENT_SECRET"];
-const sessionSecret = process.env["SESSION_SECRET"];
-
-const requiredOidcVars = {
-  OIDC_ISSUER: oidcIssuer,
-  OIDC_CLIENT_ID: oidcClientId,
-  OIDC_CLIENT_SECRET: oidcClientSecret,
-  SESSION_SECRET: sessionSecret,
-};
-const setVars = Object.entries(requiredOidcVars).filter(([, v]) => v);
-const missingVars = Object.entries(requiredOidcVars).filter(([, v]) => !v);
-
-if (setVars.length > 0 && missingVars.length > 0) {
-  console.error(
-    `Partial OIDC config: ${setVars.map(([k]) => k).join(", ")} set but ${missingVars.map(([k]) => k).join(", ")} missing. Set all 4 or none.`,
-  );
-  process.exit(1);
-}
-
-const authEnabled = setVars.length === 4;
-
-const redirectUri = process.env["OIDC_REDIRECT_URI"] ?? `http://localhost:${port}/auth/callback`;
-const scopes = process.env["OIDC_SCOPES"] ?? "openid email profile groups offline_access";
-const sessionMaxAge = parseInt(process.env["SESSION_MAX_AGE"] ?? "86400", 10);
+const redirectUri = env.OIDC_REDIRECT_URI ?? `http://localhost:${port}/auth/callback`;
+const scopes = env.OIDC_SCOPES;
+const sessionMaxAge = env.SESSION_MAX_AGE;
 const secureCookies = !redirectUri.startsWith("http://localhost");
 
 const app = Fastify({ logger: true });
@@ -63,14 +40,14 @@ await app.register(websocket);
 
 if (authEnabled) {
   await initOidc({
-    issuerUrl: oidcIssuer!,
-    clientId: oidcClientId!,
-    clientSecret: oidcClientSecret!,
+    issuerUrl: env.OIDC_ISSUER!,
+    clientId: env.OIDC_CLIENT_ID!,
+    clientSecret: env.OIDC_CLIENT_SECRET!,
     redirectUri,
     scopes: scopes.split(" "),
   });
 
-  initSession(sessionSecret!);
+  initSession(env.SESSION_SECRET!);
   initAuthMiddleware({ sessionMaxAge, secureCookies });
 
   await app.register(authRoutes, {
@@ -86,7 +63,7 @@ if (authEnabled) {
     }
   });
 
-  app.log.info(`OIDC authentication enabled (issuer: ${oidcIssuer})`);
+  app.log.info(`OIDC authentication enabled (issuer: ${env.OIDC_ISSUER})`);
 } else {
   app.log.warn("No OIDC configuration — running without authentication");
 }

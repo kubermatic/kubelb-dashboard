@@ -17,10 +17,13 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - run: npm ci
+
+      - name: Security audit
+        run: npm audit --audit-level=high
 
       - name: Lint
         run: npm run lint
@@ -51,11 +54,14 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: api/package-lock.json
 
       - run: npm ci
+
+      - name: Security audit
+        run: npm audit --audit-level=high
 
       - name: Type check
         run: npm run typecheck
@@ -81,6 +87,16 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          push: false
+          load: true
+          tags: ${{ matrix.name }}:latest
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Scan image for vulnerabilities
+        # aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: ${{ matrix.name }}:latest
+          format: table
+          exit-code: 1
+          severity: CRITICAL

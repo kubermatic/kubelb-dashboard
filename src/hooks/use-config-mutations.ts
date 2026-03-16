@@ -20,15 +20,14 @@ import { toast } from "sonner";
 import { kubeUpdate, type KubeApiError } from "@/api/kube";
 import { queryKeys } from "@/api/query-keys";
 import type { Config } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1/namespaces";
+import { API_PATHS } from "@/lib/constants";
 
 export function useUpdateConfig() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (config: Config) =>
       kubeUpdate<Config>(
-        `${BASE}/${config.metadata.namespace}/configs/${config.metadata.name}`,
+        `${API_PATHS.configs(config.metadata.namespace!)}/${config.metadata.name}`,
         config,
       ),
     onSuccess: () => {

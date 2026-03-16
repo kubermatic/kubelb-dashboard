@@ -23,6 +23,7 @@ import { useEdition } from "@/hooks/use-edition";
 import { cn } from "@/lib/utils";
 import { navItems, type NavItem } from "@/lib/nav-items";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { env } from "@/lib/env";
 
 // Group nav items by category
 const navGroups = {
@@ -281,7 +282,7 @@ export function Sidebar() {
           <div className="flex items-center justify-center gap-1.5 border-b border-sidebar-border bg-sidebar-accent/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-accent/80">
             <span className="h-1.5 w-1.5 rounded-full bg-sidebar-accent/60" />
             {isEE ? "Enterprise Edition" : "Community Edition"}
-            {import.meta.env.VITE_MOCK === "true" && (
+            {env.VITE_MOCK && (
               <>
                 <span className="text-sidebar-foreground/20">|</span>
                 <span className="text-amber-400/80">Mock Mode</span>

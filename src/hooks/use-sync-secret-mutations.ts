@@ -20,14 +20,16 @@ import { toast } from "sonner";
 import { kubeCreate, kubeDelete, kubeUpdate, type KubeApiError } from "@/api/kube";
 import { queryKeys } from "@/api/query-keys";
 import type { SyncSecret } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1/namespaces";
+import { API_PATHS } from "@/lib/constants";
 
 export function useCreateSyncSecret() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (syncSecret: SyncSecret) =>
-      kubeCreate<SyncSecret>(`${BASE}/${syncSecret.metadata.namespace}/syncsecrets`, syncSecret),
+      kubeCreate<SyncSecret>(
+        `${API_PATHS.syncSecrets(syncSecret.metadata.namespace!)}`,
+        syncSecret,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.syncSecrets.all });
       toast.success("Sync secret created");
@@ -43,7 +45,7 @@ export function useUpdateSyncSecret() {
   return useMutation({
     mutationFn: (syncSecret: SyncSecret) =>
       kubeUpdate<SyncSecret>(
-        `${BASE}/${syncSecret.metadata.namespace}/syncsecrets/${syncSecret.metadata.name}`,
+        `${API_PATHS.syncSecrets(syncSecret.metadata.namespace!)}/${syncSecret.metadata.name}`,
         syncSecret,
       ),
     onSuccess: () => {
@@ -60,7 +62,7 @@ export function useDeleteSyncSecret() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ namespace, name }: { namespace: string; name: string }) =>
-      kubeDelete(`${BASE}/${namespace}/syncsecrets/${name}`),
+      kubeDelete(`${API_PATHS.syncSecrets(namespace)}/${name}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.syncSecrets.all });
       toast.success("Sync secret deleted");

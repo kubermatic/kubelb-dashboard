@@ -17,9 +17,8 @@
 import { queryKeys } from "@/api/query-keys";
 import { useKubeList } from "@/hooks/use-kube-list";
 import type { Config } from "@/types/kubelb";
-
-const BASE = "/apis/kubelb.k8c.io/v1alpha1";
+import { API_BASE } from "@/lib/constants";
 
 export function useConfigs() {
-  return useKubeList<Config>(queryKeys.config.list(), `${BASE}/configs`);
+  return useKubeList<Config>(queryKeys.config.list(), `${API_BASE}/configs`);
 }

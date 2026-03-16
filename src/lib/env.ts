@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import { queryKeys } from "@/api/query-keys";
-import { useKubeGet } from "@/hooks/use-kube-get";
-import { useKubeList } from "@/hooks/use-kube-list";
-import type { WAFPolicy } from "@/types/kubelb";
-import { API_PATHS } from "@/lib/constants";
+import { z } from "zod";
 
-export function useWAFPolicies(options?: { enabled?: boolean }) {
-  return useKubeList<WAFPolicy>(queryKeys.wafPolicies.list(), API_PATHS.wafPolicies, options);
-}
+const boolFlag = (trueWhen: "true" | "notFalse") =>
+  z
+    .string()
+    .default(trueWhen === "true" ? "false" : "true")
+    .transform((v) => (trueWhen === "true" ? v === "true" : v !== "false"));
 
-export function useWAFPolicy(name: string) {
-  return useKubeGet<WAFPolicy>(
-    queryKeys.wafPolicies.detail(name),
-    `${API_PATHS.wafPolicies}/${name}`,
-  );
-}
+const envSchema = z.object({
+  VITE_API_URL: z.string().default(""),
+  VITE_MOCK: boolFlag("true"),
+  VITE_ENABLE_FORM_EDITOR: boolFlag("notFalse"),
+  VITE_ENABLE_YAML_EDITOR: boolFlag("notFalse"),
+});
+
+export const env = envSchema.parse(import.meta.env);

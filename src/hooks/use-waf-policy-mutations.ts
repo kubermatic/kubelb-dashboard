@@ -20,8 +20,9 @@ import { toast } from "sonner";
 import { kubeCreate, kubeDelete, kubeUpdate, type KubeApiError } from "@/api/kube";
 import { queryKeys } from "@/api/query-keys";
 import type { WAFPolicy } from "@/types/kubelb";
+import { API_PATHS } from "@/lib/constants";
 
-const BASE = "/apis/kubelb.k8c.io/v1alpha1/wafpolicies";
+const BASE = API_PATHS.wafPolicies;
 
 export function useCreateWAFPolicy() {
   const queryClient = useQueryClient();

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-const BASE_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+import { env } from "@/lib/env";
+
+const BASE_URL = env.VITE_API_URL;
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {

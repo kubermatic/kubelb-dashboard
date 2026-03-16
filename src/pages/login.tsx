@@ -21,7 +21,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
 import { useCallback, useEffect } from "react";
 
-const isMock = import.meta.env.VITE_MOCK === "true";
+import { env } from "@/lib/env";
+
+const isMock = env.VITE_MOCK;
 
 const FEATURE_PILLS = ["Multi-cluster", "Cloud-native", "Gateway API"];
 
