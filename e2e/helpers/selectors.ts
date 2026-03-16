@@ -45,7 +45,7 @@ export function dialogByTitle(page: Page, title: string | RegExp) {
   return page.getByRole("dialog").filter({ hasText: title });
 }
 
-export async function waitForMonaco(container: Locator, timeout = 15000) {
+export async function waitForMonaco(container: Locator, timeout = 30000) {
   const editor = container.locator(".monaco-editor");
   await expect(editor).toBeVisible({ timeout });
   await expect(container.locator(".view-lines")).toBeVisible({ timeout });

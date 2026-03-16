@@ -24,7 +24,7 @@ test.describe("Configuration Content", () => {
   });
 
   test("shows envoy proxy section", async ({ page }) => {
-    await expect(page.getByText("Envoy Proxy")).toBeVisible();
+    await expect(page.getByRole("main").getByText("Envoy Proxy")).toBeVisible();
   });
 
   test("has YAML viewer button", async ({ page }) => {

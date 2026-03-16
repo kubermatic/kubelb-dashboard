@@ -45,25 +45,24 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
-      - name: Build images, install deps, and setup infra
+      - name: Install deps and setup infra
         run: |
-          docker build -t kubelb-dashboard:e2e . &
-          DOCKER_PID1=$!
-          docker build -t kubelb-dashboard-api:e2e api/ &
-          DOCKER_PID2=$!
           (npm ci && npx playwright install --with-deps chromium) &
           PLAYWRIGHT_PID=$!
           (cd /tmp/kubelb-ee && make e2e-setup-local) &
           INFRA_PID=$!
-
           wait $INFRA_PID
 
           ./e2e/testdata/apply.sh &
           SEED_PID=$!
-
-          wait $DOCKER_PID1 $DOCKER_PID2 $SEED_PID $PLAYWRIGHT_PID
+          wait $SEED_PID $PLAYWRIGHT_PID
         env:
           KUBECONFIGS_DIR: /tmp/kubelb-ee/.e2e-kubeconfigs
+
+      - name: Build images
+        run: |
+          docker build -t kubelb-dashboard:e2e .
+          docker build -t kubelb-dashboard-api:e2e api/
 
       - name: Load images into kind
         run: |

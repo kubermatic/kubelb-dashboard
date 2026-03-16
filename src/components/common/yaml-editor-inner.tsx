@@ -15,9 +15,12 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Editor, { type OnMount } from "@monaco-editor/react";
+import Editor, { loader, type OnMount } from "@monaco-editor/react";
 import { Loader2 } from "lucide-react";
+import * as monaco from "monaco-editor";
 import type { IDisposable } from "monaco-editor";
+
+loader.config({ monaco });
 import type { configureMonacoYaml } from "monaco-yaml";
 
 type MonacoInstance = Parameters<typeof configureMonacoYaml>[0];
