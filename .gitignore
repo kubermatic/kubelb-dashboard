@@ -26,3 +26,7 @@ ai/
 pr-reviews/
 docs/plans/
 *-prototype.html
+
+## Claude Code
+.claude/settings.local.json
+.claude/worktrees/

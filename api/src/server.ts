@@ -96,5 +96,6 @@ await app.register(proxy, {
 
 app.get("/api/config", () => ({ authEnabled }));
 app.get("/healthz", () => ({ status: "ok" }));
+app.get("/readyz", () => ({ status: "ok" }));
 
 await app.listen({ port, host: "0.0.0.0" });

@@ -93,21 +93,6 @@ function resolveIngressHealth(status: Record<string, unknown>): HealthStatus {
   return { state: "Pending" };
 }
 
-export function resolveServiceHealth(
-  status: Record<string, unknown>,
-  spec: Record<string, unknown>,
-): HealthStatus {
-  const svcType = (spec["type"] as string) ?? "ClusterIP";
-  if (svcType === "LoadBalancer") {
-    const lb = status["loadBalancer"] as Record<string, unknown> | undefined;
-    const ingress = lb?.["ingress"] as unknown[] | undefined;
-    if (ingress?.length) return { state: "Ready" };
-    return { state: "Pending" };
-  }
-  if ("loadBalancer" in status) return { state: "Ready" };
-  return { state: "Pending" };
-}
-
 interface AncestorStatus {
   conditions?: unknown[];
 }
