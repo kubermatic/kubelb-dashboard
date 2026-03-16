@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-// TODO: We probably want to reduce this to 5 seconds and also make this configurable via env vars.
-export const POLL_INTERVAL = 10_000;
+export const POLL_INTERVAL = 15_000;
 
 export const API_GROUP = "kubelb.k8c.io";
 export const API_VERSION = `${API_GROUP}/v1alpha1`;

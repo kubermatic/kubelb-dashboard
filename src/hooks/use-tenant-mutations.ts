@@ -28,9 +28,9 @@ export function useCreateTenant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (tenant: Tenant) => kubeCreate<Tenant>(BASE, tenant),
-    onSuccess: () => {
+    onSuccess: (_data, tenant) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.tenants.all });
-      toast.success("Tenant created");
+      toast.success(`Tenant "${tenant.metadata.name}" created`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
@@ -42,9 +42,9 @@ export function useUpdateTenant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (tenant: Tenant) => kubeUpdate<Tenant>(`${BASE}/${tenant.metadata.name}`, tenant),
-    onSuccess: () => {
+    onSuccess: (_data, tenant) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.tenants.all });
-      toast.success("Tenant updated");
+      toast.success(`Tenant "${tenant.metadata.name}" updated`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);
@@ -56,9 +56,9 @@ export function useDeleteTenant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => kubeDelete(`${BASE}/${name}`),
-    onSuccess: () => {
+    onSuccess: (_data, name) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.tenants.all });
-      toast.success("Tenant deleted");
+      toast.success(`Tenant "${name}" deleted`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);

@@ -62,9 +62,10 @@ export function loadKubeProxyConfig(): KubeProxyConfig {
     config.key = Buffer.from(user.keyData, "base64");
   } else if (user.token) {
     config.token = user.token;
-    if (existsSync(SA_TOKEN_PATH)) {
-      config.tokenFile = SA_TOKEN_PATH;
-    }
+  }
+
+  if (existsSync(SA_TOKEN_PATH)) {
+    config.tokenFile = SA_TOKEN_PATH;
   }
 
   return config;

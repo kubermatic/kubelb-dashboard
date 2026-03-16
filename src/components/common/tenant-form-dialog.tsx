@@ -78,7 +78,6 @@ const tenantSchema = z.object({
 });
 
 type TenantFormValues = z.infer<typeof tenantSchema>;
-
 const DEFAULT_VALUES: TenantFormValues = {
   name: "",
   propagateAllAnnotations: false,

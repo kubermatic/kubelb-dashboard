@@ -30,9 +30,9 @@ export function useUpdateConfig() {
         `${API_PATHS.configs(config.metadata.namespace!)}/${config.metadata.name}`,
         config,
       ),
-    onSuccess: () => {
+    onSuccess: (_data, config) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
-      toast.success("Configuration updated");
+      toast.success(`Configuration "${config.metadata.name}" updated`);
     },
     onError: (error: KubeApiError) => {
       toast.error(error.message);

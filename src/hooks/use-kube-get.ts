@@ -25,7 +25,7 @@ export function useKubeGet<T>(
 ) {
   return useQuery<T>({
     queryKey,
-    queryFn: () => kubeGet<T>(path),
+    queryFn: ({ signal }) => kubeGet<T>(path, signal),
     enabled: options?.enabled,
     refetchInterval: POLL_INTERVAL,
   });

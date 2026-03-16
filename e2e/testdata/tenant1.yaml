@@ -1,0 +1,832 @@
+###############################################################################
+# Deployments (backends for services/ingresses/routes)
+###############################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-frontend
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-frontend
+  template:
+    metadata:
+      labels:
+        app: web-frontend
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=web-frontend", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: http
+          image: hashicorp/http-echo:1.0
+          args: ["-text=api-gateway-http", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+        - name: grpc
+          image: hashicorp/http-echo:1.0
+          args: ["-text=api-gateway-grpc", "-listen=:9090"]
+          ports:
+            - containerPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-site
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docs-site
+  template:
+    metadata:
+      labels:
+        app: docs-site
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=docs-site", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-v1
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-v1
+  template:
+    metadata:
+      labels:
+        app: api-v1
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=api-v1", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-v2
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-v2
+  template:
+    metadata:
+      labels:
+        app: api-v2
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=api-v2", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-health
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-health
+  template:
+    metadata:
+      labels:
+        app: api-health
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=healthy", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-svc
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-svc
+  template:
+    metadata:
+      labels:
+        app: product-svc
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=product-svc", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-svc
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-svc
+  template:
+    metadata:
+      labels:
+        app: inventory-svc
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=inventory-svc", "-listen=:8080"]
+          ports:
+            - containerPort: 8080
+---
+###############################################################################
+# L4: LoadBalancer Services
+# CCM propagates these as LoadBalancer CRDs to tenant-primary namespace
+###############################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-frontend
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: web-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: api-gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+---
+###############################################################################
+# L7: ClusterIP services (backends for Ingresses/Routes)
+###############################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: docs-site
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: docs-site
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-v1
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: api-v1
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-v2
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: api-v2
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-health
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: api-health
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-svc
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: product-svc
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-svc
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: inventory-svc
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+###############################################################################
+# L7: Ingresses (CCM propagates as Route CRDs to tenant-primary)
+###############################################################################
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docs-site
+  namespace: default
+spec:
+  ingressClassName: kubelb
+  rules:
+    - host: docs.example.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docs-site
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  namespace: default
+spec:
+  ingressClassName: kubelb
+  tls:
+    - hosts:
+        - api.example.nip.io
+        - api-v2.example.nip.io
+      secretName: api-tls
+  rules:
+    - host: api.example.nip.io
+      http:
+        paths:
+          - path: /v1
+            pathType: Prefix
+            backend:
+              service:
+                name: api-v1
+                port:
+                  number: 80
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: api-health
+                port:
+                  number: 80
+    - host: api-v2.example.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-v2
+                port:
+                  number: 80
+---
+###############################################################################
+# L7: Gateway API resources (CCM propagates as Route CRDs to tenant-primary)
+###############################################################################
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: kubelb
+  namespace: default
+spec:
+  gatewayClassName: kubelb
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: product-service
+  namespace: default
+spec:
+  parentRefs:
+    - name: kubelb
+  hostnames:
+    - "products.example.nip.io"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/products
+      backendRefs:
+        - name: product-svc
+          port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/inventory
+      backendRefs:
+        - name: inventory-svc
+          port: 8080
+---
+###############################################################################
+# GRPCRoute: gRPC streaming service
+###############################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-yages
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-yages
+  template:
+    metadata:
+      labels:
+        app: grpc-yages
+    spec:
+      containers:
+        - name: grpc
+          image: docker.io/kong/grpcbin:latest
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-yages
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: grpc-yages
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: grpc-gw
+  namespace: default
+spec:
+  gatewayClassName: kubelb
+  listeners:
+    - name: grpc
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        kinds:
+          - kind: GRPCRoute
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: grpc-streaming
+  namespace: default
+spec:
+  parentRefs:
+    - name: grpc-gw
+  hostnames:
+    - "grpc.example.nip.io"
+  rules:
+    - backendRefs:
+        - name: grpc-yages
+          port: 9000
+---
+###############################################################################
+# TCPRoute: TCP echo service
+###############################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcp-echo
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcp-echo
+  template:
+    metadata:
+      labels:
+        app: tcp-echo
+    spec:
+      containers:
+        - name: tcp-echo
+          image: gcr.io/k8s-staging-gateway-api/echo-basic:v20231214-v1.0.0-140-gf544a46e
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcp-echo
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: tcp-echo
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tcp-gw
+  namespace: default
+spec:
+  gatewayClassName: kubelb
+  listeners:
+    - name: tcp
+      protocol: TCP
+      port: 8088
+      allowedRoutes:
+        kinds:
+          - kind: TCPRoute
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: tcp-echo-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: tcp-gw
+      sectionName: tcp
+  rules:
+    - backendRefs:
+        - name: tcp-echo
+          port: 3000
+---
+###############################################################################
+# UDPRoute: CoreDNS as UDP backend
+###############################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-config
+  namespace: default
+data:
+  Corefile: |
+    .:53 {
+      whoami
+      log
+      errors
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udp-coredns
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: udp-coredns
+  template:
+    metadata:
+      labels:
+        app: udp-coredns
+    spec:
+      containers:
+        - name: coredns
+          image: coredns/coredns:latest
+          args: ["-conf", "/etc/coredns/Corefile"]
+          ports:
+            - containerPort: 53
+              protocol: UDP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/coredns
+      volumes:
+        - name: config
+          configMap:
+            name: coredns-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: udp-coredns
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: udp-coredns
+  ports:
+    - port: 53
+      targetPort: 53
+      protocol: UDP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: udp-gw
+  namespace: default
+spec:
+  gatewayClassName: kubelb
+  listeners:
+    - name: udp
+      protocol: UDP
+      port: 5300
+      allowedRoutes:
+        kinds:
+          - kind: UDPRoute
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: udp-dns-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: udp-gw
+      sectionName: udp
+  rules:
+    - backendRefs:
+        - name: udp-coredns
+          port: 53
+---
+###############################################################################
+# TLSRoute: TLS passthrough to nginx
+###############################################################################
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tls-backend-cert
+  namespace: default
+type: kubernetes.io/tls
+stringData:
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIICpDCCAYwCCQDU+pQ4pHgSpDANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls
+    dummy-cert-for-tls-passthrough-backend
+    -----END CERTIFICATE-----
+  tls.key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC77a5a+Lk9gRMz
+    dummy-key-for-tls-passthrough-backend
+    -----END PRIVATE KEY-----
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tls-nginx-config
+  namespace: default
+data:
+  nginx.conf: |
+    events { worker_connections 1024; }
+    http {
+      server {
+        listen 443 ssl;
+        server_name tls-app.example.nip.io;
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        location / { return 200 'TLS passthrough OK\n'; }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tls-nginx
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tls-nginx
+  template:
+    metadata:
+      labels:
+        app: tls-nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: tls
+              mountPath: /etc/nginx/ssl
+      volumes:
+        - name: config
+          configMap:
+            name: tls-nginx-config
+        - name: tls
+          secret:
+            secretName: tls-backend-cert
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tls-nginx
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: tls-nginx
+  ports:
+    - port: 443
+      targetPort: 443
+      protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tls-gw
+  namespace: default
+spec:
+  gatewayClassName: kubelb
+  listeners:
+    - name: tls
+      protocol: TLS
+      port: 6443
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        kinds:
+          - kind: TLSRoute
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: tls-passthrough
+  namespace: default
+spec:
+  parentRefs:
+    - name: tls-gw
+      sectionName: tls
+  hostnames:
+    - "tls-app.example.nip.io"
+  rules:
+    - backendRefs:
+        - name: tls-nginx
+          port: 443
+---
+###############################################################################
+# Envoy Gateway Traffic Policies (CCM propagates as Route CRDs, policy-only)
+###############################################################################
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: product-ctp
+  namespace: default
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: kubelb
+  timeout:
+    http:
+      requestReceivedTimeout: 30s
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: product-btp
+  namespace: default
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: product-service
+  circuitBreaker:
+    maxConnections: 100
+    maxPendingRequests: 50
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: grpc-btp
+  namespace: default
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+      name: grpc-streaming
+  circuitBreaker:
+    maxConnections: 200
+---
+###############################################################################
+# Secrets (label triggers CCM to sync as SyncSecret to management cluster)
+###############################################################################
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-tls
+  namespace: default
+  labels:
+    kubelb.k8c.io/managed-by: kubelb
+type: kubernetes.io/tls
+stringData:
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIICpDCCAYwCCQDU+pQ4pHgSpDANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls
+    b2NhbGhvc3QwHhcNMjMwMTAxMDAwMDAwWhcNMjQwMTAxMDAwMDAwWjAUMRIwEAYD
+    VQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC7
+    dummy-cert-data-for-api-tls
+    -----END CERTIFICATE-----
+  tls.key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC77a5a+Lk9gRMz
+    dummy-key-data-for-api-tls
+    -----END PRIVATE KEY-----
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-credentials
+  namespace: default
+  labels:
+    kubelb.k8c.io/managed-by: kubelb
+type: Opaque
+stringData:
+  username: admin
+  password: dashboard-test-password
