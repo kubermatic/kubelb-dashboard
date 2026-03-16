@@ -15,7 +15,7 @@
  */
 
 import { test, expect } from "../../fixtures/base";
-import { selectors, dialogByTitle } from "../../helpers/selectors";
+import { selectors, dialogByTitle, waitForMonaco } from "../../helpers/selectors";
 
 const created: { namespace: string; name: string }[] = [];
 
@@ -64,6 +64,7 @@ test.describe.serial("Sync Secret CRUD", () => {
       "data: {}",
     ].join("\n");
 
+    await waitForMonaco(dialog);
     await dialog.locator(".monaco-editor").click();
     await setMonacoValue(page, yamlContent);
 

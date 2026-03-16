@@ -15,7 +15,7 @@
  */
 
 import { test, expect } from "../../fixtures/base";
-import { selectors } from "../../helpers/selectors";
+import { selectors, waitForMonaco } from "../../helpers/selectors";
 
 test.describe("YAML Viewer", () => {
   test("opens from row actions and shows YAML content", async ({ page }) => {
@@ -30,7 +30,8 @@ test.describe("YAML Viewer", () => {
 
     const viewer = page.locator(selectors.yamlViewer);
     await expect(viewer).toBeVisible();
-    await expect(viewer.getByText("apiVersion", { exact: true })).toBeVisible();
+    await waitForMonaco(viewer);
+    await expect(viewer.getByText("apiVersion", { exact: true })).toBeVisible({ timeout: 10000 });
     await expect(viewer.getByText("metadata", { exact: true })).toBeVisible();
   });
 });

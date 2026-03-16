@@ -15,6 +15,7 @@
  */
 
 import type { Locator, Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 export const testId = (id: string) => `[data-testid="${id}"]`;
 
@@ -42,4 +43,10 @@ export function toastMessage(page: Page, text: string) {
 
 export function dialogByTitle(page: Page, title: string | RegExp) {
   return page.getByRole("dialog").filter({ hasText: title });
+}
+
+export async function waitForMonaco(container: Locator, timeout = 15000) {
+  const editor = container.locator(".monaco-editor");
+  await expect(editor).toBeVisible({ timeout });
+  await expect(container.locator(".view-lines")).toBeVisible({ timeout });
 }

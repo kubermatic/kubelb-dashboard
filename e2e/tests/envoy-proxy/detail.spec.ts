@@ -27,7 +27,7 @@ test.describe("Envoy Proxy Detail", () => {
       return;
     }
 
-    await rows.first().click();
+    await rows.first().locator("a").first().click();
     await page.waitForURL(/\/envoy-proxy\/.+\/.+/);
     await expect(page.locator(selectors.pageHeader)).toBeVisible();
   });

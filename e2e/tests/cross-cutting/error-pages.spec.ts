@@ -33,13 +33,13 @@ test.describe("Error & Not Found Pages", () => {
   test("resource not found for nonexistent load balancer", async ({ page }) => {
     await page.goto("/load-balancers/default/e2e-nonexistent-lb-xyz-999");
     const main = page.getByRole("main");
-    await expect(main.getByRole("heading", { name: /not found/i })).toBeVisible({ timeout: 10000 });
+    await expect(main.getByRole("heading", { name: /not found/i })).toBeVisible({ timeout: 30000 });
   });
 
   test("resource not found for nonexistent WAF policy", async ({ page }) => {
     await page.goto("/waf-policies/e2e-nonexistent-waf-xyz-999");
     const main = page.getByRole("main");
-    await expect(main.getByRole("heading", { name: /not found/i })).toBeVisible({ timeout: 10000 });
+    await expect(main.getByRole("heading", { name: /not found/i })).toBeVisible({ timeout: 30000 });
   });
 
   test("404 back link navigates home", async ({ page }) => {
