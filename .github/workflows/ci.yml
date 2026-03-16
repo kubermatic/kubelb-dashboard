@@ -100,3 +100,100 @@ jobs:
           format: table
           exit-code: 1
           severity: CRITICAL
+
+  e2e:
+    name: E2E Tests
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Clone kubelb-ee
+        run: git clone --depth 1 --branch release/v1.3 https://x-access-token:${{ secrets.KUBELB_EE_TOKEN }}@github.com/kubermatic/kubelb-ee.git /tmp/kubelb-ee
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: /tmp/kubelb-ee/go.mod
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install yq
+        run: |
+          curl -Lo ./yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          chmod +x ./yq
+          sudo mv ./yq /usr/local/bin/yq
+
+      - name: Setup kubelb infrastructure
+        working-directory: /tmp/kubelb-ee
+        run: make e2e-setup-local
+
+      - name: Seed test data
+        run: ./e2e/testdata/apply.sh
+        env:
+          KUBECONFIGS_DIR: /tmp/kubelb-ee/.e2e-kubeconfigs
+
+      - name: Build Docker images
+        run: |
+          docker build -t kubelb-dashboard:e2e .
+          docker build -t kubelb-dashboard-api:e2e api/
+
+      - name: Load images into kind
+        run: |
+          kind load docker-image kubelb-dashboard:e2e --name kubelb
+          kind load docker-image kubelb-dashboard-api:e2e --name kubelb
+
+      - name: Deploy with Helm
+        run: |
+          kubectl config use-context kind-kubelb
+          helm install kubelb-dashboard ./charts/kubelb-dashboard \
+            --set image.repository=kubelb-dashboard \
+            --set image.tag=e2e \
+            --set image.pullPolicy=Never \
+            --set api.image.repository=kubelb-dashboard-api \
+            --set api.image.tag=e2e \
+            --set api.image.pullPolicy=Never \
+            --set auth.enabled=false \
+            --wait --timeout 120s
+
+      - name: Port-forward and wait for ready
+        run: |
+          kubectl port-forward svc/kubelb-dashboard 8080:80 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080 > /dev/null 2>&1; then
+              echo "Dashboard is ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Install Playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
