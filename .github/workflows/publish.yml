@@ -41,9 +41,9 @@ jobs:
           tags: |
             type=sha,format=long,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
 
       - uses: docker/build-push-action@v6
         id: build
@@ -87,9 +87,9 @@ jobs:
           tags: |
             type=sha,format=long,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
 
       - uses: docker/build-push-action@v6
         id: build
@@ -135,7 +135,7 @@ jobs:
 
       - name: Set chart version from tag
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           sed -i "s/^version:.*/version: ${VERSION}/" charts/kubelb-dashboard/Chart.yaml
           sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" charts/kubelb-dashboard/Chart.yaml
 
@@ -150,11 +150,11 @@ jobs:
       - name: Package and push chart
         run: |
           CHART_NAME="kubelb-dashboard"
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           helm package charts/${CHART_NAME}
           helm push ${CHART_NAME}-${VERSION}.tgz oci://${{ env.REGISTRY }}/kubermatic/helm-charts
 
       - name: Sign chart
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           cosign sign --yes ${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}

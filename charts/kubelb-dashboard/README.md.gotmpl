@@ -5,13 +5,13 @@
 ## Install
 
 ```bash
-helm install {{ .Name }} oci://ghcr.io/kubermatic/charts/{{ .Name }} --version {{ template "chart.version" . }}
+helm upgrade {{ .Name }} oci://quay.io/kubermatic/helm-charts/{{ .Name }} --version {{ template "chart.version" . }} --namespace kubelb --create-namespace --install
 ```
 
 ## Example with Ingress
 
 ```bash
-helm install {{ .Name }} oci://ghcr.io/kubermatic/charts/{{ .Name }} \
+helm install {{ .Name }} oci://quay.io/kubermatic/helm-charts/{{ .Name }} \
   --set ingress.enabled=true \
   --set ingress.className=nginx \
   --set ingress.hosts[0].host=app.example.com \

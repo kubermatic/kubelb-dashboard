@@ -83,11 +83,9 @@ await app.register(proxy, {
   },
   replyOptions: {
     rewriteRequestHeaders: (_originalReq, headers) => {
-      if (!authEnabled) {
-        const token = getAuthToken(config);
-        if (token) {
-          return { ...headers, authorization: `Bearer ${token}` };
-        }
+      const token = getAuthToken(config);
+      if (token) {
+        return { ...headers, authorization: `Bearer ${token}` };
       }
       return headers;
     },

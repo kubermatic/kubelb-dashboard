@@ -5,13 +5,13 @@
 ## Install
 
 ```bash
-helm install kubelb-dashboard oci://ghcr.io/kubermatic/charts/kubelb-dashboard --version 0.1.0
+helm upgrade kubelb-dashboard oci://quay.io/kubermatic/helm-charts/kubelb-dashboard --version 0.1.0 --namespace kubelb --create-namespace --install
 ```
 
 ## Example with Ingress
 
 ```bash
-helm install kubelb-dashboard oci://ghcr.io/kubermatic/charts/kubelb-dashboard \
+helm install kubelb-dashboard oci://quay.io/kubermatic/helm-charts/kubelb-dashboard \
   --set ingress.enabled=true \
   --set ingress.className=nginx \
   --set ingress.hosts[0].host=app.example.com \
