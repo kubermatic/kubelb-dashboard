@@ -54,12 +54,9 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
         middlewareConfig.sessionMaxAge,
         middlewareConfig.secureCookies,
       );
-      request.headers.authorization = `Bearer ${tokens.accessToken}`;
     } catch {
       reply.code(401).send({ error: "unauthorized" });
       return;
     }
-  } else {
-    request.headers.authorization = `Bearer ${session.accessToken}`;
   }
 }
