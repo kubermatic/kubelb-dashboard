@@ -17,7 +17,6 @@
 import { test, expect } from "@playwright/test";
 
 // Auth tests are skipped until auth infra is available.
-// See: https://github.com/ahmedwaleedmalik/kubelb-dashboard/issues/TBD
 test.describe.skip("Login", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
