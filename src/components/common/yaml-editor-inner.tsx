@@ -19,9 +19,19 @@ import Editor, { loader, type OnMount } from "@monaco-editor/react";
 import { Loader2 } from "lucide-react";
 import * as monaco from "monaco-editor";
 import type { IDisposable } from "monaco-editor";
+import type { configureMonacoYaml } from "monaco-yaml";
+import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import YamlWorker from "monaco-yaml/yaml.worker?worker";
+
+window.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === "yaml") return new YamlWorker();
+    return new EditorWorker();
+  },
+};
 
 loader.config({ monaco });
-import type { configureMonacoYaml } from "monaco-yaml";
+(globalThis as unknown as { monaco: typeof monaco }).monaco = monaco;
 
 type MonacoInstance = Parameters<typeof configureMonacoYaml>[0];
 type ConfigureFn = typeof configureMonacoYaml;
@@ -35,19 +45,6 @@ function getConfigureFn(): Promise<ConfigureFn> {
   }
   return configurePromise;
 }
-
-window.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === "yaml") {
-      return new Worker(new URL("monaco-yaml/yaml.worker.js", import.meta.url), {
-        type: "module",
-      });
-    }
-    return new Worker(new URL("monaco-editor/esm/vs/editor/editor.worker.js", import.meta.url), {
-      type: "module",
-    });
-  },
-};
 
 interface YamlEditorProps {
   value: string;

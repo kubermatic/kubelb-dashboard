@@ -19,12 +19,8 @@ import { selectors } from "../../helpers/selectors";
 
 test.describe("Tenant Detail Tabs", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/tenants");
-    const table = page.locator(selectors.dataTable);
-    const firstLink = table.locator("tbody tr a").first();
-    await expect(firstLink).toBeVisible({ timeout: 10000 });
-    await firstLink.click();
-    await page.waitForURL(/\/tenants\/.+/);
+    await page.goto("/tenants/primary");
+    await expect(page.locator(selectors.pageHeader)).toBeVisible();
   });
 
   test("overview tab shows features section", async ({ page }) => {

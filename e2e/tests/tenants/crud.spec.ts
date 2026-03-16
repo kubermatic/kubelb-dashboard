@@ -76,6 +76,7 @@ test.describe.serial("Tenant CRUD", () => {
 
   test("tenant detail has tabs and YAML", async ({ page }) => {
     await page.goto(`/tenants/${tenantName}`);
+    await expect(page.locator(selectors.pageHeader)).toBeVisible();
     await expect(page.getByRole("tab", { name: /overview/i })).toBeVisible();
     await page.getByRole("button", { name: /yaml/i }).click();
     await expect(page.locator(selectors.yamlViewer)).toBeVisible();

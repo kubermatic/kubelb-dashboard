@@ -41,5 +41,6 @@ test.describe("Load Balancers List", () => {
     await expect(firstLink).toBeVisible({ timeout: 10000 });
     await firstLink.click();
     await page.waitForURL(/\/load-balancers\/.+\/.+/);
+    await expect(page.locator(selectors.pageHeader)).toBeVisible();
   });
 });

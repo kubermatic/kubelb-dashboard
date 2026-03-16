@@ -25,10 +25,11 @@ test.describe("Load Balancer Detail", () => {
     await expect(firstLink).toBeVisible({ timeout: 10000 });
     await firstLink.click();
     await page.waitForURL(/\/load-balancers\/.+\/.+/);
+    await expect(page.locator(selectors.pageHeader)).toBeVisible();
   });
 
   test("resource header visible", async ({ page }) => {
-    await expect(page.locator(selectors.pageHeader)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(selectors.pageHeader)).toBeVisible();
   });
 
   test("YAML viewer opens and closes", async ({ page }) => {

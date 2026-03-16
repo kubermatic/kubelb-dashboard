@@ -20,14 +20,24 @@ import { selectors, dialogByTitle, waitForMonaco } from "../../helpers/selectors
 const created: { namespace: string; name: string }[] = [];
 
 async function setMonacoValue(page: import("@playwright/test").Page, value: string) {
-  await page.evaluate((val) => {
-    const editor = (
-      window as never as {
-        monaco: { editor: { getEditors: () => { setValue: (v: string) => void }[] } };
-      }
-    ).monaco?.editor?.getEditors?.()[0];
-    if (editor) editor.setValue(val);
-  }, value);
+  await expect(async () => {
+    const success = await page.evaluate((val) => {
+      const m = (
+        window as never as {
+          monaco?: {
+            editor?: {
+              getEditors?: () => { setValue: (v: string) => void; getValue: () => string }[];
+            };
+          };
+        }
+      ).monaco;
+      const editor = m?.editor?.getEditors?.()?.[0];
+      if (!editor) return false;
+      editor.setValue(val);
+      return editor.getValue() === val;
+    }, value);
+    expect(success).toBe(true);
+  }).toPass({ timeout: 15000 });
 }
 
 test.describe.serial("Sync Secret CRUD", () => {
