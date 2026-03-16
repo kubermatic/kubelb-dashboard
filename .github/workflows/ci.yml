@@ -121,43 +121,51 @@ jobs:
         with:
           go-version-file: /tmp/kubelb-ee/go.mod
 
-      - name: Install kind
+      - name: Install tools
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64 &
+          curl -Lo ./yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 &
+          wait
+          chmod +x ./kind ./yq
+          sudo mv ./kind ./yq /usr/local/bin/
 
       - name: Install Helm
         uses: azure/setup-helm@v4
 
-      - name: Install yq
+      - name: Build images, install deps, and setup infra
         run: |
-          curl -Lo ./yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          chmod +x ./yq
-          sudo mv ./yq /usr/local/bin/yq
+          # All three are independent — run in parallel
+          docker build -t kubelb-dashboard:e2e . &
+          DOCKER_PID1=$!
+          docker build -t kubelb-dashboard-api:e2e api/ &
+          DOCKER_PID2=$!
+          (npm ci && npx playwright install --with-deps chromium) &
+          PLAYWRIGHT_PID=$!
+          (cd /tmp/kubelb-ee && make e2e-setup-local) &
+          INFRA_PID=$!
 
-      - name: Setup kubelb infrastructure
-        working-directory: /tmp/kubelb-ee
-        run: make e2e-setup-local
+          # Wait for infra first (needed for seed + deploy)
+          wait $INFRA_PID
 
-      - name: Seed test data
-        run: ./e2e/testdata/apply.sh
+          # Seed test data while Docker builds may still be running
+          ./e2e/testdata/apply.sh &
+          SEED_PID=$!
+
+          # Wait for everything
+          wait $DOCKER_PID1 $DOCKER_PID2 $SEED_PID $PLAYWRIGHT_PID
         env:
           KUBECONFIGS_DIR: /tmp/kubelb-ee/.e2e-kubeconfigs
 
-      - name: Build Docker images
-        run: |
-          docker build -t kubelb-dashboard:e2e .
-          docker build -t kubelb-dashboard-api:e2e api/
-
       - name: Load images into kind
         run: |
-          kind load docker-image kubelb-dashboard:e2e --name kubelb
-          kind load docker-image kubelb-dashboard-api:e2e --name kubelb
+          kind load docker-image kubelb-dashboard:e2e --name kubelb &
+          kind load docker-image kubelb-dashboard-api:e2e --name kubelb &
+          wait
 
       - name: Deploy with Helm
+        env:
+          KUBECONFIG: /tmp/kubelb-ee/.e2e-kubeconfigs/kubelb.kubeconfig
         run: |
-          kubectl config use-context kind-kubelb
           helm install kubelb-dashboard ./charts/kubelb-dashboard \
             --set image.repository=kubelb-dashboard \
             --set image.tag=e2e \
@@ -169,6 +177,8 @@ jobs:
             --wait --timeout 120s
 
       - name: Port-forward and wait for ready
+        env:
+          KUBECONFIG: /tmp/kubelb-ee/.e2e-kubeconfigs/kubelb.kubeconfig
         run: |
           kubectl port-forward svc/kubelb-dashboard 8080:80 &
           for i in $(seq 1 30); do
@@ -178,11 +188,6 @@ jobs:
             fi
             sleep 2
           done
-
-      - name: Install Playwright
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
 
       - name: Run E2E tests
         run: npm run test:e2e
