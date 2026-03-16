@@ -48,10 +48,11 @@ function getKey(): Uint8Array {
   return encryptionKey;
 }
 
-export async function encryptSession(payload: SessionPayload): Promise<string> {
+export async function encryptSession(payload: SessionPayload, maxAge: number): Promise<string> {
   return new EncryptJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
     .setIssuedAt()
+    .setExpirationTime(`${maxAge}s`)
     .encrypt(getKey());
 }
 
@@ -106,7 +107,7 @@ export function readSessionCookies(request: FastifyRequest): string | null {
   if (!countStr) return null;
 
   const count = parseInt(countStr, 10);
-  if (isNaN(count) || count <= 0) return null;
+  if (isNaN(count) || count <= 0 || count > 10) return null;
 
   const parts: string[] = [];
   for (let i = 0; i < count; i++) {

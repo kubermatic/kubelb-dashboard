@@ -17,8 +17,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { getSession, encryptSession, setSessionCookies, type SessionPayload } from "./session.js";
 import { refreshAccessToken } from "./oidc.js";
-
-const TOKEN_REFRESH_WINDOW_SECONDS = 30;
+import { TOKEN_REFRESH_WINDOW_SECONDS } from "./constants.js";
 
 let middlewareConfig: { sessionMaxAge: number; secureCookies: boolean };
 
@@ -48,7 +47,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
         refreshToken: tokens.refreshToken ?? session.refreshToken,
         accessTokenExp: tokens.expiresAt,
       };
-      const encrypted = await encryptSession(updated);
+      const encrypted = await encryptSession(updated, middlewareConfig.sessionMaxAge);
       setSessionCookies(
         reply,
         encrypted,

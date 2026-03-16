@@ -10,6 +10,7 @@ dist
 docs
 hack
 .env*
+api
 e2e
 charts
 *.md

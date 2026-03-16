@@ -41,8 +41,9 @@ interface AuthRouteOptions {
   secureCookies: boolean;
 }
 
+import { TOKEN_REFRESH_WINDOW_SECONDS } from "./constants.js";
+
 const TEMP_COOKIE_MAX_AGE = 300;
-const TOKEN_REFRESH_WINDOW_SECONDS = 30;
 
 function isRelativePath(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//");
@@ -110,7 +111,7 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRouteOptions): 
       accessTokenExp: tokens.expiresAt,
     };
 
-    const encrypted = await encryptSession(session);
+    const encrypted = await encryptSession(session, opts.sessionMaxAge);
     setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
 
     const clearOpts = tempCookieOpts(opts.secureCookies);
@@ -153,7 +154,7 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRouteOptions): 
           refreshToken: tokens.refreshToken ?? session.refreshToken,
           accessTokenExp: tokens.expiresAt,
         };
-        const encrypted = await encryptSession(updated);
+        const encrypted = await encryptSession(updated, opts.sessionMaxAge);
         setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
         return {
           authenticated: true,
