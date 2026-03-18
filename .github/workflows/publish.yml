@@ -139,7 +139,7 @@ jobs:
           sed -i "s/^version:.*/version: ${VERSION}/" charts/kubelb-dashboard/Chart.yaml
           sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" charts/kubelb-dashboard/Chart.yaml
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: stable
           cache: false
