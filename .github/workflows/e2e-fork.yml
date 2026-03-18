@@ -10,6 +10,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  notify:
+    name: Notify
+    if: >-
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      !contains(github.event.pull_request.labels.*.name, 'ok-to-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          MARKER="<!-- ok-to-test-notice -->"
+          EXISTING=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments --jq ".comments[].body | select(contains(\"$MARKER\"))")
+          if [ -z "$EXISTING" ]; then
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "${MARKER}
+          E2E tests require the \`ok-to-test\` label to run on fork PRs. A maintainer will review and add the label."
+          fi
+
   e2e:
     name: E2E Tests
     if: >-

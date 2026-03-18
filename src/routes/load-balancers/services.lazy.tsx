@@ -239,6 +239,8 @@ function Services() {
         open={!!yamlResource}
         onOpenChange={(open) => !open && setYamlResource(null)}
         resource={yamlResource}
+        apiVersion="v1"
+        kind="Service"
         title={
           yamlResource
             ? `Service: ${yamlResource.metadata.namespace}/${yamlResource.metadata.name}`
