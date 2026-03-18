@@ -27,13 +27,26 @@ interface YamlViewerProps {
   onOpenChange: (open: boolean) => void;
   resource: unknown;
   title?: string;
+  apiVersion?: string;
+  kind?: string;
 }
 
-export function YamlViewer({ open, onOpenChange, resource, title }: YamlViewerProps) {
-  const yaml = useMemo(
-    () => dump(sanitizeForView(resource), { noRefs: true, lineWidth: -1 }),
-    [resource],
-  );
+export function YamlViewer({
+  open,
+  onOpenChange,
+  resource,
+  title,
+  apiVersion,
+  kind,
+}: YamlViewerProps) {
+  const yaml = useMemo(() => {
+    const sanitized = sanitizeForView(resource) as Record<string, unknown> | null;
+    if (sanitized && typeof sanitized === "object") {
+      if (apiVersion && !sanitized.apiVersion) sanitized.apiVersion = apiVersion;
+      if (kind && !sanitized.kind) sanitized.kind = kind;
+    }
+    return dump(sanitized, { noRefs: true, lineWidth: -1 });
+  }, [resource, apiVersion, kind]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
