@@ -130,7 +130,7 @@ jobs:
           sudo mv ./kind ./yq /usr/local/bin/
 
       - name: Install Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
 
       - name: Install deps and setup infra
         run: |
