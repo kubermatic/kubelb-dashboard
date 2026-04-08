@@ -1,6 +1,6 @@
 # CE/EE Field Reference
 
-**Source of truth:** Go API types at `~/go/src/k8c.io/kubelb-ee/api/{ce,ee}/kubelb.k8c.io/v1alpha1/`
+**Source of truth:** Go API types in the internal [kubelb-ee](https://github.com/kubermatic/kubelb-ee) repository under `api/{ce,ee}/kubelb.k8c.io/v1alpha1/` (Kubermatic maintainers only).
 
 ## Rules
 
