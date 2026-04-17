@@ -35,13 +35,12 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Field, FieldLabel, FieldDescription, FieldError, FieldGroup } from "@/components/ui/field";
 import { YamlEditor } from "@/components/common/yaml-editor";
+import { isRFC1123Label } from "@/lib/validators";
 import type { Tenant, TenantSpec } from "@/types/kubelb";
-
-const RFC1123_LABEL_REGEX = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
 
 const optionalRFC1123 = z
   .string()
-  .refine((v) => !v || RFC1123_LABEL_REGEX.test(v), {
+  .refine((v) => !v || isRFC1123Label(v), {
     message: "Lowercase alphanumeric and hyphens only, must start/end with alphanumeric",
   })
   .refine((v) => !v || v.length <= 63, { message: "Max 63 characters" });
@@ -55,10 +54,9 @@ const tenantSchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(243, "Max 243 characters")
-    .regex(
-      RFC1123_LABEL_REGEX,
-      "Lowercase alphanumeric and hyphens only, must start/end with alphanumeric",
-    ),
+    .refine(isRFC1123Label, {
+      message: "Lowercase alphanumeric and hyphens only, must start/end with alphanumeric",
+    }),
   propagateAllAnnotations: z.boolean(),
   lbEnabled: z.boolean(),
   lbClass: z.string(),

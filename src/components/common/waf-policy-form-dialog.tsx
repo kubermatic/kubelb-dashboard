@@ -607,10 +607,10 @@ function FieldGroup({
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [descId, errorId].filter(Boolean).join(" ") || undefined;
 
-  let cloned = false;
-  const enhanced = React.Children.map(children, (child) => {
-    if (!cloned && React.isValidElement(child)) {
-      cloned = true;
+  const childArray = React.Children.toArray(children);
+  const firstValidIndex = childArray.findIndex(React.isValidElement);
+  const enhanced = childArray.map((child, index) => {
+    if (index === firstValidIndex && React.isValidElement(child)) {
       return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
         id,
         "aria-describedby": describedBy,
