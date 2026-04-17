@@ -50,6 +50,12 @@ export default defineConfig([
     },
   },
   {
+    files: ["src/routes/**/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
     files: ["e2e/**/*.ts"],
     rules: {
       "react-hooks/rules-of-hooks": "off",
