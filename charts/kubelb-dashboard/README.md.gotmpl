@@ -19,6 +19,18 @@ helm install {{ .Name }} oci://quay.io/kubermatic/helm-charts/{{ .Name }} \
   --set ingress.hosts[0].paths[0].pathType=Prefix
 ```
 
+## Example with HTTPRoute (Gateway API)
+
+```bash
+helm install {{ .Name }} oci://quay.io/kubermatic/helm-charts/{{ .Name }} \
+  --set httpRoute.enabled=true \
+  --set httpRoute.parentRefs[0].name=my-gateway \
+  --set httpRoute.parentRefs[0].namespace=gateway-system \
+  --set httpRoute.hostnames[0]=app.example.com
+```
+
+Requires the Gateway API v1 CRDs (`gateway.networking.k8s.io/v1`) installed in the cluster.
+
 ## Security
 
 The chart runs with a hardened security context by default:

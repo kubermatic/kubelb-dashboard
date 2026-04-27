@@ -119,6 +119,18 @@ ingress:
   # -- Ingress TLS configuration
   tls: []
 
+httpRoute:
+  # -- Enable HTTPRoute (Gateway API v1). Independent of `ingress.enabled` — both may be on simultaneously.
+  enabled: false
+  # -- HTTPRoute annotations
+  annotations: {}
+  # -- HTTPRoute parentRefs. Each entry: {name, namespace?, sectionName?, port?}
+  parentRefs: []
+  # -- HTTPRoute hostnames
+  hostnames: []
+  # -- Override default routing rules. If empty, a single rule routes PathPrefix `/` to the chart's Service on `service.port`.
+  rules: []
+
 # -- Dashboard (nginx) CPU/memory resource requests and limits
 resources: {}
 
