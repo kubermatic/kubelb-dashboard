@@ -137,9 +137,7 @@ function policyToForm(policy: WAFPolicy): FormState {
   else if (spec.targetRef) targetingMode = "targetRef";
   else if (spec.targetSelector) targetingMode = "targetSelector";
 
-  const matchLabels =
-    (spec.targetSelector as { matchLabels?: Record<string, string> } | undefined)?.matchLabels ??
-    {};
+  const matchLabels = spec.targetSelector?.matchLabels ?? {};
   const entries = Object.entries(matchLabels).map(([key, value]) => ({ key, value }));
 
   return {

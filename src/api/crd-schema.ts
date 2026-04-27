@@ -34,7 +34,7 @@ function stripKubeExtensions(schema: RJSFSchema): RJSFSchema {
   if (Array.isArray(schema)) {
     return (schema as RJSFSchema[]).map((item: RJSFSchema) =>
       typeof item === "object" && item !== null ? stripKubeExtensions(item) : item,
-    ) as unknown as RJSFSchema;
+    );
   }
 
   if (typeof schema !== "object" || schema === null) {
@@ -49,7 +49,7 @@ function stripKubeExtensions(schema: RJSFSchema): RJSFSchema {
         ? stripKubeExtensions(value as RJSFSchema)
         : value;
   }
-  return result as RJSFSchema;
+  return result;
 }
 
 export async function fetchCRDSchema(crdName: string, version?: string): Promise<RJSFSchema> {

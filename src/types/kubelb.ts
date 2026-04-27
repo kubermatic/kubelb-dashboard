@@ -331,7 +331,7 @@ export interface WAFTargetRef {
 export interface WAFPolicySpec {
   global?: boolean;
   targetRef?: WAFTargetRef;
-  targetSelector?: Record<string, unknown>;
+  targetSelector?: { matchLabels?: Record<string, string> };
   directives?: string[];
   failureMode?: WAFFailureMode;
 }

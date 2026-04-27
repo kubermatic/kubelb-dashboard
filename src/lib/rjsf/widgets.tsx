@@ -49,7 +49,7 @@ function TextWidget({
       required={required}
       disabled={disabled || readonly}
       placeholder={placeholder}
-      type={(options.inputType as string) ?? "text"}
+      type={options.inputType ?? "text"}
       onChange={(e) => onChange(e.target.value === "" ? options.emptyValue : e.target.value)}
       onBlur={() => onBlur(id, value)}
       onFocus={() => onFocus(id, value)}

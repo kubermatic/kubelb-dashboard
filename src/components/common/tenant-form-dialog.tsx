@@ -524,11 +524,7 @@ function SwitchField({
             <FieldLabel htmlFor={`switch-${name}`}>{label}</FieldLabel>
             {description && <FieldDescription>{description}</FieldDescription>}
           </div>
-          <Switch
-            id={`switch-${name}`}
-            checked={field.value as boolean}
-            onCheckedChange={field.onChange}
-          />
+          <Switch id={`switch-${name}`} checked={field.value} onCheckedChange={field.onChange} />
         </Field>
       )}
     />
