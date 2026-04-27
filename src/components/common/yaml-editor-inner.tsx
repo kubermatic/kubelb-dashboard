@@ -98,7 +98,7 @@ export default function YamlEditorInner({
               {
                 uri: "inmemory://schema/resource.json",
                 fileMatch: ["*"],
-                schema: s as object,
+                schema: s,
               },
             ]
           : [],
