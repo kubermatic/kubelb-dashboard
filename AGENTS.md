@@ -54,9 +54,11 @@ src/
 ## Getting Started
 
 ```bash
-npm install
+npm run setup    # dashboard + api deps + git hooks
 npm run dev
 ```
+
+> The repo `.npmrc` sets `ignore-scripts=true` to block postinstall script execution as a supply-chain hardening measure, so the `prepare` lifecycle that normally installs husky hooks is skipped. `npm run setup` runs root install, api install, and `npx husky` in one step. If you ever pull a dep that genuinely needs its install script, run `npm rebuild <pkg>` explicitly.
 
 ## Scripts
 
