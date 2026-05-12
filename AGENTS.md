@@ -55,8 +55,11 @@ src/
 
 ```bash
 npm install
+npx husky        # install git hooks (skipped by .npmrc ignore-scripts)
 npm run dev
 ```
+
+> The repo `.npmrc` sets `ignore-scripts=true` to block postinstall script execution as a supply-chain hardening measure. Run `npx husky` once after a fresh clone to enable pre-commit hooks. If you ever pull a dep that genuinely needs its install script, run `npm rebuild <pkg>` explicitly.
 
 ## Scripts
 
