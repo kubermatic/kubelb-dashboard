@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
+    "setup": "npm install && npm install --prefix api && npx husky",
     "dev": "node hack/dev.mjs",
     "dev:frontend": "vite",
     "dev:mock": "VITE_MOCK=true vite",
