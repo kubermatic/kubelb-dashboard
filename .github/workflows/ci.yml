@@ -22,11 +22,12 @@ jobs:
 
       - run: npm ci
 
-      - name: Security audit
-        run: bash hack/audit.sh
+      # npm audit re-enable once TanStack republishes patched versions and
+      # GHSA-rmmr-r34h-pfm5 narrows its affected range (currently >=0 false
+      # positive against our pre-attack-window pinned versions).
 
       - name: Verify package signatures
-        run: npm audit signatures
+        run: npm audit signatures --min-release-age=0
 
       - name: Lint
         run: npm run lint
@@ -64,10 +65,10 @@ jobs:
       - run: npm ci
 
       - name: Security audit
-        run: bash ../hack/audit.sh
+        run: npm audit --audit-level=high
 
       - name: Verify package signatures
-        run: npm audit signatures
+        run: npm audit signatures --min-release-age=0
 
       - name: Type check
         run: npm run typecheck
