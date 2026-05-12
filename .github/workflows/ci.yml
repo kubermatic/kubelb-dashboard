@@ -25,6 +25,9 @@ jobs:
       - name: Security audit
         run: npm audit --audit-level=high
 
+      - name: Verify package signatures
+        run: npm audit signatures
+
       - name: Lint
         run: npm run lint
 
@@ -62,6 +65,9 @@ jobs:
 
       - name: Security audit
         run: npm audit --audit-level=high
+
+      - name: Verify package signatures
+        run: npm audit signatures
 
       - name: Type check
         run: npm run typecheck
