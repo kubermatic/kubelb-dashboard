@@ -23,7 +23,7 @@ jobs:
       - run: npm ci
 
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: bash hack/audit.sh
 
       - name: Verify package signatures
         run: npm audit signatures
@@ -64,7 +64,7 @@ jobs:
       - run: npm ci
 
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: bash ../hack/audit.sh
 
       - name: Verify package signatures
         run: npm audit signatures
