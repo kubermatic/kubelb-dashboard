@@ -17,6 +17,8 @@ jobs:
       !contains(github.event.pull_request.labels.*.name, 'ok-to-test') &&
       !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Comment on PR
         env:
@@ -30,13 +32,32 @@ jobs:
           E2E tests require the \`ok-to-test\` label to run on fork PRs. A maintainer will review and add the label."
           fi
 
+  strip-stale-label:
+    name: Strip stale ok-to-test on push
+    if: >-
+      github.event.action == 'synchronize' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'ok-to-test') &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Remove ok-to-test
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --remove-label ok-to-test
+          gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "New commits pushed — \`ok-to-test\` removed. A maintainer must re-review and re-add the label before E2E runs against secrets."
+
   e2e:
     name: E2E Tests
     if: >-
       github.event.pull_request.head.repo.full_name != github.repository &&
       (
-        contains(github.event.pull_request.labels.*.name, 'ok-to-test') ||
-        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) ||
+        (github.event.action == 'labeled' && github.event.label.name == 'ok-to-test')
       )
     runs-on: ubuntu-latest
     timeout-minutes: 30

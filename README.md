@@ -8,8 +8,7 @@ Prerequisites: Node.js 22+, a kubeconfig for KubeLB Management cluster.
 
 ```bash
 export KUBECONFIG=/path/to/your/kubeconfig
-npm install #install Dashboard dependencies
-npm install --prefix api #install API dependencies
+npm run setup   # dashboard + api deps + git hooks
 npm run dev
 ```
 
