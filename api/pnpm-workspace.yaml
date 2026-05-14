@@ -1,0 +1,4 @@
+minimumReleaseAge: 7
+
+allowBuilds:
+  esbuild: false

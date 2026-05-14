@@ -3,11 +3,13 @@ FROM node:26-alpine@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb732
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm install -g --ignore-scripts pnpm@11.1.1
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # nginxinc/nginx-unprivileged:1-alpine
 FROM nginxinc/nginx-unprivileged:1-alpine@sha256:e1e4338d90a31f3fc6c549f1383cc3610cbcdc7e8d79991f4281f8ddc3cc1ee8

@@ -15,37 +15,39 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
-      # npm audit re-enable once TanStack republishes patched versions and
+      # pnpm audit re-enable once TanStack republishes patched versions and
       # GHSA-rmmr-r34h-pfm5 narrows its affected range (currently >=0 false
       # positive against our pre-attack-window pinned versions).
 
       - name: Verify package signatures
-        run: npm audit signatures --min-release-age=0
+        run: pnpm audit signatures
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Format check
-        run: npm run format:check
+        run: pnpm run format:check
 
       - name: Type check
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Test
-        run: npm run test
+        run: pnpm run test
 
       - name: License check
-        run: npm run license:check
+        run: pnpm run license:check
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
   api:
     name: API
@@ -56,25 +58,27 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: api/package-lock.json
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: pnpm audit --audit-level=high
 
       - name: Verify package signatures
-        run: npm audit signatures --min-release-age=0
+        run: pnpm audit signatures
 
       - name: Type check
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
   docker:
     name: Docker Build
@@ -118,10 +122,12 @@ jobs:
       - name: Clone kubelb-ee
         run: git clone --depth 1 --branch release/v1.3 https://x-access-token:${{ secrets.KUBELB_EE_TOKEN }}@github.com/kubermatic/kubelb-ee.git /tmp/kubelb-ee
 
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
@@ -140,7 +146,7 @@ jobs:
 
       - name: Install deps and setup infra
         run: |
-          (npm ci && npx playwright install --with-deps chromium) &
+          (pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium) &
           PLAYWRIGHT_PID=$!
           (cd /tmp/kubelb-ee && make e2e-setup-local) &
           INFRA_PID=$!
@@ -191,7 +197,7 @@ jobs:
           done
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: pnpm run test:e2e
         env:
           E2E_BASE_URL: http://localhost:8080
           CI: true
