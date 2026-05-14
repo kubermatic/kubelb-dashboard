@@ -4,3 +4,5 @@ src/routeTree.gen.ts
 public/mockServiceWorker.js
 charts/**/templates
 .claude
+pnpm-lock.yaml
+api/pnpm-lock.yaml

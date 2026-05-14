@@ -4,12 +4,12 @@ Web dashboard for [KubeLB](https://docs.kubermatic.com/kubelb/) — a cloud-nati
 
 ## Development
 
-Prerequisites: Node.js 22+, a kubeconfig for KubeLB Management cluster.
+Prerequisites: Node.js 22+, pnpm (via `corepack enable`), a kubeconfig for KubeLB Management cluster.
 
 ```bash
 export KUBECONFIG=/path/to/your/kubeconfig
-npm run setup   # dashboard + api deps + git hooks
-npm run dev
+pnpm run setup   # dashboard + api deps + git hooks
+pnpm run dev
 ```
 
 This starts the frontend (Vite on `:5173`) and the API proxy (Fastify on `:3001`) concurrently. The Vite dev server proxies `/api/` requests to the API server.
@@ -17,7 +17,7 @@ This starts the frontend (Vite on `:5173`) and the API proxy (Fastify on `:3001`
 ### Mock Mode (no cluster required)
 
 ```bash
-npm run dev:mock
+pnpm run dev:mock
 ```
 
 Uses [MSW v2](https://mswjs.io/) to intercept `fetch()` in the browser with realistic mock data captured from a live cluster. CRUD mutations persist within the browser session; page refresh resets to seed data. Runs in EE mode (WAF policies visible). MSW is tree-shaken from production builds.

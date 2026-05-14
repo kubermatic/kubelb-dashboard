@@ -41,10 +41,10 @@ src/
 
 ## Mock Mode
 
-`npm run dev:mock` starts the dashboard with MSW v2 intercepting `fetch()` in the browser. No cluster needed.
+`pnpm run dev:mock` starts the dashboard with MSW v2 intercepting `fetch()` in the browser. No cluster needed.
 
 - Fixtures in `src/mocks/fixtures/` — live-captured data (18 resource types: tenants, configs, LBs, routes, secrets, WAF policies, envoy deployments, namespaces, gateways, GW routes, ingresses, services, EG policies)
-- `npm run fixtures:capture` — re-capture fixtures from a live cluster (requires KUBECONFIG)
+- `pnpm run fixtures:capture` — re-capture fixtures from a live cluster (requires KUBECONFIG)
 - In-memory CRUD via `MockStore` in `src/mocks/store.ts` — persists within session, resets on refresh
 - Handlers in `src/mocks/handlers/` — one file per resource type, composed in `src/mocks/handlers.ts`
 - Gated by `VITE_MOCK=true` env var — dynamic import ensures MSW is tree-shaken from prod builds
@@ -54,32 +54,33 @@ src/
 ## Getting Started
 
 ```bash
-npm run setup    # dashboard + api deps + git hooks
-npm run dev
+corepack enable          # activates pnpm pinned via `packageManager`
+pnpm run setup           # dashboard + api deps + git hooks
+pnpm run dev
 ```
 
-> The repo `.npmrc` sets `ignore-scripts=true` to block postinstall script execution as a supply-chain hardening measure, so the `prepare` lifecycle that normally installs husky hooks is skipped. `npm run setup` runs root install, api install, and `npx husky` in one step. If you ever pull a dep that genuinely needs its install script, run `npm rebuild <pkg>` explicitly.
+> The repo `.npmrc` sets `ignore-scripts=true` to block dependency lifecycle scripts as a supply-chain hardening measure. pnpm still runs the project's own `prepare` lifecycle (so husky hooks install during `pnpm install`). Build scripts for `esbuild` and `msw` are explicitly disallowed via `allowBuilds` in `pnpm-workspace.yaml`; vendored artefacts (e.g. `public/mockServiceWorker.js`) are committed instead. If you ever pull a dep that genuinely needs its install script, flip the `allowBuilds` entry to `true`.
 
 ## Scripts
 
-| Command                    | Description                                |
-| -------------------------- | ------------------------------------------ |
-| `npm run dev`              | Start dev server                           |
-| `npm run dev:mock`         | Start with mock data (no cluster)          |
-| `npm run build`            | Type check + build                         |
-| `npm run preview`          | Preview production build                   |
-| `npm run lint`             | Run ESLint                                 |
-| `npm run lint:fix`         | Run ESLint with autofix                    |
-| `npm run format`           | Format with Prettier                       |
-| `npm run format:check`     | Check formatting                           |
-| `npm run typecheck`        | Run TypeScript checker                     |
-| `npm run fixtures:capture` | Re-capture mock fixtures from live cluster |
+| Command                     | Description                                |
+| --------------------------- | ------------------------------------------ |
+| `pnpm run dev`              | Start dev server                           |
+| `pnpm run dev:mock`         | Start with mock data (no cluster)          |
+| `pnpm run build`            | Type check + build                         |
+| `pnpm run preview`          | Preview production build                   |
+| `pnpm run lint`             | Run ESLint                                 |
+| `pnpm run lint:fix`         | Run ESLint with autofix                    |
+| `pnpm run format`           | Format with Prettier                       |
+| `pnpm run format:check`     | Check formatting                           |
+| `pnpm run typecheck`        | Run TypeScript checker                     |
+| `pnpm run fixtures:capture` | Re-capture mock fixtures from live cluster |
 
 ## Adding shadcn/ui Components
 
 ```bash
-npx shadcn@latest init
-npx shadcn@latest add button
+pnpm dlx shadcn@latest init
+pnpm dlx shadcn@latest add button
 ```
 
 ## CE/EE Edition Split

@@ -1,0 +1,8 @@
+minimumReleaseAge: 7
+
+allowBuilds:
+  esbuild: false
+  msw: false
+
+overrides:
+  dompurify: ^3.3.2
