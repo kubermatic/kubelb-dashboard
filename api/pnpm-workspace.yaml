@@ -2,3 +2,8 @@ minimumReleaseAge: 7
 
 allowBuilds:
   esbuild: false
+
+overrides:
+  ws: ^8.21.0
+  form-data: ^4.0.6
+  undici: ^7.28.0
