@@ -66,6 +66,9 @@ export const queryKeys = {
   auth: {
     session: () => ["auth", "session"] as const,
   },
+  appConfig: {
+    detect: () => ["app-config"] as const,
+  },
   gateways: {
     all: ["gateways"] as const,
     list: (ns?: string, labels?: string) =>

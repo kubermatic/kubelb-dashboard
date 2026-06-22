@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
-import { buildApp } from "./app.js";
-import { env } from "./env.js";
+import type { ComponentType } from "react";
 
-const app = await buildApp();
+export interface RowAction {
+  label: string;
+  icon?: ComponentType<{ className?: string }>;
+  onClick: () => void;
+  variant?: "default" | "destructive";
+  separator?: boolean;
+  mutating?: boolean;
+}
 
-await app.listen({ port: env.PORT, host: "0.0.0.0" });
+export interface RowActionsProps {
+  actions: RowAction[];
+}
+
+export function visibleRowActions(actions: RowAction[], readOnly: boolean): RowAction[] {
+  return readOnly ? actions.filter((action) => !action.mutating) : actions;
+}

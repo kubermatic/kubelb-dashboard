@@ -34,6 +34,7 @@ const envSchema = z
     OIDC_SCOPES: z.string().default("openid email profile groups offline_access"),
     SESSION_MAX_AGE: z.coerce.number().int().positive().default(86400),
     KUBECONFIG: z.string().optional(),
+    READ_ONLY: z.enum(["true", "false"]).default("false"),
   })
   .superRefine((data, ctx) => {
     const set = Object.keys(oidcFields).filter(
@@ -57,3 +58,5 @@ export const authEnabled =
   env.OIDC_CLIENT_ID !== undefined &&
   env.OIDC_CLIENT_SECRET !== undefined &&
   env.SESSION_SECRET !== undefined;
+
+export const readOnly = env.READ_ONLY === "true";

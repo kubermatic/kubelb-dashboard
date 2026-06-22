@@ -36,7 +36,7 @@ import { udpRouteHandlers } from "./handlers/udproutes";
 import { wafPolicyHandlers } from "./handlers/waf-policies";
 
 export const handlers = [
-  http.get("/api/config", () => HttpResponse.json({ authEnabled: true })),
+  http.get("/api/config", () => HttpResponse.json({ authEnabled: true, readOnly: false })),
 
   http.get("/auth/session", () => {
     const entered = sessionStorage.getItem("kubelb-mock-session");

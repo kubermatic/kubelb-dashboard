@@ -15,6 +15,7 @@
  */
 
 import type { KubeList, KubeStatus, WatchEvent } from "@/types/kubernetes";
+import { getCachedAppConfig } from "@/api/config";
 
 const KUBE_PREFIX = "/api/kube";
 
@@ -27,6 +28,19 @@ export class KubeApiError extends Error {
     this.name = "KubeApiError";
     this.status = status;
     this.code = status.code;
+  }
+}
+
+function assertWritable(): void {
+  if (getCachedAppConfig()?.readOnly) {
+    throw new KubeApiError({
+      kind: "Status",
+      apiVersion: "v1",
+      status: "Failure",
+      message: "Dashboard is running in read-only mode",
+      reason: "Forbidden",
+      code: 403,
+    });
   }
 }
 
@@ -89,6 +103,7 @@ export async function kubeList<T>(
 }
 
 export async function kubeCreate<T>(path: string, body: T): Promise<T> {
+  assertWritable();
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -102,6 +117,7 @@ export async function kubeCreate<T>(path: string, body: T): Promise<T> {
 }
 
 export async function kubeUpdate<T>(path: string, body: T): Promise<T> {
+  assertWritable();
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -115,6 +131,7 @@ export async function kubeUpdate<T>(path: string, body: T): Promise<T> {
 }
 
 export async function kubeDelete(path: string): Promise<void> {
+  assertWritable();
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "DELETE",
     credentials: "include",
@@ -125,6 +142,7 @@ export async function kubeDelete(path: string): Promise<void> {
 }
 
 export async function kubePatch<T>(path: string, patch: unknown): Promise<T> {
+  assertWritable();
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/strategic-merge-patch+json" },

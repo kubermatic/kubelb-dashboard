@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
-import { buildApp } from "./app.js";
-import { env } from "./env.js";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/api/query-keys";
+import { fetchAppConfig, getCachedAppConfig } from "@/api/config";
 
-const app = await buildApp();
+export function useReadOnly(): boolean {
+  const { data } = useQuery({
+    queryKey: queryKeys.appConfig.detect(),
+    queryFn: fetchAppConfig,
+    initialData: getCachedAppConfig,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+  });
 
-await app.listen({ port: env.PORT, host: "0.0.0.0" });
+  return data?.readOnly ?? false;
+}

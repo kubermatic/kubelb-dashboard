@@ -16,9 +16,14 @@
 
 export interface AppConfig {
   authEnabled: boolean;
+  readOnly: boolean;
 }
 
 let cachedConfig: AppConfig | null = null;
+
+export function getCachedAppConfig(): AppConfig | undefined {
+  return cachedConfig ?? undefined;
+}
 
 export async function fetchAppConfig(): Promise<AppConfig> {
   if (cachedConfig) return cachedConfig;

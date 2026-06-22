@@ -20,6 +20,7 @@ import { FileCode } from "lucide-react";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { useConfigs } from "@/hooks/use-config";
 import { useEdition } from "@/hooks/use-edition";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
 import yaml from "js-yaml";
 import type { Config, EnvoyProxy, ConfigSpec } from "@/types/kubelb";
@@ -367,6 +368,7 @@ function ConfigView({ config }: { config: Config }) {
 function Configuration() {
   const { data, isLoading, isError, error, refetch } = useConfigs();
   const updateConfig = useUpdateConfig();
+  const readOnly = useReadOnly();
 
   const [yamlOpen, setYamlOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -419,9 +421,11 @@ function Configuration() {
               <FileCode />
               View YAML
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
+            {!readOnly && (
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
           </div>
         )}
       </div>

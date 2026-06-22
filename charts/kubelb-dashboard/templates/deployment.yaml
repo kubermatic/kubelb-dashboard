@@ -88,8 +88,12 @@ spec:
               port: api
             initialDelaySeconds: 3
             periodSeconds: 5
-          {{- if or .Values.kubeconfig.existingSecret .Values.auth.enabled }}
+          {{- if or .Values.kubeconfig.existingSecret .Values.auth.enabled .Values.readOnly }}
           env:
+          {{- if .Values.readOnly }}
+            - name: READ_ONLY
+              value: "true"
+          {{- end }}
           {{- if .Values.kubeconfig.existingSecret }}
             - name: KUBECONFIG
               value: /etc/kubelb/kubeconfig

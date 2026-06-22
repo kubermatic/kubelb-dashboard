@@ -38,6 +38,7 @@ import { AgeCell } from "@/components/common/age-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEdition } from "@/hooks/use-edition";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useNamespaces } from "@/hooks/use-namespaces";
 import { useTenants } from "@/hooks/use-tenants";
 import { useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/hooks/use-tenant-mutations";
@@ -63,6 +64,7 @@ function FeatureBadge({ enabled }: { enabled: boolean }) {
 
 function Tenants() {
   const { isEE } = useEdition();
+  const readOnly = useReadOnly();
   const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } = useTenants();
   const { data: namespacesData } = useNamespaces();
   const navigate = useNavigate();
@@ -214,6 +216,7 @@ function Tenants() {
             {
               label: "Edit",
               icon: Pencil,
+              mutating: true,
               onClick: () => setEditResource(row.original),
             },
             {
@@ -221,6 +224,7 @@ function Tenants() {
               icon: Trash2,
               variant: "destructive",
               separator: true,
+              mutating: true,
               onClick: () => setDeleteResource(row.original),
             },
           ]}
@@ -250,10 +254,12 @@ function Tenants() {
           title="No tenants found"
           description="Get started by creating your first tenant."
           action={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Create Tenant
-            </Button>
+            readOnly ? undefined : (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create Tenant
+              </Button>
+            )
           }
         />
       ) : (
@@ -264,10 +270,12 @@ function Tenants() {
           searchColumn="name"
           searchPlaceholder="Search tenants..."
           toolbarLeading={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Create Tenant
-            </Button>
+            readOnly ? undefined : (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create Tenant
+              </Button>
+            )
           }
           onRefresh={() => void refetch()}
           isRefetching={isRefetching}
@@ -284,8 +292,8 @@ function Tenants() {
               params: { name: row.original.metadata.name },
             });
           }}
-          enableRowSelection
-          onDeleteSelected={setBulkDeleteItems}
+          enableRowSelection={!readOnly}
+          onDeleteSelected={readOnly ? undefined : setBulkDeleteItems}
           isDeletePending={isBulkDeleting}
         />
       )}

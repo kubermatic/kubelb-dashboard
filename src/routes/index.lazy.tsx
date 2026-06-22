@@ -49,6 +49,7 @@ import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useTenants } from "@/hooks/use-tenants";
 import { useWAFPolicies } from "@/hooks/use-waf-policies";
 import { useEdition } from "@/hooks/use-edition";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { getLoadBalancerHealthStatus, getRouteHealthStatus } from "@/lib/status-mapper";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -241,6 +242,7 @@ data: {}
 
 function Overview() {
   const { isEE } = useEdition();
+  const readOnly = useReadOnly();
   const tenantQuery = useTenants();
   const lbQuery = useLoadBalancers();
   const routeQuery = useRoutes();
@@ -495,24 +497,26 @@ function Overview() {
         </div>
       </div>
 
-      <div>
-        <h2 className="mb-3 font-condensed text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          Quick Actions
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setCreateTenantOpen(true)}>
-            <Plus className="size-4" /> Create Tenant
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setCreateSyncSecretOpen(true)}>
-            <Plus className="size-4" /> Create Sync Secret
-          </Button>
-          {isEE && (
-            <Button size="sm" variant="outline" onClick={() => setCreateWafOpen(true)}>
-              <Plus className="size-4" /> Create WAF Policy
+      {!readOnly && (
+        <div>
+          <h2 className="mb-3 font-condensed text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+            Quick Actions
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setCreateTenantOpen(true)}>
+              <Plus className="size-4" /> Create Tenant
             </Button>
-          )}
+            <Button size="sm" variant="outline" onClick={() => setCreateSyncSecretOpen(true)}>
+              <Plus className="size-4" /> Create Sync Secret
+            </Button>
+            {isEE && (
+              <Button size="sm" variant="outline" onClick={() => setCreateWafOpen(true)}>
+                <Plus className="size-4" /> Create WAF Policy
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <TenantFormDialog
         open={createTenantOpen}
