@@ -58,7 +58,7 @@ export const navItems: NavItem[] = [
   { label: "Configuration", to: "/configuration", icon: Settings },
   { label: "WAF Policies", to: "/waf-policies", icon: ShieldAlert, ee: true },
   {
-    label: "AI Gateway",
+    label: "AI & MCP Gateways",
     to: "/ai-gateway",
     icon: Bot,
     requiresAgentgateway: true,

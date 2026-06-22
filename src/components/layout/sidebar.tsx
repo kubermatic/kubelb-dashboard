@@ -32,7 +32,7 @@ const navGroups = {
   resources: ["Tenants", "Load Balancers", "Routes", "Sync Secrets"],
   infrastructure: ["Envoy Proxy", "Configuration"],
   security: ["WAF Policies"],
-  ai: ["AI Gateway"],
+  ai: ["AI & MCP Gateways"],
 };
 
 function NavLinks({
@@ -265,7 +265,7 @@ function NavLinks({
             className="animate-enter mt-6"
             style={{ "--enter-delay": "150ms" } as React.CSSProperties}
           >
-            {sectionLabel("AI & MCP")}
+            {sectionLabel("AI")}
             <div className="space-y-1">{aiItems.map(renderItem)}</div>
           </div>
         )}

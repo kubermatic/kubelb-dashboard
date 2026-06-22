@@ -140,7 +140,7 @@ function AgentgatewayBackendDetail() {
         <ResourceNotFound
           resourceKind="AgentgatewayBackend"
           backHref="/ai-gateway"
-          backLabel="AI Gateway"
+          backLabel="AI & MCP Gateways"
         />
       );
     }
@@ -160,7 +160,7 @@ function AgentgatewayBackendDetail() {
           kind="AgentgatewayBackend"
           createdAt={backend.metadata.creationTimestamp}
           backHref="/ai-gateway"
-          backLabel="AI Gateway"
+          backLabel="AI & MCP Gateways"
         />
         <Button variant="outline" size="sm" onClick={() => setYamlOpen(true)}>
           <FileCode />

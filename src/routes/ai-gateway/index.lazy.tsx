@@ -236,7 +236,7 @@ function AIGateway() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="AI Gateway"
+        title="AI & MCP Gateways"
         description="LLM providers and MCP tool servers federated through agentgateway."
       />
 
