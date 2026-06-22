@@ -62,8 +62,10 @@
 
 ## AgentgatewayBackend (EE + agentgateway addon)
 
-`agentgateway.dev/v1alpha1`, namespaced. Surfaced read-only on `/ai-gateway`. Gated on
-`isEE` **and** a separate CRD discovery probe (the addon may be absent on an EE cluster).
+`agentgateway.dev/v1alpha1`, namespaced. Surfaced read-only on `/ai-gateway`. Gated solely
+on a CRD discovery probe for `agentgatewaybackends.agentgateway.dev` — the addon is EE-only,
+so its presence already implies EE. It is deliberately **not** coupled to the WAF-based
+`isEE` signal, since an EE cluster can have the agentgateway addon without the WAF addon.
 
 | Field                           | Notes                                                                 |
 | ------------------------------- | --------------------------------------------------------------------- |

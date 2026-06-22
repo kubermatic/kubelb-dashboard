@@ -19,7 +19,6 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
 import { useKubeList } from "@/hooks/use-kube-list";
-import { useEdition } from "@/hooks/use-edition";
 import { API_PATHS } from "@/lib/constants";
 import type { AgentgatewayBackend } from "@/types/agentgateway";
 
@@ -43,21 +42,18 @@ async function detectAvailability(): Promise<boolean> {
 }
 
 export function useAgentgatewayAvailable() {
-  const { isEE, loading: editionLoading } = useEdition();
-
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.agentgateway.available(),
     queryFn: detectAvailability,
     initialData: getCachedAvailability,
-    enabled: isEE,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,
   });
 
   return {
-    available: isEE && data === true,
-    loading: editionLoading || (isEE && isLoading),
+    available: data === true,
+    loading: isLoading,
   };
 }
 
