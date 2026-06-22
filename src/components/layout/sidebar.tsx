@@ -265,7 +265,7 @@ function NavLinks({
             className="animate-enter mt-6"
             style={{ "--enter-delay": "150ms" } as React.CSSProperties}
           >
-            {sectionLabel("AI")}
+            {sectionLabel("AI & MCP")}
             <div className="space-y-1">{aiItems.map(renderItem)}</div>
           </div>
         )}
