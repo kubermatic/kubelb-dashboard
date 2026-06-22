@@ -18,6 +18,7 @@ import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
 import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
 import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
+import { Route as AiGatewayIndexRouteImport } from "./routes/ai-gateway/index"
 import { Route as WafPoliciesNameRouteImport } from "./routes/waf-policies/$name"
 import { Route as TenantsNameRouteImport } from "./routes/tenants/$name"
 import { Route as RoutesDownstreamRouteImport } from "./routes/routes/downstream"
@@ -26,6 +27,7 @@ import { Route as SyncSecretsNamespaceNameRouteImport } from "./routes/sync-secr
 import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namespace.$name"
 import { Route as LoadBalancersNamespaceNameRouteImport } from "./routes/load-balancers/$namespace.$name"
 import { Route as EnvoyProxyNamespaceNameRouteImport } from "./routes/envoy-proxy/$namespace.$name"
+import { Route as AiGatewayNamespaceNameRouteImport } from "./routes/ai-gateway/$namespace.$name"
 
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
@@ -81,6 +83,13 @@ const ConfigurationIndexRoute = ConfigurationIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
   import("./routes/configuration/index.lazy").then((d) => d.Route),
+)
+const AiGatewayIndexRoute = AiGatewayIndexRouteImport.update({
+  id: "/ai-gateway/",
+  path: "/ai-gateway/",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/ai-gateway/index.lazy").then((d) => d.Route),
 )
 const WafPoliciesNameRoute = WafPoliciesNameRouteImport.update({
   id: "/waf-policies/$name",
@@ -140,6 +149,13 @@ const EnvoyProxyNamespaceNameRoute = EnvoyProxyNamespaceNameRouteImport.update({
 } as any).lazy(() =>
   import("./routes/envoy-proxy/$namespace.$name.lazy").then((d) => d.Route),
 )
+const AiGatewayNamespaceNameRoute = AiGatewayNamespaceNameRouteImport.update({
+  id: "/ai-gateway/$namespace/$name",
+  path: "/ai-gateway/$namespace/$name",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/ai-gateway/$namespace.$name.lazy").then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
@@ -148,6 +164,7 @@ export interface FileRoutesByFullPath {
   "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
+  "/ai-gateway/": typeof AiGatewayIndexRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
@@ -155,6 +172,7 @@ export interface FileRoutesByFullPath {
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
   "/waf-policies/": typeof WafPoliciesIndexRoute
+  "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
@@ -167,6 +185,7 @@ export interface FileRoutesByTo {
   "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
+  "/ai-gateway": typeof AiGatewayIndexRoute
   "/configuration": typeof ConfigurationIndexRoute
   "/envoy-proxy": typeof EnvoyProxyIndexRoute
   "/load-balancers": typeof LoadBalancersIndexRoute
@@ -174,6 +193,7 @@ export interface FileRoutesByTo {
   "/sync-secrets": typeof SyncSecretsIndexRoute
   "/tenants": typeof TenantsIndexRoute
   "/waf-policies": typeof WafPoliciesIndexRoute
+  "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
@@ -187,6 +207,7 @@ export interface FileRoutesById {
   "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
+  "/ai-gateway/": typeof AiGatewayIndexRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
@@ -194,6 +215,7 @@ export interface FileRoutesById {
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
   "/waf-policies/": typeof WafPoliciesIndexRoute
+  "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
@@ -208,6 +230,7 @@ export interface FileRouteTypes {
     | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
+    | "/ai-gateway/"
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
@@ -215,6 +238,7 @@ export interface FileRouteTypes {
     | "/sync-secrets/"
     | "/tenants/"
     | "/waf-policies/"
+    | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
@@ -227,6 +251,7 @@ export interface FileRouteTypes {
     | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
+    | "/ai-gateway"
     | "/configuration"
     | "/envoy-proxy"
     | "/load-balancers"
@@ -234,6 +259,7 @@ export interface FileRouteTypes {
     | "/sync-secrets"
     | "/tenants"
     | "/waf-policies"
+    | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
@@ -246,6 +272,7 @@ export interface FileRouteTypes {
     | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
+    | "/ai-gateway/"
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
@@ -253,6 +280,7 @@ export interface FileRouteTypes {
     | "/sync-secrets/"
     | "/tenants/"
     | "/waf-policies/"
+    | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
@@ -266,6 +294,7 @@ export interface RootRouteChildren {
   RoutesDownstreamRoute: typeof RoutesDownstreamRoute
   TenantsNameRoute: typeof TenantsNameRoute
   WafPoliciesNameRoute: typeof WafPoliciesNameRoute
+  AiGatewayIndexRoute: typeof AiGatewayIndexRoute
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
   EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
   LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
@@ -273,6 +302,7 @@ export interface RootRouteChildren {
   SyncSecretsIndexRoute: typeof SyncSecretsIndexRoute
   TenantsIndexRoute: typeof TenantsIndexRoute
   WafPoliciesIndexRoute: typeof WafPoliciesIndexRoute
+  AiGatewayNamespaceNameRoute: typeof AiGatewayNamespaceNameRoute
   EnvoyProxyNamespaceNameRoute: typeof EnvoyProxyNamespaceNameRoute
   LoadBalancersNamespaceNameRoute: typeof LoadBalancersNamespaceNameRoute
   RoutesNamespaceNameRoute: typeof RoutesNamespaceNameRoute
@@ -344,6 +374,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ConfigurationIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/ai-gateway/": {
+      id: "/ai-gateway/"
+      path: "/ai-gateway"
+      fullPath: "/ai-gateway/"
+      preLoaderRoute: typeof AiGatewayIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/waf-policies/$name": {
       id: "/waf-policies/$name"
       path: "/waf-policies/$name"
@@ -400,6 +437,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof EnvoyProxyNamespaceNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/ai-gateway/$namespace/$name": {
+      id: "/ai-gateway/$namespace/$name"
+      path: "/ai-gateway/$namespace/$name"
+      fullPath: "/ai-gateway/$namespace/$name"
+      preLoaderRoute: typeof AiGatewayNamespaceNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -410,6 +454,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoutesDownstreamRoute: RoutesDownstreamRoute,
   TenantsNameRoute: TenantsNameRoute,
   WafPoliciesNameRoute: WafPoliciesNameRoute,
+  AiGatewayIndexRoute: AiGatewayIndexRoute,
   ConfigurationIndexRoute: ConfigurationIndexRoute,
   EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
   LoadBalancersIndexRoute: LoadBalancersIndexRoute,
@@ -417,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   SyncSecretsIndexRoute: SyncSecretsIndexRoute,
   TenantsIndexRoute: TenantsIndexRoute,
   WafPoliciesIndexRoute: WafPoliciesIndexRoute,
+  AiGatewayNamespaceNameRoute: AiGatewayNamespaceNameRoute,
   EnvoyProxyNamespaceNameRoute: EnvoyProxyNamespaceNameRoute,
   LoadBalancersNamespaceNameRoute: LoadBalancersNamespaceNameRoute,
   RoutesNamespaceNameRoute: RoutesNamespaceNameRoute,

@@ -20,6 +20,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { ChevronRight, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useEdition } from "@/hooks/use-edition";
+import { useAgentgatewayAvailable } from "@/hooks/use-agentgateway";
 import { cn } from "@/lib/utils";
 import { navItems, type NavItem } from "@/lib/nav-items";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,18 +32,27 @@ const navGroups = {
   resources: ["Tenants", "Load Balancers", "Routes", "Sync Secrets"],
   infrastructure: ["Envoy Proxy", "Configuration"],
   security: ["WAF Policies"],
+  ai: ["AI & MCP Gateways"],
 };
 
 function NavLinks({
   collapsed,
   onNavigate,
   ee,
+  agentgatewayAvailable,
 }: {
   collapsed: boolean;
   onNavigate?: () => void;
   ee?: boolean;
+  agentgatewayAvailable?: boolean;
 }) {
-  const filtered = useMemo(() => navItems.filter((item) => !item.ee || ee), [ee]);
+  const filtered = useMemo(
+    () =>
+      navItems.filter(
+        (item) => (!item.ee || ee) && (!item.requiresAgentgateway || agentgatewayAvailable),
+      ),
+    [ee, agentgatewayAvailable],
+  );
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
   const { pathname } = useLocation();
 
@@ -196,12 +206,13 @@ function NavLinks({
     );
   };
 
-  const { mainItems, resourceItems, infraItems, securityItems } = useMemo(
+  const { mainItems, resourceItems, infraItems, securityItems, aiItems } = useMemo(
     () => ({
       mainItems: filtered.filter((item) => navGroups.main.includes(item.label)),
       resourceItems: filtered.filter((item) => navGroups.resources.includes(item.label)),
       infraItems: filtered.filter((item) => navGroups.infrastructure.includes(item.label)),
       securityItems: filtered.filter((item) => navGroups.security.includes(item.label)),
+      aiItems: filtered.filter((item) => navGroups.ai.includes(item.label)),
     }),
     [filtered],
   );
@@ -248,6 +259,17 @@ function NavLinks({
           </div>
         )}
 
+        {/* AI (EE + agentgateway addon) */}
+        {aiItems.length > 0 && (
+          <div
+            className="animate-enter mt-6"
+            style={{ "--enter-delay": "150ms" } as React.CSSProperties}
+          >
+            {sectionLabel("AI")}
+            <div className="space-y-1">{aiItems.map(renderItem)}</div>
+          </div>
+        )}
+
         {/* Infrastructure */}
         {infraItems.length > 0 && (
           <div
@@ -267,6 +289,7 @@ export function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const { isEE, loading: editionLoading } = useEdition();
+  const { available: agentgatewayAvailable } = useAgentgatewayAvailable();
 
   return (
     <aside
@@ -276,7 +299,7 @@ export function Sidebar() {
         collapsed ? "w-[72px]" : "w-[260px]",
       )}
     >
-      <NavLinks collapsed={collapsed} ee={isEE} />
+      <NavLinks collapsed={collapsed} ee={isEE} agentgatewayAvailable={agentgatewayAvailable} />
 
       <div className="shrink-0 border-t border-sidebar-border">
         {!collapsed && !editionLoading && (
@@ -319,6 +342,7 @@ export function MobileSidebar() {
   const open = useUIStore((s) => s.mobileSidebarOpen);
   const close = useUIStore((s) => s.closeMobileSidebar);
   const { isEE } = useEdition();
+  const { available: agentgatewayAvailable } = useAgentgatewayAvailable();
 
   useEffect(() => {
     if (!open) return;
@@ -349,7 +373,12 @@ export function MobileSidebar() {
             <X className="size-5" />
           </button>
         </div>
-        <NavLinks collapsed={false} onNavigate={close} ee={isEE} />
+        <NavLinks
+          collapsed={false}
+          onNavigate={close}
+          ee={isEE}
+          agentgatewayAvailable={agentgatewayAvailable}
+        />
       </aside>
     </div>
   );

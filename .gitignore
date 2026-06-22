@@ -35,3 +35,5 @@ docs/plans/
 ## Claude Code
 .claude/settings.local.json
 .claude/worktrees/
+docs/superpowers/
+plans/

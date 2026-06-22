@@ -21,6 +21,9 @@ export const API_VERSION = `${API_GROUP}/v1alpha1`;
 
 export const API_BASE = `/apis/${API_VERSION}`;
 
+export const AGENTGATEWAY_API_GROUP = "agentgateway.dev";
+export const AGENTGATEWAY_API_BASE = `/apis/${AGENTGATEWAY_API_GROUP}/v1alpha1`;
+
 export const API_PATHS = {
   tenants: `${API_BASE}/tenants`,
   configs: (ns: string) => `${API_BASE}/namespaces/${ns}/configs`,
@@ -30,6 +33,9 @@ export const API_PATHS = {
   addresses: (ns: string) => `${API_BASE}/namespaces/${ns}/addresses`,
   wafPolicies: `${API_BASE}/wafpolicies`,
   namespaces: `${API_BASE}/namespaces`,
+  agentgatewayBackends: `${AGENTGATEWAY_API_BASE}/agentgatewaybackends`,
+  agentgatewayBackend: (ns: string) =>
+    `${AGENTGATEWAY_API_BASE}/namespaces/${ns}/agentgatewaybackends`,
 } as const;
 
 export const KUBELB_LABELS = {

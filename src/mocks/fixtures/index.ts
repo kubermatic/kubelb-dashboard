@@ -16,6 +16,7 @@
 
 export type { GenericResource } from "./types";
 export { addresses } from "./addresses";
+export { agentgatewayBackends } from "./agentgateway-backends";
 export { backendTrafficPolicies } from "./backend-traffic-policies";
 export { clientTrafficPolicies } from "./client-traffic-policies";
 export { configs } from "./configs";
