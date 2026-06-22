@@ -88,15 +88,19 @@ export const agentgatewayBackends: AgentgatewayBackend[] = [
         targets: [
           {
             name: "website-fetcher",
-            backendRef: { name: "mcp-website-fetcher" },
-            port: 80,
-            protocol: "SSE",
+            static: {
+              host: "mcp-website-fetcher.kubelb.svc.cluster.local",
+              port: 80,
+              protocol: "SSE",
+            },
           },
           {
             name: "github-tools",
-            backendRef: { name: "mcp-github" },
-            port: 8080,
-            protocol: "SSE",
+            static: {
+              host: "mcp-github.kubelb.svc.cluster.local",
+              port: 8080,
+              protocol: "SSE",
+            },
           },
         ],
       },

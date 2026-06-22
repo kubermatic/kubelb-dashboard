@@ -28,6 +28,7 @@ export interface AgentgatewayAISpec {
 export interface AgentgatewayMCPTarget {
   name: string;
   backendRef?: { name: string; group?: string; kind?: string };
+  static?: { host?: string; port?: number; protocol?: string };
   port?: number;
   protocol?: string;
 }

@@ -102,22 +102,27 @@ function MCPTargetsCard({ backend }: { backend: AgentgatewayBackend }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Service</TableHead>
+                <TableHead>Host</TableHead>
                 <TableHead>Port</TableHead>
                 <TableHead>Protocol</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {targets.map((t) => (
-                <TableRow key={t.name}>
-                  <TableCell className="font-medium">{t.name}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.backendRef?.name ?? "—"}</TableCell>
-                  <TableCell>{t.port ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{t.protocol ?? "—"}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {targets.map((t) => {
+                const host = t.backendRef?.name ?? t.static?.host;
+                const port = t.port ?? t.static?.port;
+                const protocol = t.protocol ?? t.static?.protocol;
+                return (
+                  <TableRow key={t.name}>
+                    <TableCell className="font-medium">{t.name}</TableCell>
+                    <TableCell className="font-mono text-xs">{host ?? "—"}</TableCell>
+                    <TableCell>{port ?? "—"}</TableCell>
+                    <TableCell>
+                      {protocol ? <Badge variant="outline">{protocol}</Badge> : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         ) : (
