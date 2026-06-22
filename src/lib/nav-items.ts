@@ -61,7 +61,6 @@ export const navItems: NavItem[] = [
     label: "AI Gateway",
     to: "/ai-gateway",
     icon: Bot,
-    ee: true,
     requiresAgentgateway: true,
   },
 ];

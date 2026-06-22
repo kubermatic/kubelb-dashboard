@@ -27,10 +27,16 @@ function getCachedEdition(): Edition | undefined {
 }
 
 async function detectEdition(): Promise<Edition> {
-  const res = await fetch("/api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies");
-  const edition = res.ok ? "ee" : "ce";
-  localStorage.setItem(STORAGE_KEY, edition);
-  return edition;
+  const res = await fetch("/api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies?limit=1");
+  if (res.ok) {
+    localStorage.setItem(STORAGE_KEY, "ee");
+    return "ee";
+  }
+  if (res.status === 404) {
+    localStorage.setItem(STORAGE_KEY, "ce");
+    return "ce";
+  }
+  throw new Error(`edition probe failed: ${String(res.status)}`);
 }
 
 export function useEdition() {
@@ -40,7 +46,6 @@ export function useEdition() {
     initialData: getCachedEdition,
     staleTime: Infinity,
     gcTime: Infinity,
-    retry: false,
   });
 
   return {

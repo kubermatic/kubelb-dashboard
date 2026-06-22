@@ -36,9 +36,15 @@ async function detectAvailability(): Promise<boolean> {
   const res = await fetch(`${KUBE_PREFIX}${API_PATHS.agentgatewayBackends}?limit=1`, {
     credentials: "include",
   });
-  const available = res.ok;
-  localStorage.setItem(STORAGE_KEY, String(available));
-  return available;
+  if (res.ok) {
+    localStorage.setItem(STORAGE_KEY, "true");
+    return true;
+  }
+  if (res.status === 404) {
+    localStorage.setItem(STORAGE_KEY, "false");
+    return false;
+  }
+  throw new Error(`agentgateway probe failed: ${String(res.status)}`);
 }
 
 export function useAgentgatewayAvailable() {
@@ -48,7 +54,6 @@ export function useAgentgatewayAvailable() {
     initialData: getCachedAvailability,
     staleTime: Infinity,
     gcTime: Infinity,
-    retry: false,
   });
 
   return {
