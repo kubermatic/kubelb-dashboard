@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteSyncSecret, useUpdateSyncSecret } from "@/hooks/use-sync-secret-mutations";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useSyncSecret } from "@/hooks/use-sync-secrets";
 import { KUBELB_LABELS } from "@/lib/constants";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
@@ -58,6 +59,7 @@ function SyncSecretDetail() {
   const { data: secret, isLoading, error, refetch } = useSyncSecret(namespace, name);
   const updateSyncSecret = useUpdateSyncSecret();
   const deleteSyncSecret = useDeleteSyncSecret();
+  const readOnly = useReadOnly();
 
   const [yamlOpen, setYamlOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -98,12 +100,16 @@ function SyncSecretDetail() {
             <FileCode />
             View YAML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
-            Delete
-          </Button>
+          {!readOnly && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

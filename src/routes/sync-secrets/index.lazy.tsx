@@ -29,6 +29,7 @@ import { TenantSelector } from "@/components/common/tenant-selector";
 import { QueryError } from "@/components/common/query-error";
 import { YamlEditorDialog } from "@/components/common/yaml-editor-dialog";
 import { RowActions } from "@/components/common/row-actions";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Button } from "@/components/ui/button";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
@@ -74,6 +75,7 @@ function SyncSecrets() {
   const createSyncSecret = useCreateSyncSecret();
   const updateSyncSecret = useUpdateSyncSecret();
   const deleteSyncSecret = useDeleteSyncSecret();
+  const readOnly = useReadOnly();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [yamlViewerResource, setYamlViewerResource] = useState<SyncSecret | null>(null);
@@ -160,6 +162,7 @@ function SyncSecrets() {
             {
               label: "Edit",
               icon: Pencil,
+              mutating: true,
               onClick: () => setEditResource(row.original),
             },
             {
@@ -167,6 +170,7 @@ function SyncSecrets() {
               icon: Trash2,
               variant: "destructive" as const,
               separator: true,
+              mutating: true,
               onClick: () => setDeleteResource(row.original),
             },
           ]}
@@ -201,10 +205,12 @@ function SyncSecrets() {
           searchPlaceholder="Search sync secrets..."
           toolbarLeading={
             <>
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus />
-                Create Sync Secret
-              </Button>
+              {!readOnly && (
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
+                  <Plus />
+                  Create Sync Secret
+                </Button>
+              )}
               <TenantSelector />
             </>
           }
@@ -224,8 +230,8 @@ function SyncSecrets() {
               params: { namespace: namespace ?? "default", name },
             });
           }}
-          enableRowSelection
-          onDeleteSelected={setBulkDeleteItems}
+          enableRowSelection={!readOnly}
+          onDeleteSelected={readOnly ? undefined : setBulkDeleteItems}
           isDeletePending={isBulkDeleting}
         />
       )}

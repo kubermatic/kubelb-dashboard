@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { type ComponentType } from "react";
+import React from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -26,24 +26,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface RowAction {
-  label: string;
-  icon?: ComponentType<{ className?: string }>;
-  onClick: () => void;
-  variant?: "default" | "destructive";
-  separator?: boolean;
-}
-
-interface RowActionsProps {
-  actions: RowAction[];
-}
+import { useReadOnly } from "@/hooks/use-read-only";
+import { visibleRowActions, type RowAction, type RowActionsProps } from "./row-actions.helpers";
 
 function stopRowEvent(e: React.MouseEvent | React.PointerEvent) {
   e.stopPropagation();
 }
 
 export function RowActions({ actions }: RowActionsProps) {
+  const readOnly = useReadOnly();
+  const visibleActions = visibleRowActions(actions, readOnly);
+
+  if (visibleActions.length === 0) return null;
+
   return (
     <DropdownMenu>
       <div role="presentation" onPointerDown={stopRowEvent} onClick={stopRowEvent}>
@@ -58,7 +53,7 @@ export function RowActions({ actions }: RowActionsProps) {
       </div>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          {actions.map((action) => (
+          {visibleActions.map((action) => (
             <React.Fragment key={action.label}>
               {action.separator && <DropdownMenuSeparator />}
               <DropdownMenuItem variant={action.variant} onClick={action.onClick}>

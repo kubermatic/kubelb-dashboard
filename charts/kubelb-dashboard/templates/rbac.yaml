@@ -8,7 +8,11 @@ metadata:
 rules:
   - apiGroups: ["kubelb.k8c.io"]
     resources: ["tenants", "configs", "syncsecrets", "wafpolicies", "loadbalancers", "routes", "addresses"]
+    {{- if .Values.readOnly }}
+    verbs: ["get", "list", "watch"]
+    {{- else }}
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    {{- end }}
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "watch"]

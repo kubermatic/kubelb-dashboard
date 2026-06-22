@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-import { buildApp } from "./app.js";
-import { env } from "./env.js";
+import { defineConfig } from "vitest/config";
 
-const app = await buildApp();
-
-await app.listen({ port: env.PORT, host: "0.0.0.0" });
+export default defineConfig({
+  test: {
+    environment: "node",
+    globals: true,
+    include: ["src/**/*.test.ts"],
+  },
+});

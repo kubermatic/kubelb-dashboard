@@ -49,6 +49,7 @@ import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEdition } from "@/hooks/use-edition";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
@@ -77,6 +78,7 @@ function TenantDetail() {
   const { data: tenant, isLoading, error, refetch } = useTenant(name);
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
+  const readOnly = useReadOnly();
 
   const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -117,14 +119,18 @@ function TenantDetail() {
             <Download />
             Kubeconfig
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil />
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
-            <Trash2 />
-            Delete
-          </Button>
+          {!readOnly && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                <Pencil />
+                Edit
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 />
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

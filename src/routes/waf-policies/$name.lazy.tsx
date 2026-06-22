@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteWAFPolicy, useUpdateWAFPolicy } from "@/hooks/use-waf-policy-mutations";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useWAFPolicy } from "@/hooks/use-waf-policies";
 import type { WAFPolicy } from "@/types/kubelb";
 
@@ -46,6 +47,7 @@ function WAFPolicyDetail() {
   const { data: policy, isLoading, error, refetch } = useWAFPolicy(name);
   const updateWAFPolicy = useUpdateWAFPolicy();
   const deleteWAFPolicy = useDeleteWAFPolicy();
+  const readOnly = useReadOnly();
 
   const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -86,14 +88,18 @@ function WAFPolicyDetail() {
             <FileCode />
             View YAML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil />
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
-            <Trash2 />
-            Delete
-          </Button>
+          {!readOnly && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                <Pencil />
+                Edit
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 />
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

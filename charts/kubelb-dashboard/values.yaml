@@ -69,6 +69,12 @@ rbac:
   # -- Create RBAC resources (ClusterRole + ClusterRoleBinding)
   create: true
 
+# -- Run the dashboard in read-only mode. The API server rejects mutating
+# requests to the Kubernetes API and the UI hides all create/edit/delete
+# controls. When `rbac.create` is true, the ClusterRole is also narrowed to
+# read-only verbs (defense-in-depth).
+readOnly: false
+
 # -- Pod annotations
 podAnnotations: {}
 # -- Pod labels

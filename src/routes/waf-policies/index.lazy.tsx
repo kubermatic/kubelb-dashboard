@@ -29,6 +29,7 @@ import { QueryError } from "@/components/common/query-error";
 import { StatusBadge } from "@/components/common/status-badge";
 import { WAFPolicyFormDialog } from "@/components/common/waf-policy-form-dialog";
 import { RowActions } from "@/components/common/row-actions";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { YamlViewer } from "@/components/common/yaml-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ function WAFPolicies() {
   const createWAFPolicy = useCreateWAFPolicy();
   const updateWAFPolicy = useUpdateWAFPolicy();
   const deleteWAFPolicy = useDeleteWAFPolicy();
+  const readOnly = useReadOnly();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [yamlViewerResource, setYamlViewerResource] = useState<WAFPolicy | null>(null);
@@ -141,6 +143,7 @@ function WAFPolicies() {
             {
               label: "Edit",
               icon: Pencil,
+              mutating: true,
               onClick: () => setEditResource(row.original),
             },
             {
@@ -148,6 +151,7 @@ function WAFPolicies() {
               icon: Trash2,
               variant: "destructive",
               separator: true,
+              mutating: true,
               onClick: () => setDeleteResource(row.original),
             },
           ]}
@@ -174,10 +178,12 @@ function WAFPolicies() {
           title="No WAF policies found"
           description="Get started by creating your first WAF policy."
           action={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Create WAF Policy
-            </Button>
+            readOnly ? undefined : (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create WAF Policy
+              </Button>
+            )
           }
         />
       ) : (
@@ -188,10 +194,12 @@ function WAFPolicies() {
           searchColumn="name"
           searchPlaceholder="Search WAF policies..."
           toolbarLeading={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Create WAF Policy
-            </Button>
+            readOnly ? undefined : (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4" />
+                Create WAF Policy
+              </Button>
+            )
           }
           initialSearch={search}
           initialPage={page}
@@ -208,8 +216,8 @@ function WAFPolicies() {
               params: { name: row.original.metadata.name },
             });
           }}
-          enableRowSelection
-          onDeleteSelected={setBulkDeleteItems}
+          enableRowSelection={!readOnly}
+          onDeleteSelected={readOnly ? undefined : setBulkDeleteItems}
           isDeletePending={isBulkDeleting}
         />
       )}
