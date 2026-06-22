@@ -25,7 +25,7 @@ console.log(`API port: ${apiPort}`);
 const envFile = new URL("../.env", import.meta.url).pathname;
 const envFlag = existsSync(envFile) ? `--env-file=${envFile}` : "";
 const apiCmd = envFlag
-  ? `node ${envFlag} ./api/node_modules/.bin/tsx watch api/src/server.ts`
+  ? `node ${envFlag} ./api/node_modules/tsx/dist/cli.mjs watch api/src/server.ts`
   : "pnpm run dev:api";
 
 execSync(`pnpm exec concurrently -n fe,api -c cyan,magenta "pnpm run dev:frontend" "${apiCmd}"`, {
