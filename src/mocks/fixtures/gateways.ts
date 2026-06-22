@@ -589,8 +589,14 @@ export const gateways: GenericResource[] = [
       listeners: [
         {
           allowedRoutes: { namespaces: { from: "All" } },
+          name: "https",
+          port: 443,
+          protocol: "HTTPS",
+        },
+        {
+          allowedRoutes: { namespaces: { from: "All" } },
           name: "http",
-          port: 8080,
+          port: 80,
           protocol: "HTTP",
         },
       ],

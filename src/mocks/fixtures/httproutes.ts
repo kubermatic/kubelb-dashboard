@@ -114,4 +114,63 @@ export const httpRoutes: GenericResource[] = [
       ],
     },
   },
+  agentgatewayRoute("openai", "/openai"),
+  agentgatewayRoute("anthropic", "/anthropic"),
+  agentgatewayRoute("mcp", "/mcp", "mcp-backend"),
 ];
+
+function agentgatewayRoute(name: string, path: string, backendName = name): GenericResource {
+  return {
+    apiVersion: "gateway.networking.k8s.io/v1",
+    kind: "HTTPRoute",
+    metadata: {
+      creationTimestamp: "2026-04-10T08:55:30Z",
+      generation: 1,
+      name,
+      namespace: "kubelb",
+      resourceVersion: "401200",
+      uid: `agw-route-${name}`,
+    },
+    spec: {
+      hostnames: ["ai-gateway.kubelb.example.com"],
+      parentRefs: [
+        {
+          group: "gateway.networking.k8s.io",
+          kind: "Gateway",
+          name: "agentgateway-proxy",
+          namespace: "kubelb",
+        },
+      ],
+      rules: [
+        {
+          matches: [{ path: { type: "PathPrefix", value: path } }],
+          backendRefs: [
+            { group: "agentgateway.dev", kind: "AgentgatewayBackend", name: backendName },
+          ],
+        },
+      ],
+    },
+    status: {
+      parents: [
+        {
+          conditions: [
+            {
+              lastTransitionTime: "2026-04-10T09:00:50Z",
+              message: "Route is accepted",
+              observedGeneration: 1,
+              reason: "Accepted",
+              status: "True",
+              type: "Accepted",
+            },
+          ],
+          controllerName: "agentgateway.dev/gateway-controller",
+          parentRef: {
+            group: "gateway.networking.k8s.io",
+            kind: "Gateway",
+            name: "agentgateway-proxy",
+          },
+        },
+      ],
+    },
+  };
+}
