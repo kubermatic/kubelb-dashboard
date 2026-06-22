@@ -63,6 +63,14 @@ export const queryKeys = {
   edition: {
     detect: () => ["edition", "detect"] as const,
   },
+  agentgateway: {
+    available: () => ["agentgateway", "available"] as const,
+    backends: {
+      all: ["agentgatewaybackends"] as const,
+      list: () => ["agentgatewaybackends", "list"] as const,
+      detail: (ns: string, name: string) => ["agentgatewaybackends", "detail", ns, name] as const,
+    },
+  },
   auth: {
     session: () => ["auth", "session"] as const,
   },

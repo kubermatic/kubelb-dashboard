@@ -25,6 +25,7 @@ import {
   Settings,
   Server,
   GitBranch,
+  Bot,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -33,6 +34,7 @@ export interface NavItem {
   to: string;
   icon: LucideIcon;
   ee?: boolean;
+  requiresAgentgateway?: boolean;
   children?: NavItem[];
 }
 
@@ -55,4 +57,11 @@ export const navItems: NavItem[] = [
   { label: "Envoy Proxy", to: "/envoy-proxy", icon: Shield },
   { label: "Configuration", to: "/configuration", icon: Settings },
   { label: "WAF Policies", to: "/waf-policies", icon: ShieldAlert, ee: true },
+  {
+    label: "AI Gateway",
+    to: "/ai-gateway",
+    icon: Bot,
+    ee: true,
+    requiresAgentgateway: true,
+  },
 ];

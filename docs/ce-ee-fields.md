@@ -55,6 +55,18 @@
 
 ## EE-Only Resources
 
-| Resource  | Notes                           |
-| --------- | ------------------------------- |
-| WAFPolicy | Full CRUD, `/waf-policies` page |
+| Resource            | Notes                                                                           |
+| ------------------- | ------------------------------------------------------------------------------- |
+| WAFPolicy           | Full CRUD, `/waf-policies` page                                                 |
+| AgentgatewayBackend | Read-only, `/ai-gateway` page. EE + agentgateway addon (`agentgateway.dev` CRD) |
+
+## AgentgatewayBackend (EE + agentgateway addon)
+
+`agentgateway.dev/v1alpha1`, namespaced. Surfaced read-only on `/ai-gateway`. Gated on
+`isEE` **and** a separate CRD discovery probe (the addon may be absent on an EE cluster).
+
+| Field                           | Notes                                                                 |
+| ------------------------------- | --------------------------------------------------------------------- |
+| `spec.ai.provider.<name>.model` | LLM provider + model (openai, anthropic, gemini, mistral, ollama)     |
+| `spec.mcp.targets[]`            | Federated MCP tool servers (`name`, `backendRef`, `port`, `protocol`) |
+| `spec.policies.auth.secretRef`  | Provider/auth credential — **name only**, value never shown           |

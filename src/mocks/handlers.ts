@@ -16,6 +16,7 @@
 
 import { http, HttpResponse } from "msw";
 import { addressHandlers } from "./handlers/addresses";
+import { agentgatewayBackendHandlers } from "./handlers/agentgateway-backends";
 import { backendTrafficPolicyHandlers } from "./handlers/backend-traffic-policies";
 import { clientTrafficPolicyHandlers } from "./handlers/client-traffic-policies";
 import { configHandlers } from "./handlers/configs";
@@ -54,6 +55,7 @@ export const handlers = [
     return HttpResponse.json({ ok: true });
   }),
   ...addressHandlers,
+  ...agentgatewayBackendHandlers,
   ...tenantHandlers,
   ...configHandlers,
   ...loadBalancerHandlers,

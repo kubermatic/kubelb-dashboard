@@ -573,4 +573,75 @@ export const gateways: GenericResource[] = [
       ],
     },
   },
+  {
+    apiVersion: "gateway.networking.k8s.io/v1",
+    kind: "Gateway",
+    metadata: {
+      creationTimestamp: "2026-04-10T08:50:00Z",
+      generation: 1,
+      name: "agentgateway-proxy",
+      namespace: "kubelb",
+      resourceVersion: "401050",
+      uid: "9f8e7d6c-5b4a-3210-fedc-ba9876543210",
+    },
+    spec: {
+      gatewayClassName: "agentgateway",
+      listeners: [
+        {
+          allowedRoutes: { namespaces: { from: "All" } },
+          name: "http",
+          port: 8080,
+          protocol: "HTTP",
+        },
+      ],
+    },
+    status: {
+      addresses: [
+        {
+          type: "IPAddress",
+          value: "172.18.255.210",
+        },
+      ],
+      conditions: [
+        {
+          lastTransitionTime: "2026-04-10T09:00:50Z",
+          message: "The Gateway has been scheduled by agentgateway",
+          observedGeneration: 1,
+          reason: "Accepted",
+          status: "True",
+          type: "Accepted",
+        },
+        {
+          lastTransitionTime: "2026-04-10T09:00:50Z",
+          message: "The Gateway has been programmed",
+          observedGeneration: 1,
+          reason: "Programmed",
+          status: "True",
+          type: "Programmed",
+        },
+      ],
+      listeners: [
+        {
+          attachedRoutes: 2,
+          conditions: [
+            {
+              lastTransitionTime: "2026-04-10T09:00:50Z",
+              message: "Listener has been successfully translated",
+              observedGeneration: 1,
+              reason: "Programmed",
+              status: "True",
+              type: "Programmed",
+            },
+          ],
+          name: "http",
+          supportedKinds: [
+            {
+              group: "gateway.networking.k8s.io",
+              kind: "HTTPRoute",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
