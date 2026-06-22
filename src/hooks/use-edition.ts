@@ -27,7 +27,7 @@ function getCachedEdition(): Edition | undefined {
 }
 
 async function detectEdition(): Promise<Edition> {
-  const res = await fetch("/api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies?limit=1");
+  const res = await fetch("/api/kube/apis/kubelb.k8c.io/v1alpha1/wafpolicies");
   if (res.ok) {
     localStorage.setItem(STORAGE_KEY, "ee");
     return "ee";

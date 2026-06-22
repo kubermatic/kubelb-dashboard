@@ -33,7 +33,7 @@ function getCachedAvailability(): boolean | undefined {
 }
 
 async function detectAvailability(): Promise<boolean> {
-  const res = await fetch(`${KUBE_PREFIX}${API_PATHS.agentgatewayBackends}?limit=1`, {
+  const res = await fetch(`${KUBE_PREFIX}${API_PATHS.agentgatewayBackends}`, {
     credentials: "include",
   });
   if (res.ok) {
