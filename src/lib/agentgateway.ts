@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { AGENTGATEWAY_API_GROUP } from "@/lib/constants";
 import type { GenericResource } from "@/mocks/fixtures/types";
 import type { AgentgatewayBackend } from "@/types/agentgateway";
 import type { Condition } from "@/types/kubernetes";
@@ -116,4 +117,84 @@ export function gatewayProgrammedCondition(gateway: GenericResource): Condition 
     conditions.find((c) => c.type === "Accepted") ??
     conditions[0]
   );
+}
+
+export function gatewayScheme(gateway?: GenericResource): "https" | "http" {
+  if (!gateway) return "https";
+  const secure = gatewayListeners(gateway).some((l) => {
+    const proto = (l.protocol ?? "").toUpperCase();
+    return proto === "HTTPS" || proto === "TLS";
+  });
+  return secure ? "https" : "http";
+}
+
+interface HTTPRouteSpec {
+  hostnames?: string[];
+  parentRefs?: { name?: string; namespace?: string }[];
+  rules?: {
+    matches?: { path?: { type?: string; value?: string } }[];
+    backendRefs?: { group?: string; kind?: string; name?: string }[];
+  }[];
+}
+
+export interface BackendEndpoint {
+  url: string;
+  host: string;
+  path: string;
+  scheme: "https" | "http";
+  routeName: string;
+  routeNamespace?: string;
+}
+
+export function resolveBackendEndpoint(
+  backend: AgentgatewayBackend,
+  httpRoutes: GenericResource[],
+  gateways: GenericResource[],
+): BackendEndpoint | undefined {
+  const name = backend.metadata.name;
+  for (const route of httpRoutes) {
+    const spec = route.spec as HTTPRouteSpec | undefined;
+    if (!spec?.rules) continue;
+    for (const rule of spec.rules) {
+      const ref = rule.backendRefs?.find(
+        (b) => b.group === AGENTGATEWAY_API_GROUP && b.name === name,
+      );
+      if (!ref) continue;
+      const path = rule.matches?.[0]?.path?.value ?? "/";
+      const gateway = gateways.find((g) => g.metadata.name === spec.parentRefs?.[0]?.name);
+      const scheme = gatewayScheme(gateway);
+      const host = spec.hostnames?.[0] ?? (gateway ? gatewayAddress(gateway) : undefined);
+      if (!host) return undefined;
+      return {
+        url: `${scheme}://${host}${path}`,
+        host,
+        path,
+        scheme,
+        routeName: route.metadata.name,
+        routeNamespace: route.metadata.namespace,
+      };
+    }
+  }
+  return undefined;
+}
+
+export function backendUsageExample(
+  backend: AgentgatewayBackend,
+  endpoint: BackendEndpoint,
+): string {
+  const base = endpoint.url.replace(/\/$/, "");
+  if (backendKind(backend) === "ai") {
+    const model = aiModel(backend) ?? "<model>";
+    return [
+      `curl -s ${base}/v1/chat/completions \\`,
+      `  -H "Content-Type: application/json" \\`,
+      `  -d '{"model":"${model}","messages":[{"role":"user","content":"What is Kubernetes in one sentence?"}]}' | jq`,
+    ].join("\n");
+  }
+  return [
+    `curl -s ${base} \\`,
+    `  -H "Content-Type: application/json" \\`,
+    `  -H "Accept: application/json, text/event-stream" \\`,
+    `  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`,
+  ].join("\n");
 }

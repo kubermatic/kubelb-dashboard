@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAgentgatewayBackends } from "@/hooks/use-agentgateway";
 import { useGateways } from "@/hooks/use-gateways";
+import { useHTTPRoutes } from "@/hooks/use-httproutes";
 import {
   aiModel,
   aiProviderLabel,
@@ -41,7 +42,9 @@ import {
   gatewayProgrammedCondition,
   isAgentgateway,
   mcpTargetCount,
+  resolveBackendEndpoint,
   validCondition,
+  type BackendEndpoint,
 } from "@/lib/agentgateway";
 import type { GenericResource } from "@/mocks/fixtures/types";
 import type { AgentgatewayBackend } from "@/types/agentgateway";
@@ -95,49 +98,80 @@ function ageColumn(): ColumnDef<AgentgatewayBackend> {
   };
 }
 
-const aiColumns: ColumnDef<AgentgatewayBackend>[] = [
-  nameColumn(),
-  namespaceColumn(),
-  {
-    id: "provider",
-    header: "Provider",
-    cell: ({ row }) => <Badge variant="outline">{aiProviderLabel(row.original) ?? "—"}</Badge>,
-  },
-  {
-    id: "model",
-    header: "Model",
-    cell: ({ row }) => <span className="font-mono text-xs">{aiModel(row.original) ?? "—"}</span>,
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => statusCell(row.original),
-  },
-  ageColumn(),
-];
+type EndpointLookup = (backend: AgentgatewayBackend) => BackendEndpoint | undefined;
 
-const mcpColumns: ColumnDef<AgentgatewayBackend>[] = [
-  nameColumn(),
-  namespaceColumn(),
-  {
-    id: "targets",
-    header: "Targets",
+function endpointColumn(endpointFor: EndpointLookup): ColumnDef<AgentgatewayBackend> {
+  return {
+    id: "endpoint",
+    header: "Endpoint",
+    meta: { hideBelow: "lg" },
     cell: ({ row }) => {
-      const count = mcpTargetCount(row.original);
+      const ep = endpointFor(row.original);
+      if (!ep) return <span className="text-sm text-muted-foreground">Not routed</span>;
       return (
-        <span className="text-sm">
-          {count} {count === 1 ? "server" : "servers"}
+        <span className="flex items-center gap-1">
+          <span
+            className="max-w-[280px] truncate rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
+            title={ep.url}
+          >
+            {ep.url}
+          </span>
+          <CopyButton value={ep.url} />
         </span>
       );
     },
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => statusCell(row.original),
-  },
-  ageColumn(),
-];
+  };
+}
+
+function buildAiColumns(endpointFor: EndpointLookup): ColumnDef<AgentgatewayBackend>[] {
+  return [
+    nameColumn(),
+    namespaceColumn(),
+    {
+      id: "provider",
+      header: "Provider",
+      cell: ({ row }) => <Badge variant="outline">{aiProviderLabel(row.original) ?? "—"}</Badge>,
+    },
+    {
+      id: "model",
+      header: "Model",
+      cell: ({ row }) => <span className="font-mono text-xs">{aiModel(row.original) ?? "—"}</span>,
+    },
+    endpointColumn(endpointFor),
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => statusCell(row.original),
+    },
+    ageColumn(),
+  ];
+}
+
+function buildMcpColumns(endpointFor: EndpointLookup): ColumnDef<AgentgatewayBackend>[] {
+  return [
+    nameColumn(),
+    namespaceColumn(),
+    {
+      id: "targets",
+      header: "Targets",
+      cell: ({ row }) => {
+        const count = mcpTargetCount(row.original);
+        return (
+          <span className="text-sm">
+            {count} {count === 1 ? "server" : "servers"}
+          </span>
+        );
+      },
+    },
+    endpointColumn(endpointFor),
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => statusCell(row.original),
+    },
+    ageColumn(),
+  ];
+}
 
 function GatewaySummary({ gateways }: { gateways: GenericResource[] }) {
   return (
@@ -216,6 +250,7 @@ function AIGateway() {
 
   const backendsQuery = useAgentgatewayBackends();
   const gatewaysQuery = useGateways();
+  const httpRoutesQuery = useHTTPRoutes();
 
   const items = useMemo(() => backendsQuery.data?.items ?? [], [backendsQuery.data]);
   const aiBackends = useMemo(() => items.filter((b) => backendKind(b) === "ai"), [items]);
@@ -225,6 +260,26 @@ function AIGateway() {
     () => (gatewaysQuery.data?.items ?? []).filter(isAgentgateway),
     [gatewaysQuery.data],
   );
+
+  const endpointMap = useMemo(() => {
+    const routes = httpRoutesQuery.data?.items ?? [];
+    const gateways = gatewaysQuery.data?.items ?? [];
+    return new Map<string, BackendEndpoint | undefined>(
+      items.map((b) => [
+        `${b.metadata.namespace ?? ""}/${b.metadata.name}`,
+        resolveBackendEndpoint(b, routes, gateways),
+      ]),
+    );
+  }, [items, httpRoutesQuery.data, gatewaysQuery.data]);
+
+  const endpointFor = useMemo<EndpointLookup>(
+    () => (backend) =>
+      endpointMap.get(`${backend.metadata.namespace ?? ""}/${backend.metadata.name}`),
+    [endpointMap],
+  );
+
+  const aiColumns = useMemo(() => buildAiColumns(endpointFor), [endpointFor]);
+  const mcpColumns = useMemo(() => buildMcpColumns(endpointFor), [endpointFor]);
 
   const setTab = (value: string) =>
     void navigate({

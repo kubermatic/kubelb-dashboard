@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
 
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
+import { CopyButton } from "@/components/common/copy-button";
 import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
@@ -38,7 +39,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAgentgatewayBackend } from "@/hooks/use-agentgateway";
-import { aiModel, aiProviderLabel, backendKind } from "@/lib/agentgateway";
+import { useGateways } from "@/hooks/use-gateways";
+import { useHTTPRoutes } from "@/hooks/use-httproutes";
+import {
+  aiModel,
+  aiProviderLabel,
+  backendKind,
+  backendUsageExample,
+  resolveBackendEndpoint,
+  type BackendEndpoint,
+} from "@/lib/agentgateway";
 import type { AgentgatewayBackend } from "@/types/agentgateway";
 
 export const Route = createLazyFileRoute("/ai-gateway/$namespace/$name")({
@@ -125,10 +135,59 @@ function MCPTargetsCard({ backend }: { backend: AgentgatewayBackend }) {
   );
 }
 
+function EndpointCard({
+  backend,
+  endpoint,
+}: {
+  backend: AgentgatewayBackend;
+  endpoint: BackendEndpoint;
+}) {
+  const usage = backendUsageExample(backend, endpoint);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Endpoint</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-[120px_1fr] items-center gap-y-2 text-sm">
+          <span className="text-muted-foreground">URL</span>
+          <span className="flex items-center gap-1">
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{endpoint.url}</code>
+            <CopyButton value={endpoint.url} />
+          </span>
+          <span className="text-muted-foreground">HTTPRoute</span>
+          <span>{endpoint.routeName}</span>
+        </div>
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">Example request</span>
+            <CopyButton value={usage} />
+          </div>
+          <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs">{usage}</pre>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function AgentgatewayBackendDetail() {
   const { namespace, name } = Route.useParams();
   const { data: backend, isLoading, error, refetch } = useAgentgatewayBackend(namespace, name);
+  const gatewaysQuery = useGateways();
+  const httpRoutesQuery = useHTTPRoutes();
   const [yamlOpen, setYamlOpen] = useState(false);
+
+  const endpoint = useMemo(
+    () =>
+      backend
+        ? resolveBackendEndpoint(
+            backend,
+            httpRoutesQuery.data?.items ?? [],
+            gatewaysQuery.data?.items ?? [],
+          )
+        : undefined,
+    [backend, httpRoutesQuery.data, gatewaysQuery.data],
+  );
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -179,6 +238,8 @@ function AgentgatewayBackendDetail() {
           </CardContent>
         </Card>
       )}
+
+      {endpoint && <EndpointCard backend={backend} endpoint={endpoint} />}
 
       {backend.status?.conditions && (
         <Card>
