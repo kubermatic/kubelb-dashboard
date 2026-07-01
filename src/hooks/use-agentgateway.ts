@@ -40,7 +40,7 @@ async function detectAvailability(): Promise<boolean> {
     localStorage.setItem(STORAGE_KEY, "true");
     return true;
   }
-  if (res.status === 404) {
+  if (res.status === 404 || res.status === 403) {
     localStorage.setItem(STORAGE_KEY, "false");
     return false;
   }

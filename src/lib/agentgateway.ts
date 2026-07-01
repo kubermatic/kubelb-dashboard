@@ -133,7 +133,7 @@ interface HTTPRouteSpec {
   parentRefs?: { name?: string; namespace?: string }[];
   rules?: {
     matches?: { path?: { type?: string; value?: string } }[];
-    backendRefs?: { group?: string; kind?: string; name?: string }[];
+    backendRefs?: { group?: string; kind?: string; name?: string; namespace?: string }[];
   }[];
 }
 
@@ -152,19 +152,24 @@ export function resolveBackendEndpoint(
   gateways: GenericResource[],
 ): BackendEndpoint | undefined {
   const name = backend.metadata.name;
+  const namespace = backend.metadata.namespace ?? "";
   for (const route of httpRoutes) {
     const spec = route.spec as HTTPRouteSpec | undefined;
     if (!spec?.rules) continue;
+    const routeNamespace = route.metadata.namespace ?? "";
     for (const rule of spec.rules) {
       const ref = rule.backendRefs?.find(
-        (b) => b.group === AGENTGATEWAY_API_GROUP && b.name === name,
+        (b) =>
+          b.group === AGENTGATEWAY_API_GROUP &&
+          b.name === name &&
+          (b.namespace ?? routeNamespace) === namespace,
       );
       if (!ref) continue;
       const path = rule.matches?.[0]?.path?.value ?? "/";
       const gateway = gateways.find((g) => g.metadata.name === spec.parentRefs?.[0]?.name);
       const scheme = gatewayScheme(gateway);
       const host = spec.hostnames?.[0] ?? (gateway ? gatewayAddress(gateway) : undefined);
-      if (!host) return undefined;
+      if (!host) continue;
       return {
         url: `${scheme}://${host}${path}`,
         host,
