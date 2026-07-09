@@ -29,12 +29,10 @@ import {
   kubeProxyAllowlistDisabled as defaultKubeProxyAllowlistDisabled,
   watchEnabled as defaultWatchEnabled,
   prometheusUrl as defaultPrometheusUrl,
-} from "./env.js";
-import { isAllowedKubePath } from "./allowlist.js";
-import { detectPrometheus, queryRange } from "./metrics.js";
   hubbleOptions as defaultHubbleOptions,
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
+import { detectPrometheus, queryRange } from "./metrics.js";
 import { buildFlowGraph, detectHubble, getRecentFlows, type HubbleOptions } from "./hubble.js";
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -189,6 +187,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       const message = err instanceof Error ? err.message : "query failed";
       const code = message === "unknown metric" || message === "invalid namespace" ? 400 : 502;
       return reply.code(code).send({ error: message });
+    }
+  });
 
   let hubbleAvailable: boolean | undefined;
   async function isHubbleAvailable(): Promise<boolean> {
