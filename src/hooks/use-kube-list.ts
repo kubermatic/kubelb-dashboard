@@ -15,7 +15,7 @@
  */
 
 import { useKubeWatch } from "@/hooks/use-kube-watch";
-import { WATCH_ENABLED } from "@/lib/feature-flags";
+import { getCachedAppConfig } from "@/api/config";
 import type { ObjectMeta } from "@/types/kubernetes";
 
 export function useKubeList<T extends { metadata: ObjectMeta }>(
@@ -23,5 +23,6 @@ export function useKubeList<T extends { metadata: ObjectMeta }>(
   path: string,
   options?: { labelSelector?: string; fieldSelector?: string; enabled?: boolean },
 ) {
-  return useKubeWatch<T>(queryKey, path, { ...options, watch: WATCH_ENABLED });
+  const watchEnabled = getCachedAppConfig()?.watchEnabled ?? false;
+  return useKubeWatch<T>(queryKey, path, { ...options, watch: watchEnabled });
 }

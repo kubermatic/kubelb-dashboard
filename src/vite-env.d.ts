@@ -18,7 +18,6 @@
 
 interface ImportMetaEnv {
   readonly VITE_ENABLE_YAML_EDITOR?: string;
-  readonly VITE_ENABLE_WATCH?: string;
 }
 
 interface ImportMeta {
