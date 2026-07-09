@@ -28,7 +28,7 @@ import { env } from "@/lib/env";
 
 // Group nav items by category
 const navGroups = {
-  main: ["Overview"],
+  main: ["Overview", "Traffic"],
   resources: ["Tenants", "Load Balancers", "Routes", "Sync Secrets"],
   infrastructure: ["Envoy Proxy", "Configuration"],
   security: ["WAF Policies"],

@@ -88,6 +88,12 @@ metrics:
   # -- Prometheus base URL, e.g. http://prometheus.monitoring.svc:9090
   prometheusUrl: ""
 
+# Live traffic view (Hubble). Point at the Hubble Relay gRPC endpoint (Cilium).
+# When empty, the Traffic view auto-detects as unavailable and is hidden.
+traffic:
+  # -- Hubble Relay address, e.g. hubble-relay.kube-system.svc:80
+  hubbleRelayAddress: ""
+
 # -- Pod annotations
 podAnnotations: {}
 # -- Pod labels

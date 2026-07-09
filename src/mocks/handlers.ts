@@ -33,6 +33,7 @@ import { routeHandlers } from "./handlers/routes";
 import { serviceHandlers } from "./handlers/services";
 import { syncSecretHandlers } from "./handlers/sync-secrets";
 import { tcpRouteHandlers } from "./handlers/tcproutes";
+import { trafficHandlers } from "./handlers/traffic";
 import { tenantHandlers } from "./handlers/tenants";
 import { tlsRouteHandlers } from "./handlers/tlsroutes";
 import { udpRouteHandlers } from "./handlers/udproutes";
@@ -80,4 +81,5 @@ export const handlers = [
   ...backendTrafficPolicyHandlers,
   ...clientTrafficPolicyHandlers,
   ...observabilityHandlers,
+  ...trafficHandlers,
 ];
