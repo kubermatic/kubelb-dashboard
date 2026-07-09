@@ -81,6 +81,12 @@ readOnly: false
 watch:
   # -- Enable Kubernetes watch streaming for resource lists
   enabled: false
+# Per-proxy traffic metrics. Point at a Prometheus that scrapes the KubeLB
+# Envoy proxies (in-cluster URL). When empty, metrics auto-detection reports
+# unavailable and the dashboard shows no metrics — nothing is queried.
+metrics:
+  # -- Prometheus base URL, e.g. http://prometheus.monitoring.svc:9090
+  prometheusUrl: ""
 
 # -- Pod annotations
 podAnnotations: {}
