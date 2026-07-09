@@ -22,11 +22,16 @@ import { POLL_INTERVAL } from "@/lib/constants";
 export function useKubeList<T>(
   queryKey: readonly unknown[],
   path: string,
-  options?: { labelSelector?: string; enabled?: boolean },
+  options?: { labelSelector?: string; fieldSelector?: string; enabled?: boolean },
 ) {
   return useQuery<KubeList<T>>({
     queryKey,
-    queryFn: ({ signal }) => kubeList<T>(path, { labelSelector: options?.labelSelector }, signal),
+    queryFn: ({ signal }) =>
+      kubeList<T>(
+        path,
+        { labelSelector: options?.labelSelector, fieldSelector: options?.fieldSelector },
+        signal,
+      ),
     enabled: options?.enabled,
     refetchInterval: POLL_INTERVAL,
   });
