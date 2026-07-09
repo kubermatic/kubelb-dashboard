@@ -38,6 +38,11 @@ const envSchema = z
     KUBE_PROXY_ALLOWLIST_DISABLED: z.enum(["true", "false"]).default("false"),
     WATCH_ENABLED: z.enum(["true", "false"]).default("false"),
     PROMETHEUS_URL: z.string().url().optional(),
+    HUBBLE_RELAY_ADDRESS: z.string().optional(),
+    HUBBLE_RELAY_TLS_CA: z.string().optional(),
+    HUBBLE_RELAY_TLS_CERT: z.string().optional(),
+    HUBBLE_RELAY_TLS_KEY: z.string().optional(),
+    HUBBLE_RELAY_TLS_SERVER_NAME: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const set = Object.keys(oidcFields).filter(
@@ -65,6 +70,20 @@ export const authEnabled =
 export const readOnly = env.READ_ONLY === "true";
 
 export const kubeProxyAllowlistDisabled = env.KUBE_PROXY_ALLOWLIST_DISABLED === "true";
+
+export function hubbleOptions(): import("./hubble.js").HubbleOptions | null {
+  if (!env.HUBBLE_RELAY_ADDRESS) return null;
+  const tls =
+    env.HUBBLE_RELAY_TLS_CA || env.HUBBLE_RELAY_TLS_CERT || env.HUBBLE_RELAY_TLS_KEY
+      ? {
+          ca: env.HUBBLE_RELAY_TLS_CA,
+          cert: env.HUBBLE_RELAY_TLS_CERT,
+          key: env.HUBBLE_RELAY_TLS_KEY,
+          serverNameOverride: env.HUBBLE_RELAY_TLS_SERVER_NAME,
+        }
+      : undefined;
+  return { address: env.HUBBLE_RELAY_ADDRESS, tls };
+}
 
 export const watchEnabled = env.WATCH_ENABLED === "true";
 export const prometheusUrl = env.PROMETHEUS_URL;

@@ -2,6 +2,7 @@ minimumReleaseAge: 7
 
 allowBuilds:
   esbuild: false
+  protobufjs: false
 
 overrides:
   ws: ^8.21.0

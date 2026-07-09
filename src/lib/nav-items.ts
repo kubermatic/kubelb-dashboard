@@ -26,6 +26,7 @@ import {
   Server,
   GitBranch,
   Bot,
+  Waypoints,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -40,6 +41,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { label: "Overview", to: "/", icon: LayoutDashboard },
+  { label: "Traffic", to: "/traffic", icon: Waypoints },
   { label: "Tenants", to: "/tenants", icon: Users },
   {
     label: "Load Balancers",

@@ -29,9 +29,11 @@ import {
   kubeProxyAllowlistDisabled as defaultKubeProxyAllowlistDisabled,
   watchEnabled as defaultWatchEnabled,
   prometheusUrl as defaultPrometheusUrl,
+  hubbleOptions as defaultHubbleOptions,
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
 import { detectPrometheus, queryRange } from "./metrics.js";
+import { buildFlowGraph, detectHubble, getRecentFlows, type HubbleOptions } from "./hubble.js";
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -42,6 +44,7 @@ export interface BuildAppOptions {
   allowlistDisabled?: boolean;
   watchEnabled?: boolean;
   prometheusUrl?: string;
+  hubble?: HubbleOptions | null;
   logger?: boolean;
 }
 
@@ -52,6 +55,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const allowlistDisabled = options.allowlistDisabled ?? defaultKubeProxyAllowlistDisabled;
   const watchEnabled = options.watchEnabled ?? defaultWatchEnabled;
   const prometheusUrl = options.prometheusUrl ?? defaultPrometheusUrl;
+  const hubble = options.hubble ?? defaultHubbleOptions();
 
   const redirectUri = env.OIDC_REDIRECT_URI ?? `http://localhost:${env.PORT}/auth/callback`;
   const scopes = env.OIDC_SCOPES;
@@ -85,7 +89,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       if (
         request.url.startsWith("/api/kube") ||
         request.url.startsWith("/api/metrics") ||
-        request.url.startsWith("/api/observability")
+        request.url.startsWith("/api/observability") ||
+        request.url.startsWith("/api/traffic")
       ) {
         await authMiddleware(request, reply);
       }
@@ -182,6 +187,41 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       const message = err instanceof Error ? err.message : "query failed";
       const code = message === "unknown metric" || message === "invalid namespace" ? 400 : 502;
       return reply.code(code).send({ error: message });
+    }
+  });
+
+  let hubbleAvailable: boolean | undefined;
+  async function isHubbleAvailable(): Promise<boolean> {
+    hubbleAvailable ??= await detectHubble(hubble);
+    return hubbleAvailable;
+  }
+
+  app.get("/api/traffic/sources", async () => {
+    const available = await isHubbleAvailable();
+    return { hubble: { available, source: available ? "hubble" : null } };
+  });
+
+  app.get("/api/traffic/flows", async (request, reply) => {
+    if (!hubble || !(await isHubbleAvailable())) {
+      return reply.code(404).send({ error: "traffic source not available" });
+    }
+    try {
+      const flows = await getRecentFlows(hubble, 300);
+      return { flows };
+    } catch (err) {
+      return reply.code(502).send({ error: err instanceof Error ? err.message : "hubble error" });
+    }
+  });
+
+  app.get("/api/traffic/graph", async (request, reply) => {
+    if (!hubble || !(await isHubbleAvailable())) {
+      return reply.code(404).send({ error: "traffic source not available" });
+    }
+    try {
+      const flows = await getRecentFlows(hubble, 500);
+      return buildFlowGraph(flows);
+    } catch (err) {
+      return reply.code(502).send({ error: err instanceof Error ? err.message : "hubble error" });
     }
   });
 
