@@ -15,9 +15,8 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { getSession, encryptSession, setSessionCookies, type SessionPayload } from "./session.js";
-import { refreshAccessToken } from "./oidc.js";
-import { TOKEN_REFRESH_WINDOW_SECONDS } from "./constants.js";
+import { getSession, encryptSession, setSessionCookies } from "./session.js";
+import { refreshSessionIfNeeded } from "./refresh.js";
 
 let middlewareConfig: { sessionMaxAge: number; secureCookies: boolean };
 
@@ -35,28 +34,18 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
     return;
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  const expiresIn = session.accessTokenExp - now;
-
-  if (expiresIn < TOKEN_REFRESH_WINDOW_SECONDS && session.refreshToken) {
-    try {
-      const tokens = await refreshAccessToken(session.refreshToken);
-      const updated: SessionPayload = {
-        ...session,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken ?? session.refreshToken,
-        accessTokenExp: tokens.expiresAt,
-      };
-      const encrypted = await encryptSession(updated, middlewareConfig.sessionMaxAge);
-      setSessionCookies(
-        reply,
-        encrypted,
-        middlewareConfig.sessionMaxAge,
-        middlewareConfig.secureCookies,
-      );
-    } catch {
-      reply.code(401).send({ error: "unauthorized" });
-      return;
-    }
+  const refreshed = await refreshSessionIfNeeded(session);
+  if (!refreshed) {
+    reply.code(401).send({ error: "unauthorized" });
+    return;
+  }
+  if (refreshed !== session) {
+    const encrypted = await encryptSession(refreshed, middlewareConfig.sessionMaxAge);
+    setSessionCookies(
+      reply,
+      encrypted,
+      middlewareConfig.sessionMaxAge,
+      middlewareConfig.secureCookies,
+    );
   }
 }

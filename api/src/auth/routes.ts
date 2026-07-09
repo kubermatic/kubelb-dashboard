@@ -22,7 +22,6 @@ import {
   computeCodeChallenge,
   buildAuthorizeUrl,
   exchangeCode,
-  refreshAccessToken,
   getEndSessionUrl,
   decodeIdTokenClaims,
 } from "./oidc.js";
@@ -33,6 +32,7 @@ import {
   clearSessionCookies,
   type SessionPayload,
 } from "./session.js";
+import { refreshSessionIfNeeded } from "./refresh.js";
 
 interface AuthRouteOptions {
   redirectUri: string;
@@ -40,8 +40,6 @@ interface AuthRouteOptions {
   sessionMaxAge: number;
   secureCookies: boolean;
 }
-
-import { TOKEN_REFRESH_WINDOW_SECONDS } from "./constants.js";
 
 const TEMP_COOKIE_MAX_AGE = 300;
 
@@ -142,39 +140,22 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRouteOptions): 
       return { authenticated: false };
     }
 
-    const now = Math.floor(Date.now() / 1000);
-    const expiresIn = session.accessTokenExp - now;
+    const refreshed = await refreshSessionIfNeeded(session);
+    if (!refreshed) {
+      return { authenticated: false };
+    }
 
-    if (expiresIn < TOKEN_REFRESH_WINDOW_SECONDS && session.refreshToken) {
-      try {
-        const tokens = await refreshAccessToken(session.refreshToken);
-        const updated: SessionPayload = {
-          ...session,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken ?? session.refreshToken,
-          accessTokenExp: tokens.expiresAt,
-        };
-        const encrypted = await encryptSession(updated, opts.sessionMaxAge);
-        setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
-        return {
-          authenticated: true,
-          user: {
-            email: updated.email,
-            name: updated.name,
-            groups: updated.groups,
-          },
-        };
-      } catch {
-        return { authenticated: false };
-      }
+    if (refreshed !== session) {
+      const encrypted = await encryptSession(refreshed, opts.sessionMaxAge);
+      setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
     }
 
     return {
       authenticated: true,
       user: {
-        email: session.email,
-        name: session.name,
-        groups: session.groups,
+        email: refreshed.email,
+        name: refreshed.name,
+        groups: refreshed.groups,
       },
     };
   });
