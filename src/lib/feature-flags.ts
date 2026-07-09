@@ -17,3 +17,4 @@
 import { env } from "@/lib/env";
 
 export const YAML_EDITOR_ENABLED = env.VITE_ENABLE_YAML_EDITOR;
+export const WATCH_ENABLED = env.VITE_ENABLE_WATCH;
