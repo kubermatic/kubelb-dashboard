@@ -160,6 +160,7 @@ export function kubeWatch<T>(
   resourceVersion: string,
   onEvent: (event: WatchEvent<T>) => void,
   onError: (error: Error) => void,
+  onOpen?: () => void,
 ): () => void {
   const abortController = new AbortController();
   const separator = path.includes("?") ? "&" : "?";
@@ -171,6 +172,7 @@ export function kubeWatch<T>(
       if (!response.ok) {
         throw await toKubeError(response);
       }
+      onOpen?.();
       if (!response.body) {
         throw new Error("Watch response has no body");
       }

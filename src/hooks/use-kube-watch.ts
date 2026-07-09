@@ -16,7 +16,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { kubeList, kubeWatch } from "@/api/kube";
+import { KubeApiError, kubeList, kubeWatch } from "@/api/kube";
 import type { KubeList, ObjectMeta, WatchEvent } from "@/types/kubernetes";
 
 export type WatchConnectionStatus = "connecting" | "connected" | "reconnecting";
@@ -32,6 +32,7 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
   const backoffRef = useRef(1_000);
   const cleanupRef = useRef<(() => void) | null>(null);
   const hasConnectedRef = useRef(false);
+  const sawErrorEventRef = useRef(false);
   const [connectionStatus, setConnectionStatus] = useState<WatchConnectionStatus>("connecting");
 
   const serializedKey = JSON.stringify(queryKey);
@@ -71,17 +72,34 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
         watchPath,
         rv,
         (event: WatchEvent<T>) => {
-          backoffRef.current = 1_000;
-          hasConnectedRef.current = true;
-          setConnectionStatus("connected");
+          if (event.type === "ERROR") {
+            sawErrorEventRef.current = true;
+          }
           handleEvent(queryClient, stableQueryKey, event);
         },
-        () => {
+        (err: Error) => {
           if (!mounted) return;
+
+          const staleResourceVersion =
+            sawErrorEventRef.current || (err instanceof KubeApiError && err.code === 410);
+          sawErrorEventRef.current = false;
+
+          if (staleResourceVersion) {
+            void queryClient.invalidateQueries({ queryKey: stableQueryKey }).then(() => {
+              if (mounted) connect();
+            });
+            return;
+          }
+
           setConnectionStatus("reconnecting");
           const delay = backoffRef.current;
           backoffRef.current = Math.min(delay * 2, MAX_BACKOFF);
           reconnectTimer = setTimeout(connect, delay);
+        },
+        () => {
+          setConnectionStatus("connected");
+          backoffRef.current = 1_000;
+          hasConnectedRef.current = true;
         },
       );
     }
