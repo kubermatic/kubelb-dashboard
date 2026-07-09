@@ -17,7 +17,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
 import proxy from "@fastify/http-proxy";
-import websocket from "@fastify/websocket";
 import { loadKubeProxyConfig, getAuthToken, type KubeProxyConfig } from "./kube-config.js";
 import { initOidc } from "./auth/oidc.js";
 import { initSession } from "./auth/session.js";
@@ -47,7 +46,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const app = Fastify({ logger: options.logger ?? true });
 
   await app.register(cookie);
-  await app.register(websocket);
 
   if (authEnabled) {
     await initOidc({
@@ -92,7 +90,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     upstream: config.upstream,
     prefix: "/api/kube",
     rewritePrefix: "",
-    websocket: true,
     undici: {
       connect: {
         ca: config.ca?.toString(),
