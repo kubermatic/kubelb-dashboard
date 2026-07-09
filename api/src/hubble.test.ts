@@ -19,6 +19,7 @@ import {
   buildFlowGraph,
   buildFlowRequest,
   detectHubble,
+  filterFlowsByNamespace,
   resolveWindowSeconds,
   type Flow,
 } from "./hubble.js";
@@ -91,5 +92,17 @@ describe("buildFlowRequest", () => {
   it("falls back to a number cap when no window", () => {
     expect(buildFlowRequest(undefined, 2000, 1_000_000)).toEqual({ number: 2000 });
     expect(buildFlowRequest(0, 500, 1_000_000)).toEqual({ number: 500 });
+  });
+});
+
+describe("filterFlowsByNamespace", () => {
+  it("keeps flows touching the namespace on either end", () => {
+    const flows = [
+      flow("tenant-a", "envoy", "app", "backend"),
+      flow("app", "web", "tenant-a", "api"),
+      flow("other", "x", "app", "backend"),
+    ];
+    const kept = filterFlowsByNamespace(flows, "tenant-a");
+    expect(kept).toHaveLength(2);
   });
 });

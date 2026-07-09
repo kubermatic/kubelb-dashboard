@@ -36,6 +36,7 @@ import { detectPrometheus, queryRange } from "./metrics.js";
 import {
   buildFlowGraph,
   detectHubble,
+  filterFlowsByNamespace,
   getFlows,
   resolveWindowSeconds,
   type HubbleOptions,
@@ -197,8 +198,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   let hubbleAvailable: boolean | undefined;
+  let hubbleCheckedAt = 0;
+  const HUBBLE_RECHECK_MS = 5 * 60_000;
   async function isHubbleAvailable(): Promise<boolean> {
-    hubbleAvailable ??= await detectHubble(hubble);
+    if (hubbleAvailable === true) return true;
+    const now = Date.now();
+    if (hubbleAvailable === undefined || now - hubbleCheckedAt > HUBBLE_RECHECK_MS) {
+      hubbleAvailable = await detectHubble(hubble);
+      hubbleCheckedAt = now;
+    }
     return hubbleAvailable;
   }
 
@@ -229,7 +237,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     const windowSeconds = resolveWindowSeconds(q.window);
     try {
       const flows = await getFlows(hubble, { windowSeconds, limit: 2000 });
-      return buildFlowGraph(flows);
+      const scoped = q.namespace ? filterFlowsByNamespace(flows, q.namespace) : flows;
+      return buildFlowGraph(scoped);
     } catch (err) {
       return reply.code(502).send({ error: err instanceof Error ? err.message : "hubble error" });
     }

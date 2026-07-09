@@ -34,6 +34,12 @@ interface FlowEndpoint {
   kind: string;
 }
 
+export interface L7Http {
+  method: string;
+  path: string;
+  status?: number;
+}
+
 export interface Flow {
   source: FlowEndpoint;
   destination: FlowEndpoint;
@@ -41,6 +47,7 @@ export interface Flow {
   port: number;
   verdict: string;
   l7?: string;
+  l7http?: L7Http;
   time: string;
 }
 
@@ -79,7 +86,7 @@ interface RawFlow {
     TCP?: { destination_port?: number; source_port?: number };
     UDP?: { destination_port?: number; source_port?: number };
   };
-  l7?: { type?: string };
+  l7?: { type?: string; http?: { method?: string; url?: string; code?: number } };
   source?: RawEndpoint;
   destination?: RawEndpoint;
 }
@@ -125,6 +132,14 @@ function getClient(opts: HubbleOptions): any {
   return cachedClient;
 }
 
+// Drop the cached channel so the next call reconnects — the relay may have
+// restarted or the connection gone stale.
+function resetClient(): void {
+  if (cachedClient?.close) cachedClient.close();
+  cachedClient = undefined;
+  cachedKey = "";
+}
+
 function endpoint(ep: RawEndpoint | undefined): FlowEndpoint {
   if (!ep) return { name: "unknown", namespace: "", kind: "unknown" };
   const workload = ep.workloads?.[0];
@@ -134,8 +149,15 @@ function endpoint(ep: RawEndpoint | undefined): FlowEndpoint {
   return { name, namespace: ep.namespace ?? "", kind };
 }
 
+function httpPath(url: string | undefined): string {
+  if (!url) return "";
+  const m = /^[a-z]+:\/\/[^/]+(\/.*)?$/i.exec(url);
+  return m ? (m[1] ?? "/") : url;
+}
+
 function mapFlow(raw: RawFlow): Flow {
   const l4 = raw.l4?.TCP ?? raw.l4?.UDP;
+  const http = raw.l7?.http;
   return {
     source: endpoint(raw.source),
     destination: endpoint(raw.destination),
@@ -143,6 +165,9 @@ function mapFlow(raw: RawFlow): Flow {
     port: l4?.destination_port ?? 0,
     verdict: raw.verdict ?? "",
     l7: raw.l7?.type,
+    l7http: http?.method
+      ? { method: http.method, path: httpPath(http.url), status: http.code || undefined }
+      : undefined,
     time: raw.time?.seconds ? new Date(Number(raw.time.seconds) * 1000).toISOString() : "",
   };
 }
@@ -192,6 +217,7 @@ export function getFlows(opts: HubbleOptions, query: FlowQuery = {}): Promise<Fl
     });
     call.on("error", (err: Error) => {
       clearTimeout(timer);
+      resetClient();
       reject(err);
     });
   });
@@ -209,6 +235,13 @@ export type TrafficWindow = keyof typeof TRAFFIC_WINDOWS;
 
 export function resolveWindowSeconds(window: string | undefined): number | undefined {
   return window && window in TRAFFIC_WINDOWS ? TRAFFIC_WINDOWS[window as TrafficWindow] : undefined;
+}
+
+/** Keep only flows that touch the given namespace on either end. */
+export function filterFlowsByNamespace(flows: Flow[], namespace: string): Flow[] {
+  return flows.filter(
+    (f) => f.source.namespace === namespace || f.destination.namespace === namespace,
+  );
 }
 
 function nodeId(e: FlowEndpoint): string {

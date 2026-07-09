@@ -36,6 +36,15 @@ function verdictClass(v: string): string {
   return "text-muted-foreground";
 }
 
+function requestLabel(f: TrafficFlow): string {
+  if (f.l7http) {
+    const status = f.l7http.status ? ` · ${String(f.l7http.status)}` : "";
+    return `${f.l7http.method} ${f.l7http.path}${status}`;
+  }
+  if (f.l7) return f.l7.toUpperCase();
+  return `${f.protocol}${f.port ? `:${String(f.port)}` : ""}`;
+}
+
 function HeaderCell({
   field,
   label: text,
@@ -114,9 +123,7 @@ export function TrafficFlowsTable({ flows }: { flows: TrafficFlow[] }) {
             </div>
             <div className="truncate px-3">{label(f.source)}</div>
             <div className="truncate px-3">{label(f.destination)}</div>
-            <div className="truncate px-3 text-muted-foreground">
-              {f.l7 ? f.l7.toUpperCase() : `${f.protocol}${f.port ? `:${String(f.port)}` : ""}`}
-            </div>
+            <div className="truncate px-3 text-muted-foreground">{requestLabel(f)}</div>
             <div className={cn("truncate px-3 font-medium", verdictClass(f.verdict))}>
               {f.verdict}
             </div>

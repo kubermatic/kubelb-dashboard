@@ -30,9 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DEFAULT_TRAFFIC_WINDOW, TRAFFIC_WINDOWS, type TrafficWindow } from "@/api/traffic";
-import { TrafficGraphView } from "@/components/common/traffic-graph";
+import { TrafficGraphView, type TrafficSelection } from "@/components/common/traffic-graph";
 import { TrafficFlowsTable } from "@/components/common/traffic-flows-table";
 import { TrafficFilterSidebar } from "@/components/common/traffic-filter-sidebar";
+import { TrafficDetailPanel } from "@/components/common/traffic-detail-panel";
 import {
   applyFlowFilters,
   applyGraphFilters,
@@ -58,6 +59,7 @@ function Traffic() {
   const [window, setWindow] = useState<TrafficWindow>(DEFAULT_TRAFFIC_WINDOW);
   const [filters, setFilters] = useState<TrafficFilters>(DEFAULT_FILTERS);
   const [search, setSearch] = useState("");
+  const [selection, setSelection] = useState<TrafficSelection | null>(null);
 
   const graph = useTrafficGraph(available, window);
   const flows = useTrafficFlows(available, window);
@@ -113,6 +115,11 @@ function Traffic() {
                     connections
                   </span>
                 )}
+                {filteredGraph && filteredGraph.nodes.length < filteredGraph.totalNodes && (
+                  <span className="text-muted-foreground/70">
+                    · showing top {filteredGraph.nodes.length} of {filteredGraph.totalNodes}
+                  </span>
+                )}
               </div>
               <Select value={window} onValueChange={(v) => setWindow(v as TrafficWindow)}>
                 <SelectTrigger size="sm" className="w-28 text-xs" aria-label="Time window">
@@ -131,7 +138,23 @@ function Traffic() {
             {graph.isError && graph.error ? (
               <QueryError error={graph.error} onRetry={() => void graph.refetch()} />
             ) : filteredGraph ? (
-              <TrafficGraphView graph={filteredGraph} namespaces={namespaces} />
+              <div className="flex gap-4">
+                <div className="min-w-0 flex-1">
+                  <TrafficGraphView
+                    graph={filteredGraph}
+                    namespaces={namespaces}
+                    selection={selection}
+                    onSelect={setSelection}
+                  />
+                </div>
+                {selection && (
+                  <TrafficDetailPanel
+                    selection={selection}
+                    flows={flows.data ?? []}
+                    onClose={() => setSelection(null)}
+                  />
+                )}
+              </div>
             ) : (
               <Skeleton className="h-[560px] w-full" />
             )}

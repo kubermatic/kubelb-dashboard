@@ -69,22 +69,40 @@ function ep(id: string) {
   return { name: n.name, namespace: n.namespace, kind: n.kind };
 }
 
+const HTTP = [
+  { method: "GET", path: "/api/v1/users", status: 200 },
+  { method: "POST", path: "/api/v1/login", status: 401 },
+  { method: "GET", path: "/healthz", status: 200 },
+];
+
 export const trafficHandlers = [
   http.get("/api/traffic/sources", () =>
     HttpResponse.json({ hubble: { available: true, source: "hubble" } }),
   ),
-  http.get("/api/traffic/graph", () => HttpResponse.json({ nodes: NODES, edges: EDGES })),
+  http.get("/api/traffic/graph", ({ request }) => {
+    const ns = new URL(request.url).searchParams.get("namespace");
+    if (!ns) return HttpResponse.json({ nodes: NODES, edges: EDGES });
+    const edges = EDGES.filter((e) => ep(e.from).namespace === ns || ep(e.to).namespace === ns);
+    const ids = new Set(edges.flatMap((e) => [e.from, e.to]));
+    return HttpResponse.json({ nodes: NODES.filter((n) => ids.has(n.id)), edges });
+  }),
   http.get("/api/traffic/flows", () => {
     const now = Date.now();
     const flows = EDGES.flatMap((e, i) =>
-      Array.from({ length: Math.min(3, Math.ceil(e.connections / 40)) }, (_, j) => ({
-        source: ep(e.from),
-        destination: ep(e.to),
-        protocol: "TCP",
-        port: [80, 443, 8080, 6443][(i + j) % 4],
-        verdict: e.verdict,
-        time: new Date(now - (i * 3 + j) * 1500).toISOString(),
-      })),
+      Array.from({ length: Math.min(3, Math.ceil(e.connections / 40)) }, (_, j) => {
+        const port = [80, 443, 8080, 6443][(i + j) % 4];
+        const http7 = port !== 6443 ? HTTP[(i + j) % HTTP.length] : undefined;
+        return {
+          source: ep(e.from),
+          destination: ep(e.to),
+          protocol: "TCP",
+          port,
+          verdict: e.verdict,
+          l7: http7 ? "http" : undefined,
+          l7http: http7,
+          time: new Date(now - (i * 3 + j) * 1500).toISOString(),
+        };
+      }),
     );
     return HttpResponse.json({ flows });
   }),

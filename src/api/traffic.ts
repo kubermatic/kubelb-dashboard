@@ -40,6 +40,12 @@ export interface TrafficGraphData {
   edges: TrafficEdge[];
 }
 
+export interface L7Http {
+  method: string;
+  path: string;
+  status?: number;
+}
+
 export interface TrafficFlow {
   source: TrafficEndpoint;
   destination: TrafficEndpoint;
@@ -47,6 +53,7 @@ export interface TrafficFlow {
   port: number;
   verdict: string;
   l7?: string;
+  l7http?: L7Http;
   time: string;
 }
 
@@ -66,8 +73,12 @@ export async function fetchTrafficSources(): Promise<TrafficSources> {
   }
 }
 
-export async function fetchTrafficGraph(window: TrafficWindow): Promise<TrafficGraphData> {
-  const res = await fetch(`/api/traffic/graph?window=${window}`, { credentials: "include" });
+export async function fetchTrafficGraph(
+  window: TrafficWindow,
+  namespace?: string,
+): Promise<TrafficGraphData> {
+  const ns = namespace ? `&namespace=${encodeURIComponent(namespace)}` : "";
+  const res = await fetch(`/api/traffic/graph?window=${window}${ns}`, { credentials: "include" });
   if (!res.ok) throw new Error(`traffic graph ${String(res.status)}`);
   return (await res.json()) as TrafficGraphData;
 }

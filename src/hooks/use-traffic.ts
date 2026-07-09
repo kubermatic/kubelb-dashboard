@@ -16,6 +16,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  DEFAULT_TRAFFIC_WINDOW,
   fetchTrafficFlows,
   fetchTrafficGraph,
   fetchTrafficSources,
@@ -51,6 +52,15 @@ export function useTrafficFlows(enabled: boolean, window: TrafficWindow) {
   return useQuery({
     queryKey: ["traffic", "flows", window],
     queryFn: () => fetchTrafficFlows(window),
+    enabled,
+    refetchInterval: 10_000,
+  });
+}
+
+export function useProxyTrafficGraph(namespace: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["traffic", "graph", "namespace", namespace],
+    queryFn: () => fetchTrafficGraph(DEFAULT_TRAFFIC_WINDOW, namespace),
     enabled,
     refetchInterval: 10_000,
   });
