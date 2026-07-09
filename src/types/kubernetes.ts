@@ -115,3 +115,21 @@ export interface Namespace {
   spec: { finalizers?: string[] };
   status?: { phase?: string };
 }
+
+export interface KubeEvent {
+  metadata: ObjectMeta;
+  type?: string;
+  reason?: string;
+  message?: string;
+  count?: number;
+  firstTimestamp?: string;
+  lastTimestamp?: string;
+  eventTime?: string;
+  involvedObject: {
+    kind?: string;
+    name?: string;
+    namespace?: string;
+    uid?: string;
+  };
+  source?: { component?: string };
+}

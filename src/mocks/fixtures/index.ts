@@ -21,6 +21,7 @@ export { backendTrafficPolicies } from "./backend-traffic-policies";
 export { clientTrafficPolicies } from "./client-traffic-policies";
 export { configs } from "./configs";
 export { deployments } from "./deployments";
+export { events } from "./events";
 export { gateways } from "./gateways";
 export { grpcRoutes } from "./grpcroutes";
 export { httpRoutes } from "./httproutes";

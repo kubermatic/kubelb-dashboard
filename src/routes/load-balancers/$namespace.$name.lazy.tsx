@@ -22,6 +22,7 @@ import { KubeApiError } from "@/api/kube";
 import { KUBELB_ANNOTATIONS as KUBELB_ANNOTATION_KEYS } from "@/lib/constants";
 import { CopyButton } from "@/components/common/copy-button";
 import { EndpointsSection } from "@/components/common/endpoints-section";
+import { EventsSection } from "@/components/common/events-section";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
@@ -105,6 +106,11 @@ function LoadBalancerDetail() {
           />
           <OverviewTab lb={lb} />
           <StatusSection lb={lb} />
+          <EventsSection
+            namespace={lb.metadata.namespace ?? "default"}
+            name={lb.metadata.name}
+            uid={lb.metadata.uid}
+          />
         </TabsContent>
 
         <TabsContent value="metadata">
