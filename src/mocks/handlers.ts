@@ -21,6 +21,7 @@ import { backendTrafficPolicyHandlers } from "./handlers/backend-traffic-policie
 import { clientTrafficPolicyHandlers } from "./handlers/client-traffic-policies";
 import { configHandlers } from "./handlers/configs";
 import { deploymentHandlers } from "./handlers/deployments";
+import { eventHandlers } from "./handlers/events";
 import { gatewayHandlers } from "./handlers/gateways";
 import { grpcRouteHandlers } from "./handlers/grpcroutes";
 import { httpRouteHandlers } from "./handlers/httproutes";
@@ -62,6 +63,7 @@ export const handlers = [
   ...routeHandlers,
   ...syncSecretHandlers,
   ...deploymentHandlers,
+  ...eventHandlers,
   ...namespaceHandlers,
   ...wafPolicyHandlers,
   ...gatewayHandlers,

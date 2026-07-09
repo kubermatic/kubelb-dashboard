@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-const CORE_RESOURCES = "namespaces|services|secrets|pods";
-const NAMESPACED_CORE_RESOURCES = "services|secrets|pods";
+const CORE_RESOURCES = "namespaces|services|secrets|pods|events";
+const NAMESPACED_CORE_RESOURCES = "services|secrets|pods|events";
 
 const ALLOWED_API_GROUPS =
   "kubelb\\.k8c\\.io|apps|networking\\.k8s\\.io|gateway\\.networking\\.k8s\\.io|gateway\\.envoyproxy\\.io|agentgateway\\.dev";

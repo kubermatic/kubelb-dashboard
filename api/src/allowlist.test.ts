@@ -23,6 +23,7 @@ describe("isAllowedKubePath", () => {
     "/apis/kubelb.k8c.io/v1alpha1/namespaces/foo/routes/bar",
     "/api/v1/namespaces",
     "/api/v1/namespaces/x/secrets/y",
+    "/api/v1/namespaces/x/events",
     "/apis/apps/v1/namespaces/x/deployments",
     "/apis/gateway.networking.k8s.io/v1/httproutes",
     "/apis/apiextensions.k8s.io/v1/customresourcedefinitions/routes.kubelb.k8c.io",

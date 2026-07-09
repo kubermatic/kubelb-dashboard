@@ -39,4 +39,18 @@ test.describe("Load Balancer Detail", () => {
     await page.keyboard.press("Escape");
     await expect(viewer).not.toBeVisible();
   });
+
+  test("events section shows either events or an empty state", async ({ page }) => {
+    const eventsCard = page.locator('[data-slot="card"]').filter({ hasText: "Events" });
+    await expect(eventsCard).toBeVisible();
+
+    const rows = eventsCard.locator("tbody tr");
+    const hasRows = (await rows.count()) > 0;
+
+    if (hasRows) {
+      await expect(rows.first().locator("td").nth(1)).not.toHaveText("");
+    } else {
+      await expect(eventsCard.getByText("No events")).toBeVisible();
+    }
+  });
 });
