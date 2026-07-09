@@ -69,14 +69,21 @@ TrafficNodeCard.displayName = "TrafficNodeCard";
 
 const nodeTypes = { traffic: TrafficNodeCard };
 
+export type TrafficSelection =
+  { type: "node"; id: string } | { type: "edge"; from: string; to: string };
+
 export function TrafficGraphView({
   graph,
   namespaces,
+  selection = null,
+  onSelect,
 }: {
   graph: TrafficGraphData;
   namespaces: string[];
+  selection?: TrafficSelection | null;
+  onSelect?: (s: TrafficSelection | null) => void;
 }) {
-  const layout = useMemo(() => {
+  const base = useMemo(() => {
     const maxConn = Math.max(1, ...graph.edges.map((e) => e.connections));
     const g = new dagre.graphlib.Graph();
     g.setGraph({ rankdir: "LR", nodesep: 40, ranksep: 140 });
@@ -122,7 +129,40 @@ export function TrafficGraphView({
     return { nodes, edges };
   }, [graph, namespaces]);
 
-  if (layout.nodes.length === 0) {
+  const highlighted = useMemo(() => {
+    if (!selection) return null;
+    const nodes = new Set<string>();
+    const edges = new Set<string>();
+    graph.edges.forEach((e, i) => {
+      const hit =
+        selection.type === "node"
+          ? e.from === selection.id || e.to === selection.id
+          : e.from === selection.from && e.to === selection.to;
+      if (hit) {
+        edges.add(`e${i}`);
+        nodes.add(e.from);
+        nodes.add(e.to);
+      }
+    });
+    if (selection.type === "node") nodes.add(selection.id);
+    return { nodes, edges };
+  }, [selection, graph]);
+
+  const view = useMemo(() => {
+    if (!highlighted) return base;
+    const nodes = base.nodes.map((n) => ({
+      ...n,
+      selected: selection?.type === "node" && selection.id === n.id,
+      style: { ...n.style, opacity: highlighted.nodes.has(n.id) ? 1 : 0.25 },
+    }));
+    const edges = base.edges.map((e) => ({
+      ...e,
+      style: { ...e.style, opacity: highlighted.edges.has(e.id) ? 0.95 : 0.08 },
+    }));
+    return { nodes, edges };
+  }, [base, highlighted, selection]);
+
+  if (base.nodes.length === 0) {
     return (
       <div className="flex h-[560px] items-center justify-center rounded-md border text-sm text-muted-foreground">
         No traffic matches the current filters.
@@ -133,14 +173,17 @@ export function TrafficGraphView({
   return (
     <div className="h-[560px] w-full rounded-md border bg-card">
       <ReactFlow
-        nodes={layout.nodes}
-        edges={layout.edges}
+        nodes={view.nodes}
+        edges={view.edges}
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.2}
         proOptions={{ hideAttribution: true }}
         nodesConnectable={false}
         edgesFocusable={false}
+        onNodeClick={(_, n) => onSelect?.({ type: "node", id: n.id })}
+        onEdgeClick={(_, e) => onSelect?.({ type: "edge", from: e.source, to: e.target })}
+        onPaneClick={() => onSelect?.(null)}
       >
         <Background gap={20} className="!bg-transparent" />
         <Controls showInteractive={false} />

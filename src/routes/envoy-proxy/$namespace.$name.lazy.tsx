@@ -23,6 +23,7 @@ import { ConditionsTable } from "@/components/common/conditions-table";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ProxyMetricsSection } from "@/components/common/proxy-metrics-section";
+import { ProxyTrafficSection } from "@/components/common/proxy-traffic-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -33,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeployment } from "@/hooks/use-deployments";
 import { useMetricsAvailable } from "@/hooks/use-observability";
+import { useTrafficAvailable } from "@/hooks/use-traffic";
 
 export const Route = createLazyFileRoute("/envoy-proxy/$namespace/$name")({
   component: EnvoyProxyDetail,
@@ -43,6 +45,7 @@ function EnvoyProxyDetail() {
   const { data: deployment, isLoading, isError, error, refetch } = useDeployment(namespace, name);
   const [yamlOpen, setYamlOpen] = useState(false);
   const metricsAvailable = useMetricsAvailable();
+  const trafficAvailable = useTrafficAvailable();
 
   if (isLoading) {
     return (
@@ -89,6 +92,7 @@ function EnvoyProxyDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {metricsAvailable && <TabsTrigger value="metrics">Metrics</TabsTrigger>}
+          {trafficAvailable && <TabsTrigger value="traffic">Traffic</TabsTrigger>}
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
@@ -96,6 +100,14 @@ function EnvoyProxyDetail() {
           <TabsContent value="metrics">
             <div className="pt-4">
               <ProxyMetricsSection namespace={namespace} />
+            </div>
+          </TabsContent>
+        )}
+
+        {trafficAvailable && (
+          <TabsContent value="traffic">
+            <div className="pt-4">
+              <ProxyTrafficSection namespace={namespace} />
             </div>
           </TabsContent>
         )}

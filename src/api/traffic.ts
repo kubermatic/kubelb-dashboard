@@ -40,6 +40,12 @@ export interface TrafficGraphData {
   edges: TrafficEdge[];
 }
 
+export interface L7Http {
+  method: string;
+  path: string;
+  status?: number;
+}
+
 export interface TrafficFlow {
   source: TrafficEndpoint;
   destination: TrafficEndpoint;
@@ -47,8 +53,13 @@ export interface TrafficFlow {
   port: number;
   verdict: string;
   l7?: string;
+  l7http?: L7Http;
   time: string;
 }
+
+export const TRAFFIC_WINDOWS = ["1m", "5m", "15m", "1h"] as const;
+export type TrafficWindow = (typeof TRAFFIC_WINDOWS)[number];
+export const DEFAULT_TRAFFIC_WINDOW: TrafficWindow = "5m";
 
 const UNAVAILABLE: TrafficSources = { hubble: { available: false, source: null } };
 
@@ -62,14 +73,18 @@ export async function fetchTrafficSources(): Promise<TrafficSources> {
   }
 }
 
-export async function fetchTrafficGraph(): Promise<TrafficGraphData> {
-  const res = await fetch("/api/traffic/graph", { credentials: "include" });
+export async function fetchTrafficGraph(
+  window: TrafficWindow,
+  namespace?: string,
+): Promise<TrafficGraphData> {
+  const ns = namespace ? `&namespace=${encodeURIComponent(namespace)}` : "";
+  const res = await fetch(`/api/traffic/graph?window=${window}${ns}`, { credentials: "include" });
   if (!res.ok) throw new Error(`traffic graph ${String(res.status)}`);
   return (await res.json()) as TrafficGraphData;
 }
 
-export async function fetchTrafficFlows(): Promise<TrafficFlow[]> {
-  const res = await fetch("/api/traffic/flows", { credentials: "include" });
+export async function fetchTrafficFlows(window: TrafficWindow): Promise<TrafficFlow[]> {
+  const res = await fetch(`/api/traffic/flows?window=${window}`, { credentials: "include" });
   if (!res.ok) throw new Error(`traffic flows ${String(res.status)}`);
   const body = (await res.json()) as { flows: TrafficFlow[] };
   return body.flows;

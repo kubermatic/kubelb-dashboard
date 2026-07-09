@@ -82,6 +82,14 @@ export function TrafficFilterSidebar({
   return (
     <div className="w-56 shrink-0 space-y-5 rounded-lg border bg-card/40 p-4">
       <div className="text-sm font-semibold">Traffic filters</div>
+      <Section title="Scope">
+        <ToggleRow
+          label="KubeLB only"
+          checked={filters.scope === "kubelb"}
+          onChange={(v) => set({ scope: v ? "kubelb" : "all" })}
+        />
+      </Section>
+
       <Section title="Connections">
         <Select
           value={String(filters.minConnections)}

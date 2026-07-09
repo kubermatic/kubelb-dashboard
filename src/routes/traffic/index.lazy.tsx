@@ -16,15 +16,24 @@
 
 import { useMemo, useState } from "react";
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { Search, Waypoints } from "lucide-react";
+import { Clock, Search, Waypoints } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryError } from "@/components/common/query-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { TrafficGraphView } from "@/components/common/traffic-graph";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DEFAULT_TRAFFIC_WINDOW, TRAFFIC_WINDOWS, type TrafficWindow } from "@/api/traffic";
+import { TrafficGraphView, type TrafficSelection } from "@/components/common/traffic-graph";
 import { TrafficFlowsTable } from "@/components/common/traffic-flows-table";
 import { TrafficFilterSidebar } from "@/components/common/traffic-filter-sidebar";
+import { TrafficDetailPanel } from "@/components/common/traffic-detail-panel";
 import {
   applyFlowFilters,
   applyGraphFilters,
@@ -46,11 +55,14 @@ export const Route = createLazyFileRoute("/traffic/")({
 function Traffic() {
   const { isLoading: sourcesLoading } = useTrafficSources();
   const available = useTrafficAvailable();
-  const graph = useTrafficGraph(available);
-  const flows = useTrafficFlows(available);
 
+  const [window, setWindow] = useState<TrafficWindow>(DEFAULT_TRAFFIC_WINDOW);
   const [filters, setFilters] = useState<TrafficFilters>(DEFAULT_FILTERS);
   const [search, setSearch] = useState("");
+  const [selection, setSelection] = useState<TrafficSelection | null>(null);
+
+  const graph = useTrafficGraph(available, window);
+  const flows = useTrafficFlows(available, window);
 
   const namespaces = useMemo(() => (graph.data ? graphNamespaces(graph.data) : []), [graph.data]);
   const filteredGraph = useMemo(
@@ -90,22 +102,59 @@ function Traffic() {
         <TrafficFilterSidebar filters={filters} namespaces={namespaces} onChange={setFilters} />
         <div className="min-w-0 flex-1 space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              Live via Hubble
-              {filteredGraph && (
-                <span>
-                  · {filteredGraph.nodes.length} services, {filteredGraph.edges.length} connections
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                 </span>
-              )}
+                Live via Hubble
+                {filteredGraph && (
+                  <span>
+                    · {filteredGraph.nodes.length} services, {filteredGraph.edges.length}{" "}
+                    connections
+                  </span>
+                )}
+                {filteredGraph && filteredGraph.nodes.length < filteredGraph.totalNodes && (
+                  <span className="text-muted-foreground/70">
+                    · showing top {filteredGraph.nodes.length} of {filteredGraph.totalNodes}
+                  </span>
+                )}
+              </div>
+              <Select value={window} onValueChange={(v) => setWindow(v as TrafficWindow)}>
+                <SelectTrigger size="sm" className="w-28 text-xs" aria-label="Time window">
+                  <Clock className="size-3.5 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRAFFIC_WINDOWS.map((w) => (
+                    <SelectItem key={w} value={w}>
+                      Last {w}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {graph.isError && graph.error ? (
               <QueryError error={graph.error} onRetry={() => void graph.refetch()} />
             ) : filteredGraph ? (
-              <TrafficGraphView graph={filteredGraph} namespaces={namespaces} />
+              <div className="flex gap-4">
+                <div className="min-w-0 flex-1">
+                  <TrafficGraphView
+                    graph={filteredGraph}
+                    namespaces={namespaces}
+                    selection={selection}
+                    onSelect={setSelection}
+                  />
+                </div>
+                {selection && (
+                  <TrafficDetailPanel
+                    selection={selection}
+                    flows={flows.data ?? []}
+                    onClose={() => setSelection(null)}
+                  />
+                )}
+              </div>
             ) : (
               <Skeleton className="h-[560px] w-full" />
             )}

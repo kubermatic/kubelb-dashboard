@@ -70,6 +70,43 @@ describe("applyGraphFilters", () => {
     const g = applyGraphFilters(graph, filters({ hiddenNamespaces: ["app"] }));
     expect(g.nodes.some((n) => n.namespace === "app")).toBe(false);
   });
+
+  it("kubelb scope keeps only edges touching a tenant/envoy endpoint", () => {
+    const kubelb: TrafficGraphData = {
+      nodes: [
+        { id: "tenant-a/envoy-a", name: "envoy-a", namespace: "tenant-a", kind: "Deployment" },
+        { id: "app/backend", name: "backend", namespace: "app", kind: "Deployment" },
+        { id: "app/other", name: "other", namespace: "app", kind: "Deployment" },
+      ],
+      edges: [
+        { from: "tenant-a/envoy-a", to: "app/backend", connections: 10, verdict: "FORWARDED" },
+        { from: "app/other", to: "app/backend", connections: 5, verdict: "FORWARDED" },
+      ],
+    };
+    const g = applyGraphFilters(kubelb, filters({ scope: "kubelb" }));
+    expect(g.edges).toHaveLength(1);
+    expect(g.nodes.map((n) => n.id).sort()).toEqual(["app/backend", "tenant-a/envoy-a"]);
+  });
+
+  it("caps to the top-N nodes by connection weight and reports the total", () => {
+    const star: TrafficGraphData = {
+      nodes: [
+        { id: "app/hub", name: "hub", namespace: "app", kind: "Deployment" },
+        { id: "app/a", name: "a", namespace: "app", kind: "Deployment" },
+        { id: "app/b", name: "b", namespace: "app", kind: "Deployment" },
+        { id: "app/c", name: "c", namespace: "app", kind: "Deployment" },
+      ],
+      edges: [
+        { from: "app/hub", to: "app/a", connections: 100, verdict: "FORWARDED" },
+        { from: "app/hub", to: "app/b", connections: 80, verdict: "FORWARDED" },
+        { from: "app/hub", to: "app/c", connections: 5, verdict: "FORWARDED" },
+      ],
+    };
+    const g = applyGraphFilters(star, filters({ maxNodes: 2 }));
+    expect(g.totalNodes).toBe(4);
+    expect(g.nodes.map((n) => n.id).sort()).toEqual(["app/a", "app/hub"]);
+    expect(g.edges).toHaveLength(1);
+  });
 });
 
 describe("applyFlowFilters", () => {

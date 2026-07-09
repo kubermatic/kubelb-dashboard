@@ -33,7 +33,14 @@ import {
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
 import { detectPrometheus, queryRange } from "./metrics.js";
-import { buildFlowGraph, detectHubble, getRecentFlows, type HubbleOptions } from "./hubble.js";
+import {
+  buildFlowGraph,
+  detectHubble,
+  filterFlowsByNamespace,
+  getFlows,
+  resolveWindowSeconds,
+  type HubbleOptions,
+} from "./hubble.js";
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -191,8 +198,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   let hubbleAvailable: boolean | undefined;
+  let hubbleCheckedAt = 0;
+  const HUBBLE_RECHECK_MS = 5 * 60_000;
   async function isHubbleAvailable(): Promise<boolean> {
-    hubbleAvailable ??= await detectHubble(hubble);
+    if (hubbleAvailable === true) return true;
+    const now = Date.now();
+    if (hubbleAvailable === undefined || now - hubbleCheckedAt > HUBBLE_RECHECK_MS) {
+      hubbleAvailable = await detectHubble(hubble);
+      hubbleCheckedAt = now;
+    }
     return hubbleAvailable;
   }
 
@@ -205,8 +219,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     if (!hubble || !(await isHubbleAvailable())) {
       return reply.code(404).send({ error: "traffic source not available" });
     }
+    const q = request.query as Record<string, string | undefined>;
+    const windowSeconds = resolveWindowSeconds(q.window);
     try {
-      const flows = await getRecentFlows(hubble, 300);
+      const flows = await getFlows(hubble, { windowSeconds, limit: 1000 });
       return { flows };
     } catch (err) {
       return reply.code(502).send({ error: err instanceof Error ? err.message : "hubble error" });
@@ -217,9 +233,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     if (!hubble || !(await isHubbleAvailable())) {
       return reply.code(404).send({ error: "traffic source not available" });
     }
+    const q = request.query as Record<string, string | undefined>;
+    const windowSeconds = resolveWindowSeconds(q.window);
     try {
-      const flows = await getRecentFlows(hubble, 500);
-      return buildFlowGraph(flows);
+      const flows = await getFlows(hubble, { windowSeconds, limit: 2000 });
+      const scoped = q.namespace ? filterFlowsByNamespace(flows, q.namespace) : flows;
+      return buildFlowGraph(scoped);
     } catch (err) {
       return reply.code(502).send({ error: err instanceof Error ? err.message : "hubble error" });
     }

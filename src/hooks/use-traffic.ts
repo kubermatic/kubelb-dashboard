@@ -16,10 +16,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  DEFAULT_TRAFFIC_WINDOW,
   fetchTrafficFlows,
   fetchTrafficGraph,
   fetchTrafficSources,
   type TrafficSources,
+  type TrafficWindow,
 } from "@/api/traffic";
 
 // Whether Hubble is present is fixed for the pod lifetime — cache it.
@@ -37,19 +39,28 @@ export function useTrafficAvailable(): boolean {
   return data?.hubble.available ?? false;
 }
 
-export function useTrafficGraph(enabled: boolean) {
+export function useTrafficGraph(enabled: boolean, window: TrafficWindow) {
   return useQuery({
-    queryKey: ["traffic", "graph"],
-    queryFn: fetchTrafficGraph,
+    queryKey: ["traffic", "graph", window],
+    queryFn: () => fetchTrafficGraph(window),
     enabled,
     refetchInterval: 10_000,
   });
 }
 
-export function useTrafficFlows(enabled: boolean) {
+export function useTrafficFlows(enabled: boolean, window: TrafficWindow) {
   return useQuery({
-    queryKey: ["traffic", "flows"],
-    queryFn: fetchTrafficFlows,
+    queryKey: ["traffic", "flows", window],
+    queryFn: () => fetchTrafficFlows(window),
+    enabled,
+    refetchInterval: 10_000,
+  });
+}
+
+export function useProxyTrafficGraph(namespace: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["traffic", "graph", "namespace", namespace],
+    queryFn: () => fetchTrafficGraph(DEFAULT_TRAFFIC_WINDOW, namespace),
     enabled,
     refetchInterval: 10_000,
   });
