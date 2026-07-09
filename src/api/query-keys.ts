@@ -139,4 +139,7 @@ export const queryKeys = {
     all: ["namespaces"] as const,
     list: () => ["namespaces", "list"] as const,
   },
+  events: {
+    list: (ns: string, name: string) => ["events", "list", ns, name] as const,
+  },
 } as const;

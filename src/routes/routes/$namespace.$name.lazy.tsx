@@ -21,6 +21,7 @@ import { ArrowRight, FileCode, Globe, Lock, Network, Server } from "lucide-react
 import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
 import { EndpointsSection } from "@/components/common/endpoints-section";
+import { EventsSection } from "@/components/common/events-section";
 import { MetadataSection } from "@/components/common/metadata-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
@@ -89,6 +90,11 @@ function RouteDetail() {
           />
           <OverviewTab route={route} />
           <StatusSection route={route} />
+          <EventsSection
+            namespace={route.metadata.namespace ?? "default"}
+            name={route.metadata.name}
+            uid={route.metadata.uid}
+          />
         </TabsContent>
 
         <TabsContent value="metadata">
