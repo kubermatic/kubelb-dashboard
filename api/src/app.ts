@@ -22,7 +22,13 @@ import { initOidc } from "./auth/oidc.js";
 import { initSession } from "./auth/session.js";
 import { authRoutes } from "./auth/routes.js";
 import { initAuthMiddleware, authMiddleware } from "./auth/middleware.js";
-import { env, authEnabled as defaultAuthEnabled, readOnly as defaultReadOnly } from "./env.js";
+import {
+  env,
+  authEnabled as defaultAuthEnabled,
+  readOnly as defaultReadOnly,
+  kubeProxyAllowlistDisabled as defaultKubeProxyAllowlistDisabled,
+} from "./env.js";
+import { isAllowedKubePath } from "./allowlist.js";
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -30,6 +36,7 @@ export interface BuildAppOptions {
   config?: KubeProxyConfig;
   authEnabled?: boolean;
   readOnly?: boolean;
+  allowlistDisabled?: boolean;
   logger?: boolean;
 }
 
@@ -37,6 +44,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const config = options.config ?? loadKubeProxyConfig();
   const authEnabled = options.authEnabled ?? defaultAuthEnabled;
   const readOnly = options.readOnly ?? defaultReadOnly;
+  const allowlistDisabled = options.allowlistDisabled ?? defaultKubeProxyAllowlistDisabled;
 
   const redirectUri = env.OIDC_REDIRECT_URI ?? `http://localhost:${env.PORT}/auth/callback`;
   const scopes = env.OIDC_SCOPES;
@@ -75,6 +83,21 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     app.log.info(`OIDC authentication enabled (issuer: ${env.OIDC_ISSUER})`);
   } else {
     app.log.warn("No OIDC configuration — running without authentication");
+  }
+
+  if (allowlistDisabled) {
+    app.log.warn("KUBE_PROXY_ALLOWLIST_DISABLED=true — kube proxy path allowlist is disabled");
+  } else {
+    app.addHook("onRequest", async (request, reply) => {
+      if (!request.url.startsWith("/api/kube")) {
+        return;
+      }
+      const path = request.url.slice("/api/kube".length).split("?")[0];
+      if (!isAllowedKubePath(path)) {
+        app.log.warn(`Blocked disallowed kube proxy path: ${path}`);
+        return reply.code(403).send({ error: "path not allowed" });
+      }
+    });
   }
 
   if (readOnly) {

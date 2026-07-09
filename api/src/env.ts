@@ -35,6 +35,7 @@ const envSchema = z
     SESSION_MAX_AGE: z.coerce.number().int().positive().default(86400),
     KUBECONFIG: z.string().optional(),
     READ_ONLY: z.enum(["true", "false"]).default("false"),
+    KUBE_PROXY_ALLOWLIST_DISABLED: z.enum(["true", "false"]).default("false"),
   })
   .superRefine((data, ctx) => {
     const set = Object.keys(oidcFields).filter(
@@ -60,3 +61,5 @@ export const authEnabled =
   env.SESSION_SECRET !== undefined;
 
 export const readOnly = env.READ_ONLY === "true";
+
+export const kubeProxyAllowlistDisabled = env.KUBE_PROXY_ALLOWLIST_DISABLED === "true";
