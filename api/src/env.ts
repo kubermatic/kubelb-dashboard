@@ -37,6 +37,7 @@ const envSchema = z
     READ_ONLY: z.enum(["true", "false"]).default("false"),
     KUBE_PROXY_ALLOWLIST_DISABLED: z.enum(["true", "false"]).default("false"),
     WATCH_ENABLED: z.enum(["true", "false"]).default("false"),
+    PROMETHEUS_URL: z.string().url().optional(),
   })
   .superRefine((data, ctx) => {
     const set = Object.keys(oidcFields).filter(
@@ -66,3 +67,4 @@ export const readOnly = env.READ_ONLY === "true";
 export const kubeProxyAllowlistDisabled = env.KUBE_PROXY_ALLOWLIST_DISABLED === "true";
 
 export const watchEnabled = env.WATCH_ENABLED === "true";
+export const prometheusUrl = env.PROMETHEUS_URL;

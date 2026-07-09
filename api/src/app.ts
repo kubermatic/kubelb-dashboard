@@ -28,8 +28,10 @@ import {
   readOnly as defaultReadOnly,
   kubeProxyAllowlistDisabled as defaultKubeProxyAllowlistDisabled,
   watchEnabled as defaultWatchEnabled,
+  prometheusUrl as defaultPrometheusUrl,
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
+import { detectPrometheus, queryRange } from "./metrics.js";
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -39,6 +41,7 @@ export interface BuildAppOptions {
   readOnly?: boolean;
   allowlistDisabled?: boolean;
   watchEnabled?: boolean;
+  prometheusUrl?: string;
   logger?: boolean;
 }
 
@@ -48,6 +51,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const readOnly = options.readOnly ?? defaultReadOnly;
   const allowlistDisabled = options.allowlistDisabled ?? defaultKubeProxyAllowlistDisabled;
   const watchEnabled = options.watchEnabled ?? defaultWatchEnabled;
+  const prometheusUrl = options.prometheusUrl ?? defaultPrometheusUrl;
 
   const redirectUri = env.OIDC_REDIRECT_URI ?? `http://localhost:${env.PORT}/auth/callback`;
   const scopes = env.OIDC_SCOPES;
@@ -78,7 +82,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     });
 
     app.addHook("onRequest", async (request, reply) => {
-      if (request.url.startsWith("/api/kube")) {
+      if (
+        request.url.startsWith("/api/kube") ||
+        request.url.startsWith("/api/metrics") ||
+        request.url.startsWith("/api/observability")
+      ) {
         await authMiddleware(request, reply);
       }
     });
@@ -136,6 +144,47 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   app.get("/api/config", () => ({ authEnabled, readOnly, watchEnabled }));
+  let metricsAvailable: boolean | undefined;
+  async function isMetricsAvailable(): Promise<boolean> {
+    metricsAvailable ??= await detectPrometheus(prometheusUrl);
+    return metricsAvailable;
+  }
+
+  app.get("/api/observability/sources", async () => {
+    const metrics = await isMetricsAvailable();
+    return {
+      metrics: { available: metrics, source: metrics ? "prometheus" : null },
+      traffic: { available: false, source: null },
+      tracing: { available: false, source: null },
+    };
+  });
+
+  app.get("/api/metrics/query_range", async (request, reply) => {
+    if (!prometheusUrl || !(await isMetricsAvailable())) {
+      return reply.code(404).send({ error: "metrics not available" });
+    }
+    const q = request.query as Record<string, string | undefined>;
+    const metric = q.metric ?? "";
+    const namespace = q.namespace ?? "";
+    const windowSeconds = Math.min(Math.max(Number(q.window) || 1800, 60), 86400);
+    const step = Math.min(Math.max(Number(q.step) || 60, 15), 3600);
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const result = await queryRange(prometheusUrl, {
+        metric,
+        namespace,
+        windowSeconds,
+        step,
+        now,
+      });
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "query failed";
+      const code = message === "unknown metric" || message === "invalid namespace" ? 400 : 502;
+      return reply.code(code).send({ error: message });
+    }
+  });
+
   app.get("/healthz", () => ({ status: "ok" }));
   app.get("/readyz", () => ({ status: "ok" }));
 

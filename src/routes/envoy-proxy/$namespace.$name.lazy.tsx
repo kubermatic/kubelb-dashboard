@@ -22,6 +22,7 @@ import { KubeApiError } from "@/api/kube";
 import { ConditionsTable } from "@/components/common/conditions-table";
 import { KeyValuePairs } from "@/components/common/key-value-pairs";
 import { MetadataSection } from "@/components/common/metadata-section";
+import { ProxyMetricsSection } from "@/components/common/proxy-metrics-section";
 import { ResourceNotFound } from "@/components/common/not-found";
 import { QueryError } from "@/components/common/query-error";
 import { ResourceHeader } from "@/components/common/resource-header";
@@ -31,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeployment } from "@/hooks/use-deployments";
+import { useMetricsAvailable } from "@/hooks/use-observability";
 
 export const Route = createLazyFileRoute("/envoy-proxy/$namespace/$name")({
   component: EnvoyProxyDetail,
@@ -40,6 +42,7 @@ function EnvoyProxyDetail() {
   const { namespace, name } = Route.useParams();
   const { data: deployment, isLoading, isError, error, refetch } = useDeployment(namespace, name);
   const [yamlOpen, setYamlOpen] = useState(false);
+  const metricsAvailable = useMetricsAvailable();
 
   if (isLoading) {
     return (
@@ -85,8 +88,17 @@ function EnvoyProxyDetail() {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          {metricsAvailable && <TabsTrigger value="metrics">Metrics</TabsTrigger>}
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
+
+        {metricsAvailable && (
+          <TabsContent value="metrics">
+            <div className="pt-4">
+              <ProxyMetricsSection namespace={namespace} />
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="overview">
           <div className="space-y-4 pt-4">

@@ -28,6 +28,7 @@ import { httpRouteHandlers } from "./handlers/httproutes";
 import { ingressHandlers } from "./handlers/ingresses";
 import { loadBalancerHandlers } from "./handlers/load-balancers";
 import { namespaceHandlers } from "./handlers/namespaces";
+import { observabilityHandlers } from "./handlers/observability";
 import { routeHandlers } from "./handlers/routes";
 import { serviceHandlers } from "./handlers/services";
 import { syncSecretHandlers } from "./handlers/sync-secrets";
@@ -78,4 +79,5 @@ export const handlers = [
   ...serviceHandlers,
   ...backendTrafficPolicyHandlers,
   ...clientTrafficPolicyHandlers,
+  ...observabilityHandlers,
 ];
