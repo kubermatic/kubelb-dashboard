@@ -16,8 +16,9 @@
 
 import { queryKeys } from "@/api/query-keys";
 import { useKubeGet } from "@/hooks/use-kube-get";
+import { useKubeList } from "@/hooks/use-kube-list";
 import type { Addresses } from "@/types/kubelb";
-import { API_PATHS } from "@/lib/constants";
+import { API_BASE, API_PATHS } from "@/lib/constants";
 
 export function useAddresses(namespace: string, name: string, enabled = true) {
   return useKubeGet<Addresses>(
@@ -25,4 +26,8 @@ export function useAddresses(namespace: string, name: string, enabled = true) {
     `${API_PATHS.addresses(namespace)}/${name}`,
     { enabled: enabled && !!namespace && !!name },
   );
+}
+
+export function useAllAddresses(options?: { enabled?: boolean }) {
+  return useKubeList<Addresses>(queryKeys.addresses.all, `${API_BASE}/addresses`, options);
 }

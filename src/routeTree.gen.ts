@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from "./routes/__root"
 import { Route as LoginRouteImport } from "./routes/login"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as WafPoliciesIndexRouteImport } from "./routes/waf-policies/index"
+import { Route as TrafficIndexRouteImport } from "./routes/traffic/index"
 import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
 import { Route as SyncSecretsIndexRouteImport } from "./routes/sync-secrets/index"
 import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
@@ -46,6 +47,11 @@ const WafPoliciesIndexRoute = WafPoliciesIndexRouteImport.update({
 } as any).lazy(() =>
   import("./routes/waf-policies/index.lazy").then((d) => d.Route),
 )
+const TrafficIndexRoute = TrafficIndexRouteImport.update({
+  id: "/traffic/",
+  path: "/traffic/",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import("./routes/traffic/index.lazy").then((d) => d.Route))
 const TenantsIndexRoute = TenantsIndexRouteImport.update({
   id: "/tenants/",
   path: "/tenants/",
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
+  "/traffic/": typeof TrafficIndexRoute
   "/waf-policies/": typeof WafPoliciesIndexRoute
   "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   "/routes": typeof RoutesIndexRoute
   "/sync-secrets": typeof SyncSecretsIndexRoute
   "/tenants": typeof TenantsIndexRoute
+  "/traffic": typeof TrafficIndexRoute
   "/waf-policies": typeof WafPoliciesIndexRoute
   "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
   "/tenants/": typeof TenantsIndexRoute
+  "/traffic/": typeof TrafficIndexRoute
   "/waf-policies/": typeof WafPoliciesIndexRoute
   "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | "/routes/"
     | "/sync-secrets/"
     | "/tenants/"
+    | "/traffic/"
     | "/waf-policies/"
     | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | "/routes"
     | "/sync-secrets"
     | "/tenants"
+    | "/traffic"
     | "/waf-policies"
     | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | "/routes/"
     | "/sync-secrets/"
     | "/tenants/"
+    | "/traffic/"
     | "/waf-policies/"
     | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   RoutesIndexRoute: typeof RoutesIndexRoute
   SyncSecretsIndexRoute: typeof SyncSecretsIndexRoute
   TenantsIndexRoute: typeof TenantsIndexRoute
+  TrafficIndexRoute: typeof TrafficIndexRoute
   WafPoliciesIndexRoute: typeof WafPoliciesIndexRoute
   AiGatewayNamespaceNameRoute: typeof AiGatewayNamespaceNameRoute
   EnvoyProxyNamespaceNameRoute: typeof EnvoyProxyNamespaceNameRoute
@@ -330,6 +343,13 @@ declare module "@tanstack/react-router" {
       path: "/waf-policies"
       fullPath: "/waf-policies/"
       preLoaderRoute: typeof WafPoliciesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/traffic/": {
+      id: "/traffic/"
+      path: "/traffic"
+      fullPath: "/traffic/"
+      preLoaderRoute: typeof TrafficIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/tenants/": {
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoutesIndexRoute: RoutesIndexRoute,
   SyncSecretsIndexRoute: SyncSecretsIndexRoute,
   TenantsIndexRoute: TenantsIndexRoute,
+  TrafficIndexRoute: TrafficIndexRoute,
   WafPoliciesIndexRoute: WafPoliciesIndexRoute,
   AiGatewayNamespaceNameRoute: AiGatewayNamespaceNameRoute,
   EnvoyProxyNamespaceNameRoute: EnvoyProxyNamespaceNameRoute,
