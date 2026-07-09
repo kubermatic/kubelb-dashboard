@@ -147,22 +147,44 @@ function mapFlow(raw: RawFlow): Flow {
   };
 }
 
-// Pull the last `limit` flows (one-shot; GetFlows completes when not following).
-export function getRecentFlows(
-  opts: HubbleOptions,
-  limit = 200,
-  timeoutMs = 8000,
-): Promise<Flow[]> {
+export interface FlowQuery {
+  /** Time window in seconds. When set, flows are fetched for [now - windowSeconds, now]. */
+  windowSeconds?: number;
+  /** Hard cap on returned flows — bounds memory and, in windowed mode, stream length. */
+  limit?: number;
+  timeoutMs?: number;
+}
+
+// `since` and `number` are mutually exclusive in the Observer API: a windowed query
+// streams the whole interval, so `limit` is enforced client-side as a ceiling.
+export function buildFlowRequest(
+  windowSeconds: number | undefined,
+  limit: number,
+  nowSeconds: number,
+): { since: { seconds: number } } | { number: number } {
+  return windowSeconds && windowSeconds > 0
+    ? { since: { seconds: nowSeconds - windowSeconds } }
+    : { number: limit };
+}
+
+export function getFlows(opts: HubbleOptions, query: FlowQuery = {}): Promise<Flow[]> {
+  const { windowSeconds, limit = 500, timeoutMs = 8000 } = query;
   return new Promise((resolve, reject) => {
     const client = getClient(opts);
     const flows: Flow[] = [];
-    const call = client.GetFlows({ number: limit });
+    const request = buildFlowRequest(windowSeconds, limit, Math.floor(Date.now() / 1000));
+    const call = client.GetFlows(request);
     const timer = setTimeout(() => {
       call.cancel();
       resolve(flows);
     }, timeoutMs);
     call.on("data", (res: { flow?: RawFlow }) => {
       if (res.flow) flows.push(mapFlow(res.flow));
+      if (flows.length >= limit) {
+        clearTimeout(timer);
+        call.cancel();
+        resolve(flows);
+      }
     });
     call.on("end", () => {
       clearTimeout(timer);
@@ -175,6 +197,19 @@ export function getRecentFlows(
   });
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+export const TRAFFIC_WINDOWS = {
+  "1m": 60,
+  "5m": 300,
+  "15m": 900,
+  "1h": 3600,
+} as const;
+
+export type TrafficWindow = keyof typeof TRAFFIC_WINDOWS;
+
+export function resolveWindowSeconds(window: string | undefined): number | undefined {
+  return window && window in TRAFFIC_WINDOWS ? TRAFFIC_WINDOWS[window as TrafficWindow] : undefined;
+}
 
 function nodeId(e: FlowEndpoint): string {
   return `${e.namespace}/${e.name}`;
@@ -203,7 +238,7 @@ export function buildFlowGraph(flows: Flow[]): FlowGraph {
 export async function detectHubble(opts: HubbleOptions | null): Promise<boolean> {
   if (!opts?.address) return false;
   try {
-    await getRecentFlows(opts, 1, 4000);
+    await getFlows(opts, { limit: 1, timeoutMs: 4000 });
     return true;
   } catch {
     return false;

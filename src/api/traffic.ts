@@ -50,6 +50,10 @@ export interface TrafficFlow {
   time: string;
 }
 
+export const TRAFFIC_WINDOWS = ["1m", "5m", "15m", "1h"] as const;
+export type TrafficWindow = (typeof TRAFFIC_WINDOWS)[number];
+export const DEFAULT_TRAFFIC_WINDOW: TrafficWindow = "5m";
+
 const UNAVAILABLE: TrafficSources = { hubble: { available: false, source: null } };
 
 export async function fetchTrafficSources(): Promise<TrafficSources> {
@@ -62,14 +66,14 @@ export async function fetchTrafficSources(): Promise<TrafficSources> {
   }
 }
 
-export async function fetchTrafficGraph(): Promise<TrafficGraphData> {
-  const res = await fetch("/api/traffic/graph", { credentials: "include" });
+export async function fetchTrafficGraph(window: TrafficWindow): Promise<TrafficGraphData> {
+  const res = await fetch(`/api/traffic/graph?window=${window}`, { credentials: "include" });
   if (!res.ok) throw new Error(`traffic graph ${String(res.status)}`);
   return (await res.json()) as TrafficGraphData;
 }
 
-export async function fetchTrafficFlows(): Promise<TrafficFlow[]> {
-  const res = await fetch("/api/traffic/flows", { credentials: "include" });
+export async function fetchTrafficFlows(window: TrafficWindow): Promise<TrafficFlow[]> {
+  const res = await fetch(`/api/traffic/flows?window=${window}`, { credentials: "include" });
   if (!res.ok) throw new Error(`traffic flows ${String(res.status)}`);
   const body = (await res.json()) as { flows: TrafficFlow[] };
   return body.flows;
