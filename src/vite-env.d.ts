@@ -17,7 +17,6 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_ENABLE_FORM_EDITOR?: string;
   readonly VITE_ENABLE_YAML_EDITOR?: string;
 }
 

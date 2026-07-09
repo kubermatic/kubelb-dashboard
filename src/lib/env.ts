@@ -25,7 +25,6 @@ const boolFlag = (trueWhen: "true" | "notFalse") =>
 const envSchema = z.object({
   VITE_API_URL: z.string().default(""),
   VITE_MOCK: boolFlag("true"),
-  VITE_ENABLE_FORM_EDITOR: boolFlag("notFalse"),
   VITE_ENABLE_YAML_EDITOR: boolFlag("notFalse"),
 });
 

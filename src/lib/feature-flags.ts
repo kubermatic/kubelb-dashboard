@@ -16,5 +16,4 @@
 
 import { env } from "@/lib/env";
 
-export const FORM_EDITOR_ENABLED = env.VITE_ENABLE_FORM_EDITOR;
 export const YAML_EDITOR_ENABLED = env.VITE_ENABLE_YAML_EDITOR;
