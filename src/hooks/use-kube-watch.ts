@@ -92,6 +92,8 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
         (event: WatchEvent<T>) => {
           if (event.type === "ERROR") {
             sawErrorEventRef.current = true;
+          } else {
+            failedAttemptsRef.current = 0;
           }
           handleEvent(queryClient, stableQueryKey, event);
         },
@@ -110,7 +112,7 @@ export function useKubeWatch<T extends { metadata: ObjectMeta }>(
           }
 
           failedAttemptsRef.current += 1;
-          if (!hasConnectedRef.current && failedAttemptsRef.current >= MAX_FAILED_ATTEMPTS) {
+          if (failedAttemptsRef.current >= MAX_FAILED_ATTEMPTS) {
             setPollingFallback(true);
             setConnectionStatus(undefined);
             return;

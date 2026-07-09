@@ -189,6 +189,45 @@ describe("useKubeWatch", () => {
     expect(mockKubeWatch).toHaveBeenCalledTimes(3);
   });
 
+  it("falls back to polling when the stream opens then immediately ends with zero events", async () => {
+    vi.useFakeTimers();
+    mockKubeList.mockResolvedValue(listOf("1"));
+    mockKubeWatch.mockImplementation((_path, _rv, _onEvent, onError, onOpen) => {
+      onOpen?.();
+      onError(new Error("watch stream ended"));
+      return () => {};
+    });
+
+    const { result } = renderHook(() => useKubeWatch<Item>(["watch-immediate-end"], "/items"), {
+      wrapper,
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(mockKubeWatch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(mockKubeWatch).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(mockKubeWatch).toHaveBeenCalledTimes(3);
+    expect(result.current.connectionStatus).toBeUndefined();
+
+    const watchCallsAtFallback = mockKubeWatch.mock.calls.length;
+    const listCallsAtFallback = mockKubeList.mock.calls.length;
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(mockKubeWatch).toHaveBeenCalledTimes(watchCallsAtFallback);
+    expect(mockKubeList.mock.calls.length).toBeGreaterThan(listCallsAtFallback);
+  });
+
   it("skips the watch entirely and polls when watch is disabled", async () => {
     vi.useFakeTimers();
     mockKubeList.mockResolvedValue(listOf("1"));
