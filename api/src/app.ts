@@ -27,6 +27,7 @@ import {
   authEnabled as defaultAuthEnabled,
   readOnly as defaultReadOnly,
   kubeProxyAllowlistDisabled as defaultKubeProxyAllowlistDisabled,
+  watchEnabled as defaultWatchEnabled,
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
 
@@ -37,6 +38,7 @@ export interface BuildAppOptions {
   authEnabled?: boolean;
   readOnly?: boolean;
   allowlistDisabled?: boolean;
+  watchEnabled?: boolean;
   logger?: boolean;
 }
 
@@ -45,6 +47,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const authEnabled = options.authEnabled ?? defaultAuthEnabled;
   const readOnly = options.readOnly ?? defaultReadOnly;
   const allowlistDisabled = options.allowlistDisabled ?? defaultKubeProxyAllowlistDisabled;
+  const watchEnabled = options.watchEnabled ?? defaultWatchEnabled;
 
   const redirectUri = env.OIDC_REDIRECT_URI ?? `http://localhost:${env.PORT}/auth/callback`;
   const scopes = env.OIDC_SCOPES;
@@ -132,7 +135,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     },
   });
 
-  app.get("/api/config", () => ({ authEnabled, readOnly }));
+  app.get("/api/config", () => ({ authEnabled, readOnly, watchEnabled }));
   app.get("/healthz", () => ({ status: "ok" }));
   app.get("/readyz", () => ({ status: "ok" }));
 

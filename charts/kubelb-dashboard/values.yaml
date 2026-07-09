@@ -75,6 +75,13 @@ rbac:
 # read-only verbs (defense-in-depth).
 readOnly: false
 
+# Watch streams resource updates instead of polling every 15s. Disabled by
+# default; enable per-deployment once validated against your cluster. Falls
+# back to polling automatically if the watch stream fails.
+watch:
+  # -- Enable Kubernetes watch streaming for resource lists
+  enabled: false
+
 # -- Pod annotations
 podAnnotations: {}
 # -- Pod labels

@@ -29,7 +29,7 @@ beforeEach(() => {
 describe("kube write guard", () => {
   describe("when read-only", () => {
     beforeEach(() => {
-      mockGetCached.mockReturnValue({ authEnabled: false, readOnly: true });
+      mockGetCached.mockReturnValue({ authEnabled: false, readOnly: true, watchEnabled: false });
     });
 
     it("rejects every mutating call with a 403 KubeApiError and never calls fetch", async () => {
@@ -52,7 +52,7 @@ describe("kube write guard", () => {
 
   describe("when not read-only", () => {
     beforeEach(() => {
-      mockGetCached.mockReturnValue({ authEnabled: false, readOnly: false });
+      mockGetCached.mockReturnValue({ authEnabled: false, readOnly: false, watchEnabled: false });
     });
 
     it("performs the request", async () => {

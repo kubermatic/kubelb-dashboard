@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { kubeList } from "@/api/kube";
-import type { KubeList } from "@/types/kubernetes";
-import { POLL_INTERVAL } from "@/lib/constants";
+import { useKubeWatch } from "@/hooks/use-kube-watch";
+import { getCachedAppConfig } from "@/api/config";
+import type { ObjectMeta } from "@/types/kubernetes";
 
-export function useKubeList<T>(
+export function useKubeList<T extends { metadata: ObjectMeta }>(
   queryKey: readonly unknown[],
   path: string,
   options?: { labelSelector?: string; fieldSelector?: string; enabled?: boolean },
 ) {
-  return useQuery<KubeList<T>>({
-    queryKey,
-    queryFn: ({ signal }) =>
-      kubeList<T>(
-        path,
-        { labelSelector: options?.labelSelector, fieldSelector: options?.fieldSelector },
-        signal,
-      ),
-    enabled: options?.enabled,
-    refetchInterval: POLL_INTERVAL,
-  });
+  const watchEnabled = getCachedAppConfig()?.watchEnabled ?? false;
+  return useKubeWatch<T>(queryKey, path, { ...options, watch: watchEnabled });
 }

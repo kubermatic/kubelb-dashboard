@@ -88,10 +88,14 @@ spec:
               port: api
             initialDelaySeconds: 3
             periodSeconds: 5
-          {{- if or .Values.kubeconfig.existingSecret .Values.auth.enabled .Values.readOnly }}
+          {{- if or .Values.kubeconfig.existingSecret .Values.auth.enabled .Values.readOnly .Values.watch.enabled }}
           env:
           {{- if .Values.readOnly }}
             - name: READ_ONLY
+              value: "true"
+          {{- end }}
+          {{- if .Values.watch.enabled }}
+            - name: WATCH_ENABLED
               value: "true"
           {{- end }}
           {{- if .Values.kubeconfig.existingSecret }}

@@ -17,6 +17,7 @@
 export interface AppConfig {
   authEnabled: boolean;
   readOnly: boolean;
+  watchEnabled: boolean;
 }
 
 let cachedConfig: AppConfig | null = null;

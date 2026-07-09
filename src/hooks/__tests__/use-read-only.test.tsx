@@ -40,20 +40,20 @@ beforeEach(() => {
 
 describe("useReadOnly", () => {
   it("returns true synchronously from the cached config", () => {
-    mockGetCached.mockReturnValue({ authEnabled: false, readOnly: true });
+    mockGetCached.mockReturnValue({ authEnabled: false, readOnly: true, watchEnabled: false });
     const { result } = renderHook(() => useReadOnly(), { wrapper });
     expect(result.current).toBe(true);
   });
 
   it("returns false from the cached config", () => {
-    mockGetCached.mockReturnValue({ authEnabled: false, readOnly: false });
+    mockGetCached.mockReturnValue({ authEnabled: false, readOnly: false, watchEnabled: false });
     const { result } = renderHook(() => useReadOnly(), { wrapper });
     expect(result.current).toBe(false);
   });
 
   it("falls back to fetching when no cache is present", async () => {
     mockGetCached.mockReturnValue(undefined);
-    mockFetch.mockResolvedValue({ authEnabled: false, readOnly: true });
+    mockFetch.mockResolvedValue({ authEnabled: false, readOnly: true, watchEnabled: false });
     const { result } = renderHook(() => useReadOnly(), { wrapper });
     expect(result.current).toBe(false);
     await waitFor(() => expect(result.current).toBe(true));
