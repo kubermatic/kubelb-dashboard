@@ -17,7 +17,13 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
 import proxy from "@fastify/http-proxy";
-import { loadKubeProxyConfig, getAuthToken, type KubeProxyConfig } from "./kube-config.js";
+import type { CoreV1Api } from "@kubernetes/client-node";
+import {
+  loadKubeProxyConfig,
+  getAuthToken,
+  makeCoreV1Client,
+  type KubeProxyConfig,
+} from "./kube-config.js";
 import { initOidc } from "./auth/oidc.js";
 import { initSession } from "./auth/session.js";
 import { authRoutes } from "./auth/routes.js";
@@ -30,9 +36,12 @@ import {
   watchEnabled as defaultWatchEnabled,
   prometheusUrl as defaultPrometheusUrl,
   hubbleOptions as defaultHubbleOptions,
+  prometheusAutodiscover as defaultPrometheusAutodiscover,
+  hubbleAutodiscover as defaultHubbleAutodiscover,
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
 import { detectPrometheus, queryRange } from "./metrics.js";
+import { discoverHubble, discoverPrometheus } from "./discovery.js";
 import {
   buildFlowGraph,
   detectHubble,
@@ -52,7 +61,20 @@ export interface BuildAppOptions {
   watchEnabled?: boolean;
   prometheusUrl?: string;
   hubble?: HubbleOptions | null;
+  prometheusAutodiscover?: boolean;
+  hubbleAutodiscover?: boolean;
+  coreClient?: CoreV1Api | null;
   logger?: boolean;
+}
+
+// Building the discovery client touches the local kubeconfig, which may be
+// absent (e.g. in unit tests). Fail closed to null so discovery just no-ops.
+function safeCoreClient(): CoreV1Api | null {
+  try {
+    return makeCoreV1Client();
+  } catch {
+    return null;
+  }
 }
 
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -63,6 +85,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const watchEnabled = options.watchEnabled ?? defaultWatchEnabled;
   const prometheusUrl = options.prometheusUrl ?? defaultPrometheusUrl;
   const hubble = options.hubble ?? defaultHubbleOptions();
+  const prometheusAutodiscover = options.prometheusAutodiscover ?? defaultPrometheusAutodiscover;
+  const hubbleAutodiscover = options.hubbleAutodiscover ?? defaultHubbleAutodiscover;
+  // Only build a discovery client when discovery could actually run (an address
+  // is missing and discovery is enabled). Explicit null in options disables it.
+  const needsDiscovery =
+    (!prometheusUrl && prometheusAutodiscover) || (!hubble && hubbleAutodiscover);
+  const coreClient =
+    options.coreClient !== undefined
+      ? options.coreClient
+      : needsDiscovery
+        ? safeCoreClient()
+        : null;
 
   const redirectUri = env.OIDC_REDIRECT_URI ?? `http://localhost:${env.PORT}/auth/callback`;
   const scopes = env.OIDC_SCOPES;
@@ -156,9 +190,42 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   app.get("/api/config", () => ({ authEnabled, readOnly, watchEnabled }));
+
+  // Availability is re-checked on this cadence while a source is unavailable, so
+  // a cluster that installs Prometheus/Hubble later is picked up without a
+  // restart. Once available, the result sticks for the pod lifetime.
+  const RECHECK_MS = 5 * 60_000;
+
+  // Effective Prometheus URL: the explicit env address, or one found via
+  // discovery. Set on the first availability check, refreshed on re-check, and
+  // used by the query handler so it targets whatever was actually resolved.
+  let resolvedPromUrl: string | undefined = prometheusUrl;
   let metricsAvailable: boolean | undefined;
+  let metricsCheckedAt = 0;
   async function isMetricsAvailable(): Promise<boolean> {
-    metricsAvailable ??= await detectPrometheus(prometheusUrl);
+    if (metricsAvailable === true) return true;
+    const now = Date.now();
+    if (metricsAvailable !== undefined && now - metricsCheckedAt <= RECHECK_MS) {
+      return metricsAvailable;
+    }
+    metricsCheckedAt = now;
+    if (prometheusUrl) {
+      resolvedPromUrl = prometheusUrl;
+      metricsAvailable = await detectPrometheus(resolvedPromUrl);
+    } else if (prometheusAutodiscover && coreClient) {
+      // discoverPrometheus validates each candidate, so a returned URL is usable.
+      resolvedPromUrl = (await discoverPrometheus(coreClient)) ?? undefined;
+      metricsAvailable = resolvedPromUrl !== undefined;
+    } else {
+      resolvedPromUrl = undefined;
+      metricsAvailable = false;
+    }
+    // Log the resolved target once, when discovery first makes metrics available
+    // (this line is reached at most once: availability then sticks). Avoids
+    // per-recheck log spam while a source stays unavailable.
+    if (metricsAvailable && !prometheusUrl && resolvedPromUrl) {
+      app.log.info(`Auto-discovered Prometheus at ${resolvedPromUrl}`);
+    }
     return metricsAvailable;
   }
 
@@ -172,7 +239,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   app.get("/api/metrics/query_range", async (request, reply) => {
-    if (!prometheusUrl || !(await isMetricsAvailable())) {
+    if (!(await isMetricsAvailable()) || !resolvedPromUrl) {
       return reply.code(404).send({ error: "metrics not available" });
     }
     const q = request.query as Record<string, string | undefined>;
@@ -182,7 +249,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     const step = Math.min(Math.max(Number(q.step) || 60, 15), 3600);
     try {
       const now = Math.floor(Date.now() / 1000);
-      const result = await queryRange(prometheusUrl, {
+      const result = await queryRange(resolvedPromUrl, {
         metric,
         namespace,
         windowSeconds,
@@ -197,15 +264,29 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     }
   });
 
+  // Effective Hubble options: the explicit env address, or one found via
+  // discovery. Used by the flow/graph handlers so they hit whatever was resolved.
+  let resolvedHubble: HubbleOptions | null = hubble;
   let hubbleAvailable: boolean | undefined;
   let hubbleCheckedAt = 0;
-  const HUBBLE_RECHECK_MS = 5 * 60_000;
   async function isHubbleAvailable(): Promise<boolean> {
     if (hubbleAvailable === true) return true;
     const now = Date.now();
-    if (hubbleAvailable === undefined || now - hubbleCheckedAt > HUBBLE_RECHECK_MS) {
-      hubbleAvailable = await detectHubble(hubble);
-      hubbleCheckedAt = now;
+    if (hubbleAvailable !== undefined && now - hubbleCheckedAt <= RECHECK_MS) {
+      return hubbleAvailable;
+    }
+    hubbleCheckedAt = now;
+    if (hubble) {
+      resolvedHubble = hubble;
+    } else if (hubbleAutodiscover && coreClient) {
+      resolvedHubble = await discoverHubble(coreClient);
+    } else {
+      resolvedHubble = null;
+    }
+    hubbleAvailable = await detectHubble(resolvedHubble);
+    // Log the resolved relay once, when discovery first makes traffic available.
+    if (hubbleAvailable && !hubble && resolvedHubble) {
+      app.log.info(`Auto-discovered Hubble Relay at ${resolvedHubble.address}`);
     }
     return hubbleAvailable;
   }
@@ -216,13 +297,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   app.get("/api/traffic/flows", async (request, reply) => {
-    if (!hubble || !(await isHubbleAvailable())) {
+    if (!(await isHubbleAvailable()) || !resolvedHubble) {
       return reply.code(404).send({ error: "traffic source not available" });
     }
     const q = request.query as Record<string, string | undefined>;
     const windowSeconds = resolveWindowSeconds(q.window);
     try {
-      const flows = await getFlows(hubble, { windowSeconds, limit: 1000 });
+      const flows = await getFlows(resolvedHubble, { windowSeconds, limit: 1000 });
       return { flows };
     } catch (err) {
       return reply.code(502).send({ error: err instanceof Error ? err.message : "hubble error" });
@@ -230,13 +311,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   app.get("/api/traffic/graph", async (request, reply) => {
-    if (!hubble || !(await isHubbleAvailable())) {
+    if (!(await isHubbleAvailable()) || !resolvedHubble) {
       return reply.code(404).send({ error: "traffic source not available" });
     }
     const q = request.query as Record<string, string | undefined>;
     const windowSeconds = resolveWindowSeconds(q.window);
     try {
-      const flows = await getFlows(hubble, { windowSeconds, limit: 2000 });
+      const flows = await getFlows(resolvedHubble, { windowSeconds, limit: 2000 });
       const scoped = q.namespace ? filterFlowsByNamespace(flows, q.namespace) : flows;
       return buildFlowGraph(scoped);
     } catch (err) {

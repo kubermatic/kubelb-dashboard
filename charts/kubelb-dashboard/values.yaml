@@ -82,17 +82,23 @@ watch:
   # -- Enable Kubernetes watch streaming for resource lists
   enabled: false
 # Per-proxy traffic metrics. Point at a Prometheus that scrapes the KubeLB
-# Envoy proxies (in-cluster URL). When empty, metrics auto-detection reports
-# unavailable and the dashboard shows no metrics — nothing is queried.
+# Envoy proxies (in-cluster URL). When prometheusUrl is empty and autoDiscover
+# is true, the dashboard probes well-known Prometheus locations and uses one that
+# exposes the Envoy series. When neither yields a usable target, metrics are hidden.
 metrics:
   # -- Prometheus base URL, e.g. http://prometheus.monitoring.svc:9090
   prometheusUrl: ""
+  # -- Auto-discover Prometheus when prometheusUrl is empty (explicit URL always wins)
+  autoDiscover: true
 
 # Live traffic view (Hubble). Point at the Hubble Relay gRPC endpoint (Cilium).
-# When empty, the Traffic view auto-detects as unavailable and is hidden.
+# When hubbleRelayAddress is empty and autoDiscover is true, the dashboard finds
+# the hubble-relay Service (any namespace) itself. Otherwise the Traffic view is hidden.
 traffic:
   # -- Hubble Relay address, e.g. hubble-relay.kube-system.svc:80
   hubbleRelayAddress: ""
+  # -- Auto-discover Hubble Relay when hubbleRelayAddress is empty (explicit address always wins)
+  autoDiscover: true
 
 # -- Pod annotations
 podAnnotations: {}

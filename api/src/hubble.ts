@@ -23,9 +23,23 @@ import protoLoader from "@grpc/proto-loader";
 // Hubble Relay only speaks gRPC. The client is built lazily from the vendored
 // observer/flow protos. Relay commonly disables server TLS (serving plaintext
 // to clients); mTLS certs, when required, are supplied via config.
+//
+// TLS material comes from one of two places: file paths (ca/cert/key) when set
+// via env vars, or in-memory PEM buffers (caData/certData/keyData) when read
+// from a Secret during auto-discovery. When both are present, buffers win.
+export interface HubbleTLS {
+  ca?: string;
+  cert?: string;
+  key?: string;
+  caData?: Buffer;
+  certData?: Buffer;
+  keyData?: Buffer;
+  serverNameOverride?: string;
+}
+
 export interface HubbleOptions {
   address: string;
-  tls?: { ca?: string; cert?: string; key?: string; serverNameOverride?: string };
+  tls?: HubbleTLS;
 }
 
 interface FlowEndpoint {
@@ -115,11 +129,10 @@ function getClient(opts: HubbleOptions): any {
   let creds: grpc.ChannelCredentials;
   const channelOpts: Record<string, string> = {};
   if (opts.tls) {
-    creds = grpc.credentials.createSsl(
-      opts.tls.ca ? readFileSync(opts.tls.ca) : null,
-      opts.tls.key ? readFileSync(opts.tls.key) : null,
-      opts.tls.cert ? readFileSync(opts.tls.cert) : null,
-    );
+    const ca = opts.tls.caData ?? (opts.tls.ca ? readFileSync(opts.tls.ca) : null);
+    const key = opts.tls.keyData ?? (opts.tls.key ? readFileSync(opts.tls.key) : null);
+    const cert = opts.tls.certData ?? (opts.tls.cert ? readFileSync(opts.tls.cert) : null);
+    creds = grpc.credentials.createSsl(ca, key, cert);
     if (opts.tls.serverNameOverride) {
       channelOpts["grpc.ssl_target_name_override"] = opts.tls.serverNameOverride;
       channelOpts["grpc.default_authority"] = opts.tls.serverNameOverride;

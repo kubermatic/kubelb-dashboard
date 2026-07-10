@@ -38,7 +38,9 @@ const envSchema = z
     KUBE_PROXY_ALLOWLIST_DISABLED: z.enum(["true", "false"]).default("false"),
     WATCH_ENABLED: z.enum(["true", "false"]).default("false"),
     PROMETHEUS_URL: z.string().url().optional(),
+    PROMETHEUS_AUTODISCOVER: z.enum(["true", "false"]).default("true"),
     HUBBLE_RELAY_ADDRESS: z.string().optional(),
+    HUBBLE_AUTODISCOVER: z.enum(["true", "false"]).default("true"),
     HUBBLE_RELAY_TLS_CA: z.string().optional(),
     HUBBLE_RELAY_TLS_CERT: z.string().optional(),
     HUBBLE_RELAY_TLS_KEY: z.string().optional(),
@@ -87,3 +89,8 @@ export function hubbleOptions(): import("./hubble.js").HubbleOptions | null {
 
 export const watchEnabled = env.WATCH_ENABLED === "true";
 export const prometheusUrl = env.PROMETHEUS_URL;
+
+// Auto-discovery runs only when the corresponding explicit address is unset; the
+// address, when set, always wins. These flags are the kill-switch for discovery.
+export const prometheusAutodiscover = env.PROMETHEUS_AUTODISCOVER === "true";
+export const hubbleAutodiscover = env.HUBBLE_AUTODISCOVER === "true";
