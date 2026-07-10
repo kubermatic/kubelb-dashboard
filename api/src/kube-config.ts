@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { KubeConfig } from "@kubernetes/client-node";
+import { KubeConfig, CoreV1Api } from "@kubernetes/client-node";
 import { readFileSync, existsSync } from "node:fs";
 
 const SA_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
@@ -69,6 +69,14 @@ export function loadKubeProxyConfig(): KubeProxyConfig {
   }
 
   return config;
+}
+
+// A typed CoreV1 client for observability auto-discovery. Uses the same default
+// resolution as the proxy config (in-cluster SA token, or local kubeconfig).
+export function makeCoreV1Client(): CoreV1Api {
+  const kc = new KubeConfig();
+  kc.loadFromDefault();
+  return kc.makeApiClient(CoreV1Api);
 }
 
 export function getAuthToken(config: KubeProxyConfig): string | undefined {
