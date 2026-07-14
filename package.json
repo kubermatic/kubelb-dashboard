@@ -24,7 +24,10 @@
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "test:e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
     "test:e2e:headed": "playwright test --config e2e/playwright.config.ts --headed",
+    "test:release": "node --test hack/*.node-test.mjs",
     "license:check": "bash hack/check-licenses.sh",
+    "release:prepare": "node hack/prepare-release.mjs",
+    "release:manifest": "node hack/release-manifest.mjs",
     "version:check": "node hack/verify-version.mjs",
     "fixtures:capture": "pnpm exec tsx hack/capture-fixtures.ts",
     "prepare": "husky"

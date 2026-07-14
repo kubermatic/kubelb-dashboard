@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
 
 permissions: {}
 
@@ -39,17 +39,89 @@ jobs:
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         run: |
           node hack/verify-version.mjs
+          if [[ -n "$RELEASE_TAG" ]]; then
+            test -f "docs/releases/${RELEASE_TAG}.md"
+          fi
           echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+
+  preflight:
+    name: Release Preflight
+    needs: version
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'main-publish' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        if: startsWith(github.ref, 'refs/tags/v')
+
+      - name: Login to Quay.io
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | oras login ${{ env.REGISTRY }} -u ${{ secrets.REGISTRY_USER }} --password-stdin
+
+      - name: Refuse to overwrite release artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          assert_release_absent() {
+            local error
+            error="$(mktemp)"
+            if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" > /dev/null 2> "$error"; then
+              echo "Release $GITHUB_REF_NAME already exists; refusing to mutate registry tags" >&2
+              exit 1
+            fi
+            if ! grep -qE 'HTTP 404|Not Found' "$error"; then
+              cat "$error" >&2
+              echo "Could not prove that release $GITHUB_REF_NAME is absent" >&2
+              exit 1
+            fi
+          }
+
+          assert_registry_ref_absent() {
+            local ref="$1"
+            local error
+            error="$(mktemp)"
+            if oras manifest fetch "$ref" > /dev/null 2> "$error"; then
+              echo "$ref already exists; use a new release version" >&2
+              exit 1
+            fi
+            if ! grep -qiE 'manifest unknown|HTTP 404|: not found$' "$error"; then
+              cat "$error" >&2
+              echo "Could not prove that $ref is absent" >&2
+              exit 1
+            fi
+          }
+
+          assert_release_absent
+          assert_registry_ref_absent "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard:${GITHUB_REF_NAME}"
+          assert_registry_ref_absent "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api:${GITHUB_REF_NAME}"
+          assert_registry_ref_absent "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}"
+
+          if [[ "$VERSION" != "${GITHUB_REF_NAME#v}" ]]; then
+            echo "Tag and version diverged after validation" >&2
+            exit 1
+          fi
 
   dashboard:
     name: Dashboard Image
-    needs: version
+    needs: [version, preflight]
     runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'main-publish' }}
     permissions:
+      artifact-metadata: write
+      attestations: write
       contents: read
       id-token: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      sbom-amd64-digest: ${{ steps.sbom_amd64_hash.outputs.digest }}
+      sbom-arm64-digest: ${{ steps.sbom_arm64_hash.outputs.digest }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         with:
@@ -68,17 +140,24 @@ jobs:
         with:
           images: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard
           tags: |
-            type=sha,format=long,prefix=
+            type=sha,format=long,prefix=,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
+            type=raw,value=release-${{ github.run_id }}-${{ github.run_attempt }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: release_meta
+        with:
+          images: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard
+          flavor: latest=false
+          tags: type=raw,value=${{ github.ref_name }}
 
       - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         id: build
         with:
           context: .
           push: true
+          provenance: mode=max
           sbom: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -86,21 +165,149 @@ jobs:
           cache-from: type=gha,scope=dashboard
           cache-to: type=gha,mode=max,scope=dashboard
 
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Sign image
+      - name: Scan exact image digest (linux/amd64)
         if: startsWith(github.ref, 'refs/tags/v')
-        run: cosign sign --yes ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/amd64
+        with:
+          image-ref: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+          format: json
+          output: dashboard-linux-amd64.trivy.json
+          exit-code: 0
+          severity: HIGH,CRITICAL
+
+      - name: Enforce vulnerability policy (linux/amd64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          node hack/vulnerability-gate.mjs image \
+            --input dashboard-linux-amd64.trivy.json \
+            --image-ref "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}"
+
+      - name: Scan exact image digest (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/arm64
+        with:
+          image-ref: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+          format: json
+          output: dashboard-linux-arm64.trivy.json
+          exit-code: 0
+          severity: HIGH,CRITICAL
+
+      - name: Enforce vulnerability policy (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          node hack/vulnerability-gate.mjs image \
+            --input dashboard-linux-arm64.trivy.json \
+            --image-ref "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}"
+
+      - name: Generate canonical SPDX SBOM (linux/amd64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        env:
+          SYFT_PLATFORM: linux/amd64
+        with:
+          image: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+          registry-username: ${{ secrets.REGISTRY_USER }}
+          registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          format: spdx-json
+          output-file: dashboard-linux-amd64.spdx.json
+          syft-version: v1.46.0
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Generate canonical SPDX SBOM (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        env:
+          SYFT_PLATFORM: linux/arm64
+        with:
+          image: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+          registry-username: ${{ secrets.REGISTRY_USER }}
+          registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          format: spdx-json
+          output-file: dashboard-linux-arm64.spdx.json
+          syft-version: v1.46.0
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Hash canonical SBOM (linux/amd64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: sbom_amd64_hash
+        run: echo "digest=sha256:$(sha256sum dashboard-linux-amd64.spdx.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Hash canonical SBOM (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: sbom_arm64_hash
+        run: echo "digest=sha256:$(sha256sum dashboard-linux-arm64.spdx.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        if: startsWith(github.ref, 'refs/tags/v')
+
+      - name: Sign image and attest SBOM
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          IMAGE_REF: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "$IMAGE_REF"
+          cosign attest --yes --predicate dashboard-linux-amd64.spdx.json --type spdxjson "$IMAGE_REF"
+          cosign attest --yes --predicate dashboard-linux-arm64.spdx.json --type spdxjson "$IMAGE_REF"
+
+      - name: Attest build provenance
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Promote verified image tags
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          IMAGE_REF: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${{ steps.build.outputs.digest }}
+          PROMOTION_TAGS: ${{ steps.release_meta.outputs.tags }}
+        run: |
+          mapfile -t TAGS <<< "$PROMOTION_TAGS"
+          ARGS=()
+          for TAG in "${TAGS[@]}"; do
+            [[ -n "$TAG" ]] && ARGS+=(--tag "$TAG")
+          done
+          docker buildx imagetools create "${ARGS[@]}" "$IMAGE_REF"
+          FULL_TAG="${IMAGE_REF%@*}:${GITHUB_REF_NAME}"
+          ACTUAL_DIGEST="$(docker buildx imagetools inspect "$FULL_TAG" | awk '$1 == "Digest:" {print $2; exit}')"
+          test "$ACTUAL_DIGEST" = "${IMAGE_REF#*@}"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: release-dashboard-evidence
+          path: |
+            dashboard-linux-amd64.spdx.json
+            dashboard-linux-amd64.trivy.json
+            dashboard-linux-arm64.spdx.json
+            dashboard-linux-arm64.trivy.json
+          retention-days: 90
 
   api:
     name: API Image
-    needs: version
+    needs: [version, preflight]
     runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'main-publish' }}
     permissions:
+      artifact-metadata: write
+      attestations: write
       contents: read
       id-token: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      sbom-amd64-digest: ${{ steps.sbom_amd64_hash.outputs.digest }}
+      sbom-arm64-digest: ${{ steps.sbom_arm64_hash.outputs.digest }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         with:
@@ -119,17 +326,24 @@ jobs:
         with:
           images: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api
           tags: |
-            type=sha,format=long,prefix=
+            type=sha,format=long,prefix=,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
+            type=raw,value=release-${{ github.run_id }}-${{ github.run_attempt }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: release_meta
+        with:
+          images: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api
+          flavor: latest=false
+          tags: type=raw,value=${{ github.ref_name }}
 
       - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         id: build
         with:
           context: api
           push: true
+          provenance: mode=max
           sbom: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -137,25 +351,154 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Sign image
+      - name: Scan exact image digest (linux/amd64)
         if: startsWith(github.ref, 'refs/tags/v')
-        run: cosign sign --yes ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/amd64
+        with:
+          image-ref: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+          format: json
+          output: api-linux-amd64.trivy.json
+          exit-code: 0
+          severity: HIGH,CRITICAL
+
+      - name: Enforce vulnerability policy (linux/amd64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          node hack/vulnerability-gate.mjs image \
+            --input api-linux-amd64.trivy.json \
+            --image-ref "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}"
+
+      - name: Scan exact image digest (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: linux/arm64
+        with:
+          image-ref: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+          format: json
+          output: api-linux-arm64.trivy.json
+          exit-code: 0
+          severity: HIGH,CRITICAL
+
+      - name: Enforce vulnerability policy (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          node hack/vulnerability-gate.mjs image \
+            --input api-linux-arm64.trivy.json \
+            --image-ref "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}"
+
+      - name: Generate canonical SPDX SBOM (linux/amd64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        env:
+          SYFT_PLATFORM: linux/amd64
+        with:
+          image: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+          registry-username: ${{ secrets.REGISTRY_USER }}
+          registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          format: spdx-json
+          output-file: api-linux-amd64.spdx.json
+          syft-version: v1.46.0
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Generate canonical SPDX SBOM (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        env:
+          SYFT_PLATFORM: linux/arm64
+        with:
+          image: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+          registry-username: ${{ secrets.REGISTRY_USER }}
+          registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          format: spdx-json
+          output-file: api-linux-arm64.spdx.json
+          syft-version: v1.46.0
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Hash canonical SBOM (linux/amd64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: sbom_amd64_hash
+        run: echo "digest=sha256:$(sha256sum api-linux-amd64.spdx.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Hash canonical SBOM (linux/arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: sbom_arm64_hash
+        run: echo "digest=sha256:$(sha256sum api-linux-arm64.spdx.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        if: startsWith(github.ref, 'refs/tags/v')
+
+      - name: Sign image and attest SBOM
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          IMAGE_REF: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "$IMAGE_REF"
+          cosign attest --yes --predicate api-linux-amd64.spdx.json --type spdxjson "$IMAGE_REF"
+          cosign attest --yes --predicate api-linux-arm64.spdx.json --type spdxjson "$IMAGE_REF"
+
+      - name: Attest build provenance
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Promote verified image tags
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          IMAGE_REF: ${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${{ steps.build.outputs.digest }}
+          PROMOTION_TAGS: ${{ steps.release_meta.outputs.tags }}
+        run: |
+          mapfile -t TAGS <<< "$PROMOTION_TAGS"
+          ARGS=()
+          for TAG in "${TAGS[@]}"; do
+            [[ -n "$TAG" ]] && ARGS+=(--tag "$TAG")
+          done
+          docker buildx imagetools create "${ARGS[@]}" "$IMAGE_REF"
+          FULL_TAG="${IMAGE_REF%@*}:${GITHUB_REF_NAME}"
+          ACTUAL_DIGEST="$(docker buildx imagetools inspect "$FULL_TAG" | awk '$1 == "Digest:" {print $2; exit}')"
+          test "$ACTUAL_DIGEST" = "${IMAGE_REF#*@}"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: release-api-evidence
+          path: |
+            api-linux-amd64.spdx.json
+            api-linux-amd64.trivy.json
+            api-linux-arm64.spdx.json
+            api-linux-arm64.trivy.json
+          retention-days: 90
 
   chart:
+    name: Helm Chart
     needs: [version, dashboard, api]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    environment: release
     permissions:
+      artifact-metadata: write
+      attestations: write
       contents: read
       id-token: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
 
       - name: Login to Quay.io (Helm)
         run: echo "${{ secrets.REGISTRY_PASSWORD }}" | helm registry login ${{ env.REGISTRY }} -u ${{ secrets.REGISTRY_USER }} --password-stdin
@@ -172,19 +515,254 @@ jobs:
           go-version: stable
           cache: false
 
-      - name: Generate helm docs
-        run: make helm-docs
+      - name: Verify generated Helm documentation
+        run: |
+          make helm-docs
+          git diff --exit-code charts/kubelb-dashboard/README.md
 
-      - name: Package and push chart
+      - name: Package and stage chart
+        id: push
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           CHART_NAME="kubelb-dashboard"
           helm package "charts/${CHART_NAME}"
-          helm push "${CHART_NAME}-${VERSION}.tgz" "oci://${{ env.REGISTRY }}/kubermatic/helm-charts"
+          helm push "${CHART_NAME}-${VERSION}.tgz" "oci://${{ env.REGISTRY }}/kubermatic/helm-charts-staging" | tee helm-push.txt
+          DIGEST="$(awk '/^Digest: sha256:/{print $2}' helm-push.txt | tail -1)"
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Could not determine immutable chart digest" >&2
+            exit 1
+          fi
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
-      - name: Sign chart
+      - name: Sign staged chart
         env:
+          CHART_DIGEST: ${{ steps.push.outputs.digest }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          cosign sign --yes "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}"
+          cosign sign --yes "${{ env.REGISTRY }}/kubermatic/helm-charts-staging/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
+
+      - name: Promote signed chart
+        env:
+          CHART_DIGEST: ${{ steps.push.outputs.digest }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          SOURCE="${{ env.REGISTRY }}/kubermatic/helm-charts-staging/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
+          TARGET="${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}"
+          oras copy --recursive "$SOURCE" "$TARGET"
+          ACTUAL_DIGEST="$(oras manifest fetch --descriptor "$TARGET" | jq -r .digest)"
+          test "$ACTUAL_DIGEST" = "$CHART_DIGEST"
+          cosign sign --yes "${TARGET}@${CHART_DIGEST}"
+
+      - name: Attest chart provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-chart
+          path: kubelb-dashboard-${{ needs.version.outputs.version }}.tgz
+          retention-days: 90
+
+  release:
+    name: Verify and Finalize Release
+    needs: [version, dashboard, api, chart]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      artifact-metadata: read
+      attestations: read
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Generate signed release manifest
+        env:
+          API_DIGEST: ${{ needs.api.outputs.digest }}
+          API_SBOM_AMD64_DIGEST: ${{ needs.api.outputs.sbom-amd64-digest }}
+          API_SBOM_ARM64_DIGEST: ${{ needs.api.outputs.sbom-arm64-digest }}
+          CHART_DIGEST: ${{ needs.chart.outputs.digest }}
+          DASHBOARD_DIGEST: ${{ needs.dashboard.outputs.digest }}
+          DASHBOARD_SBOM_AMD64_DIGEST: ${{ needs.dashboard.outputs.sbom-amd64-digest }}
+          DASHBOARD_SBOM_ARM64_DIGEST: ${{ needs.dashboard.outputs.sbom-arm64-digest }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          verify_sbom_digest() {
+            local file="$1"
+            local expected="$2"
+            local actual
+            actual="sha256:$(sha256sum "$file" | cut -d ' ' -f 1)"
+            if [[ "$actual" != "$expected" ]]; then
+              echo "SBOM digest mismatch for $file" >&2
+              exit 1
+            fi
+          }
+
+          verify_sbom_digest release-assets/dashboard-linux-amd64.spdx.json "$DASHBOARD_SBOM_AMD64_DIGEST"
+          verify_sbom_digest release-assets/dashboard-linux-arm64.spdx.json "$DASHBOARD_SBOM_ARM64_DIGEST"
+          verify_sbom_digest release-assets/api-linux-amd64.spdx.json "$API_SBOM_AMD64_DIGEST"
+          verify_sbom_digest release-assets/api-linux-arm64.spdx.json "$API_SBOM_ARM64_DIGEST"
+
+          DASHBOARD_REF="${{ env.REGISTRY_PREFIX }}/kubelb-dashboard:${GITHUB_REF_NAME}@${DASHBOARD_DIGEST}"
+          API_REF="${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api:${GITHUB_REF_NAME}@${API_DIGEST}"
+          CHART_REF="${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
+          WORKFLOW_IDENTITY="${GITHUB_SERVER_URL}/${GITHUB_WORKFLOW_REF}"
+
+          node hack/release-manifest.mjs generate \
+            --version "$VERSION" \
+            --tag "$GITHUB_REF_NAME" \
+            --source-repository "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --source-commit "$GITHUB_SHA" \
+            --dashboard-image-ref "$DASHBOARD_REF" \
+            --dashboard-image-digest "$DASHBOARD_DIGEST" \
+            --api-image-ref "$API_REF" \
+            --api-image-digest "$API_DIGEST" \
+            --helm-chart-ref "$CHART_REF" \
+            --helm-chart-digest "$CHART_DIGEST" \
+            --dashboard-sbom-ref "$DASHBOARD_REF" \
+            --dashboard-sbom-amd64-digest "$DASHBOARD_SBOM_AMD64_DIGEST" \
+            --dashboard-sbom-arm64-digest "$DASHBOARD_SBOM_ARM64_DIGEST" \
+            --api-sbom-ref "$API_REF" \
+            --api-sbom-amd64-digest "$API_SBOM_AMD64_DIGEST" \
+            --api-sbom-arm64-digest "$API_SBOM_ARM64_DIGEST" \
+            --dashboard-provenance-ref "$DASHBOARD_REF" \
+            --api-provenance-ref "$API_REF" \
+            --helm-chart-provenance-ref "$CHART_REF" \
+            --github-run-id "$GITHUB_RUN_ID" \
+            --github-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-run-url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --github-workflow-ref "$WORKFLOW_IDENTITY" \
+            --output release-assets/release-manifest.json
+
+          node hack/release-manifest.mjs check --input release-assets/release-manifest.json
+          cosign sign-blob --yes \
+            --bundle release-assets/release-manifest.sigstore.json \
+            release-assets/release-manifest.json
+
+      - name: Verify signatures, SBOMs, and provenance
+        env:
+          API_DIGEST: ${{ needs.api.outputs.digest }}
+          CHART_DIGEST: ${{ needs.chart.outputs.digest }}
+          DASHBOARD_DIGEST: ${{ needs.dashboard.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          WORKFLOW_IDENTITY="${GITHUB_SERVER_URL}/${GITHUB_WORKFLOW_REF}"
+          ISSUER="https://token.actions.githubusercontent.com"
+          DASHBOARD_REF="${{ env.REGISTRY_PREFIX }}/kubelb-dashboard@${DASHBOARD_DIGEST}"
+          API_REF="${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api@${API_DIGEST}"
+          CHART_REF="${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard@${CHART_DIGEST}"
+
+          for REF in "$DASHBOARD_REF" "$API_REF" "$CHART_REF"; do
+            cosign verify \
+              --certificate-identity "$WORKFLOW_IDENTITY" \
+              --certificate-oidc-issuer "$ISSUER" \
+              "$REF" > /dev/null
+          done
+
+          verify_sbom_attestations() {
+            local ref="$1"
+            shift
+            local attestations
+            attestations="$(mktemp)"
+            cosign verify-attestation \
+              --type spdxjson \
+              --certificate-identity "$WORKFLOW_IDENTITY" \
+              --certificate-oidc-issuer "$ISSUER" \
+              "$ref" > "$attestations"
+
+            mapfile -t payloads < <(jq -r '.. | objects | select(has("payload")) | .payload' "$attestations")
+            for sbom in "$@"; do
+              local expected matched payload predicate
+              expected="$(mktemp)"
+              jq -S . "$sbom" > "$expected"
+              matched=false
+              for payload in "${payloads[@]}"; do
+                predicate="$(mktemp)"
+                printf '%s' "$payload" | base64 --decode | jq -S .predicate > "$predicate"
+                if cmp -s "$expected" "$predicate"; then
+                  matched=true
+                  break
+                fi
+              done
+              if [[ "$matched" != true ]]; then
+                echo "No verified registry attestation matches $sbom" >&2
+                exit 1
+              fi
+            done
+          }
+
+          verify_sbom_attestations "$DASHBOARD_REF" \
+            release-assets/dashboard-linux-amd64.spdx.json \
+            release-assets/dashboard-linux-arm64.spdx.json
+          verify_sbom_attestations "$API_REF" \
+            release-assets/api-linux-amd64.spdx.json \
+            release-assets/api-linux-arm64.spdx.json
+
+          for REF in "$DASHBOARD_REF" "$API_REF" "$CHART_REF"; do
+            gh attestation verify "oci://${REF}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --cert-identity "$WORKFLOW_IDENTITY" \
+              --source-ref "$GITHUB_REF" \
+              --source-digest "$GITHUB_SHA" > /dev/null
+          done
+
+          cosign verify-blob \
+            --bundle release-assets/release-manifest.sigstore.json \
+            --certificate-identity "$WORKFLOW_IDENTITY" \
+            --certificate-oidc-issuer "$ISSUER" \
+            release-assets/release-manifest.json > /dev/null
+
+      - name: Create immutable-ready GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          NOTES="docs/releases/${RELEASE_TAG}.md"
+          ASSETS=(
+            release-assets/dashboard-linux-amd64.spdx.json
+            release-assets/dashboard-linux-arm64.spdx.json
+            release-assets/dashboard-linux-amd64.trivy.json
+            release-assets/dashboard-linux-arm64.trivy.json
+            release-assets/api-linux-amd64.spdx.json
+            release-assets/api-linux-arm64.spdx.json
+            release-assets/api-linux-amd64.trivy.json
+            release-assets/api-linux-arm64.trivy.json
+            "release-assets/kubelb-dashboard-${VERSION}.tgz"
+            release-assets/release-manifest.json
+            release-assets/release-manifest.sigstore.json
+          )
+
+          RELEASE_FLAGS=(--latest)
+          if [[ "$VERSION" == *-* ]]; then
+            RELEASE_FLAGS=(--prerelease --latest=false)
+          fi
+
+          gh release create "$RELEASE_TAG" "${ASSETS[@]}" \
+            --verify-tag \
+            --fail-on-no-commits \
+            --title "$RELEASE_TAG" \
+            --notes-file "$NOTES" \
+            "${RELEASE_FLAGS[@]}"

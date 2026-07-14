@@ -1,4 +1,4 @@
-# node:24-alpine
+# node:26-alpine
 FROM node:26-alpine@sha256:7c6af15abe4e3de859690e7db171d0d711bf37d27528eddfe625b2fe89e097f8 AS build
 
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY . .
 RUN pnpm run build
 
 # nginxinc/nginx-unprivileged:1-alpine
-FROM nginxinc/nginx-unprivileged:1-alpine@sha256:e1e4338d90a31f3fc6c549f1383cc3610cbcdc7e8d79991f4281f8ddc3cc1ee8
+FROM nginxinc/nginx-unprivileged:1-alpine@sha256:6320020c7da8714feab524e02c08c5a1958675c4e68700e93a2fd8970b065786
 
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubelb-dashboard"
 
