@@ -1,7 +1,7 @@
 {
   "name": "kubelb-dashboard",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.1.0-alpha.0",
   "license": "Apache-2.0",
   "type": "module",
   "packageManager": "pnpm@11.1.1",
@@ -25,6 +25,7 @@
     "test:e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
     "test:e2e:headed": "playwright test --config e2e/playwright.config.ts --headed",
     "license:check": "bash hack/check-licenses.sh",
+    "version:check": "node hack/verify-version.mjs",
     "fixtures:capture": "pnpm exec tsx hack/capture-fixtures.ts",
     "prepare": "husky"
   },

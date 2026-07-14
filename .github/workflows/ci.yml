@@ -30,6 +30,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Version consistency
+        run: pnpm run version:check
+
       # pnpm audit re-enable once TanStack republishes patched versions and
       # GHSA-rmmr-r34h-pfm5 narrows its affected range (currently >=0 false
       # positive against our pre-attack-window pinned versions).
