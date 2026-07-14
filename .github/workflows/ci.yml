@@ -8,12 +8,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   dashboard:
     name: Dashboard
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
@@ -52,11 +58,15 @@ jobs:
   api:
     name: API
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: api
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
@@ -86,6 +96,8 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         include:
@@ -95,6 +107,8 @@ jobs:
             name: api
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
@@ -119,11 +133,29 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
-      - name: Clone kubelb-ee
-        run: git clone --depth 1 --branch release/v1.3 https://x-access-token:${{ secrets.KUBELB_EE_TOKEN }}@github.com/kubermatic/kubelb-ee.git /tmp/kubelb-ee
+      - name: Fetch pinned kubelb-ee source
+        env:
+          KUBELB_EE_REF: bf47e2e346f374ef0af335eab1bc5bfca9282fca
+          KUBELB_EE_TOKEN: ${{ secrets.KUBELB_EE_TOKEN }}
+        run: |
+          git init /tmp/kubelb-ee
+          git -C /tmp/kubelb-ee remote add origin https://github.com/kubermatic/kubelb-ee.git
+          AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$KUBELB_EE_TOKEN" | base64 -w 0)"
+          echo "::add-mask::$AUTH_HEADER"
+          GIT_CONFIG_COUNT=1 \
+            GIT_CONFIG_KEY_0=http.extraheader \
+            GIT_CONFIG_VALUE_0="$AUTH_HEADER" \
+            git -C /tmp/kubelb-ee fetch --depth 1 origin "$KUBELB_EE_REF"
+          git -C /tmp/kubelb-ee checkout --detach FETCH_HEAD
+          git -C /tmp/kubelb-ee remote remove origin
+          unset AUTH_HEADER KUBELB_EE_TOKEN
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
@@ -137,12 +169,7 @@ jobs:
           go-version-file: /tmp/kubelb-ee/go.mod
 
       - name: Install tools
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64 &
-          curl -Lo ./yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 &
-          wait
-          chmod +x ./kind ./yq
-          sudo mv ./kind ./yq /usr/local/bin/
+        run: ./hack/ci/install-e2e-tools.sh
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -191,7 +218,7 @@ jobs:
           KUBECONFIG: /tmp/kubelb-ee/.e2e-kubeconfigs/kubelb.kubeconfig
         run: |
           kubectl port-forward svc/kubelb-dashboard 8080:80 &
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl -sf http://localhost:8080 > /dev/null 2>&1; then
               echo "Dashboard is ready"
               break

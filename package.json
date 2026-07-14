@@ -25,7 +25,7 @@
     "test:e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
     "test:e2e:headed": "playwright test --config e2e/playwright.config.ts --headed",
     "license:check": "bash hack/check-licenses.sh",
-    "fixtures:capture": "pnpm dlx tsx hack/capture-fixtures.ts",
+    "fixtures:capture": "pnpm exec tsx hack/capture-fixtures.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -92,6 +92,7 @@
     "prettier": "^3.9.4",
     "shadcn": "^4.12.0",
     "tailwindcss": "^4.3.2",
+    "tsx": "4.22.4",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.2",

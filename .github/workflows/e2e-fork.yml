@@ -1,73 +1,37 @@
 name: "E2E Tests (Fork)"
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main, "release/**"]
-    types: [opened, reopened, synchronize, labeled]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
-  notify:
-    name: Notify
-    if: >-
-      github.event.pull_request.head.repo.full_name != github.repository &&
-      !contains(github.event.pull_request.labels.*.name, 'ok-to-test') &&
-      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Comment on PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          MARKER="<!-- ok-to-test-notice -->"
-          EXISTING=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments --jq ".comments[].body | select(contains(\"$MARKER\"))")
-          if [ -z "$EXISTING" ]; then
-            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "${MARKER}
-          E2E tests require the \`ok-to-test\` label to run on fork PRs. A maintainer will review and add the label."
-          fi
-
-  strip-stale-label:
-    name: Strip stale ok-to-test on push
-    if: >-
-      github.event.action == 'synchronize' &&
-      github.event.pull_request.head.repo.full_name != github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'ok-to-test') &&
-      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Remove ok-to-test
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --remove-label ok-to-test
-          gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "New commits pushed — \`ok-to-test\` removed. A maintainer must re-review and re-add the label before E2E runs against secrets."
-
   e2e:
-    name: E2E Tests
-    if: >-
-      github.event.pull_request.head.repo.full_name != github.repository &&
-      (
-        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) ||
-        (github.event.action == 'labeled' && github.event.label.name == 'ok-to-test')
-      )
+    name: CE Smoke Tests
+    if: github.event.pull_request.head.repo.full_name != github.repository && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
-      - name: Clone kubelb-ee
-        run: git clone --depth 1 --branch release/v1.3 https://x-access-token:${{ secrets.KUBELB_EE_TOKEN }}@github.com/kubermatic/kubelb-ee.git /tmp/kubelb-ee
+      - name: Fetch pinned KubeLB CE source
+        env:
+          KUBELB_CE_REF: 963b02983caf81d274e3bc1724c67530a65596e6
+        run: |
+          git init /tmp/kubelb
+          git -C /tmp/kubelb remote add origin https://github.com/kubermatic/kubelb.git
+          git -C /tmp/kubelb fetch --depth 1 origin "$KUBELB_CE_REF"
+          git -C /tmp/kubelb checkout --detach FETCH_HEAD
+          git -C /tmp/kubelb remote remove origin
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
@@ -78,32 +42,23 @@ jobs:
 
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version-file: /tmp/kubelb-ee/go.mod
+          go-version-file: /tmp/kubelb/go.mod
 
       - name: Install tools
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64 &
-          curl -Lo ./yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 &
-          wait
-          chmod +x ./kind ./yq
-          sudo mv ./kind ./yq /usr/local/bin/
+        run: ./hack/ci/install-e2e-tools.sh
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
-      - name: Install deps and setup infra
+      - name: Install deps and setup CE infra
         run: |
           (pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium) &
           PLAYWRIGHT_PID=$!
-          (cd /tmp/kubelb-ee && make e2e-setup-local) &
+          (cd /tmp/kubelb && make e2e-setup-local) &
           INFRA_PID=$!
-          wait $INFRA_PID
-
-          ./e2e/testdata/apply.sh &
-          SEED_PID=$!
-          wait $SEED_PID $PLAYWRIGHT_PID
+          wait $INFRA_PID $PLAYWRIGHT_PID
         env:
-          KUBECONFIGS_DIR: /tmp/kubelb-ee/.e2e-kubeconfigs
+          KUBECONFIGS_DIR: /tmp/kubelb/.e2e-kubeconfigs
 
       - name: Build images
         run: |
@@ -118,7 +73,7 @@ jobs:
 
       - name: Deploy with Helm
         env:
-          KUBECONFIG: /tmp/kubelb-ee/.e2e-kubeconfigs/kubelb.kubeconfig
+          KUBECONFIG: /tmp/kubelb/.e2e-kubeconfigs/kubelb.kubeconfig
         run: |
           helm install kubelb-dashboard ./charts/kubelb-dashboard \
             --set image.repository=kubelb-dashboard \
@@ -132,10 +87,10 @@ jobs:
 
       - name: Port-forward and wait for ready
         env:
-          KUBECONFIG: /tmp/kubelb-ee/.e2e-kubeconfigs/kubelb.kubeconfig
+          KUBECONFIG: /tmp/kubelb/.e2e-kubeconfigs/kubelb.kubeconfig
         run: |
           kubectl port-forward svc/kubelb-dashboard 8080:80 &
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl -sf http://localhost:8080 > /dev/null 2>&1; then
               echo "Dashboard is ready"
               break
@@ -143,8 +98,8 @@ jobs:
             sleep 2
           done
 
-      - name: Run E2E tests
-        run: pnpm run test:e2e
+      - name: Run CE E2E tests
+        run: pnpm run test:e2e -- --project=chromium-ce
         env:
           E2E_BASE_URL: http://localhost:8080
           CI: true
@@ -153,6 +108,6 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-ce
           path: playwright-report/
           retention-days: 14

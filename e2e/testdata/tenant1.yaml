@@ -425,7 +425,7 @@ spec:
     spec:
       containers:
         - name: grpc
-          image: docker.io/kong/grpcbin:latest
+          image: docker.io/kong/grpcbin@sha256:2e85538340e419415c81b6368e0e2b6a73a2b87b885a76029dc49ca462aacc6d
           ports:
             - containerPort: 9000
             - containerPort: 9001
@@ -574,7 +574,7 @@ spec:
     spec:
       containers:
         - name: coredns
-          image: coredns/coredns:latest
+          image: coredns/coredns@sha256:900f9c109f7a33545d3c811516e8376df9019147b750f5ce3e254468769176ea
           args: ["-conf", "/etc/coredns/Corefile"]
           ports:
             - containerPort: 53
@@ -686,7 +686,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:latest
+          image: nginx@sha256:c90e4ea5905ee69515d84cd5520e11d204df06cce71a312666cebbc4b9b68267
           ports:
             - containerPort: 443
           volumeMounts:
