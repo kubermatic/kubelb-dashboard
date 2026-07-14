@@ -1,35 +1,57 @@
-# KubeLB Dashboard Release
+# KubeLB Dashboard releases
 
-## Versioning
+The Dashboard follows independent [Semantic Versioning](https://semver.org/).
+It does not automatically inherit the KubeLB version. See
+[ADR 0001](adr/0001-independent-dashboard-releases.md) for the decision and its
+compatibility implications.
 
-KubeLB Dashboard follows [Semantic Versioning](https://semver.org/). Each release is tagged with a version number in the format `vMAJOR.MINOR.PATCH`.
+## Version metadata
 
-## Release Process
+[`VERSION`](../VERSION) is canonical and contains SemVer without a leading `v`.
+Build metadata (`+...`) is not supported because it cannot be represented in all
+published OCI tags.
 
-1. Create release branch from the main branch:
+| Consumer                                                             | Representation for version `1.2.3` |
+| -------------------------------------------------------------------- | ---------------------------------- |
+| `VERSION`, package manifests, Helm chart version                     | `1.2.3`                            |
+| Git tag, GitHub Release, Dashboard/API image tag, chart `appVersion` | `v1.2.3`                           |
+| Helm OCI chart version                                               | `1.2.3`                            |
 
-   ```bash
-   git checkout -b release/vX.Y.Z
-   ```
+Run the consistency gate after changing release metadata:
 
-   In case of patch releases, this should already exist.
+```bash
+pnpm run version:check
+```
 
-2. Create tag for the release:
+CI and the publish workflow run the same gate. A tag build fails unless the tag
+is exactly `v` followed by the committed `VERSION`.
 
-   ```bash
-   git tag -a vX.Y.Z -m "Release vX.Y.Z"
-   ```
+## Branches and tags
 
-3. Push the release branch and tag to the remote repository:
+- Development happens on `main`.
+- Stabilization and patch releases use `release/vMAJOR.MINOR`.
+- Releases use signed tags in the form `vMAJOR.MINOR.PATCH`.
+- Prereleases append a SemVer suffix, for example `v1.2.0-rc.1`.
 
-   ```bash
-   git push origin release/vX.Y.Z
-   git push origin vX.Y.Z
-   ```
+## Compatibility policy
 
-4. Create a release on GitHub:
-   - Go to the "Releases" section of the repository.
-   - Click "Draft a new release".
-   - Select the tag you just pushed.
-   - Fill in the release title and description, including any relevant changes or features.
-   - Publish the release.
+Each Dashboard release targets the current and previous supported KubeLB minor
+(`N` and `N-1`). A version is listed as supported only after the exact Dashboard
+and KubeLB refs pass the compatibility suite. KubeLB release metadata selects an
+existing Dashboard release; it never creates a Dashboard release automatically.
+
+## Release process
+
+1. Create or update `release/vMAJOR.MINOR` through a pull request.
+2. Update `VERSION` and its committed mirrors: both package manifests,
+   `Chart.yaml` `version`, and `Chart.yaml` `appVersion` with a leading `v`.
+3. Run `pnpm run version:check` and the full release checks.
+4. Merge the reviewed release preparation change.
+5. Create and push a signed `vMAJOR.MINOR.PATCH` tag at that commit.
+6. Let the publish workflow validate the tag and publish both images and the
+   Helm chart from committed metadata.
+7. Publish the GitHub Release only after all release artifacts and verification
+   evidence are available. Its notes are the canonical changelog.
+
+Release preparation and finalization remain manual until the follow-up release
+automation tasks are implemented.

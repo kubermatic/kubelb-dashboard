@@ -1,11 +1,11 @@
 # kubelb-dashboard
 
-![Version: v0.1.0](https://img.shields.io/badge/Version-v0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 1.1.0-alpha.0](https://img.shields.io/badge/Version-1.1.0--alpha.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.1.0-alpha.0](https://img.shields.io/badge/AppVersion-v1.1.0--alpha.0-informational?style=flat-square)
 
 ## Install
 
 ```bash
-helm upgrade kubelb-dashboard oci://quay.io/kubermatic/helm-charts/kubelb-dashboard --version v0.1.0 --namespace kubelb --create-namespace --install
+helm upgrade kubelb-dashboard oci://quay.io/kubermatic/helm-charts/kubelb-dashboard --version 1.1.0-alpha.0 --namespace kubelb --create-namespace --install
 ```
 
 ## Example with Ingress
