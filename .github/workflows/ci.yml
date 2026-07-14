@@ -33,9 +33,12 @@ jobs:
       - name: Version consistency
         run: pnpm run version:check
 
-      # pnpm audit re-enable once TanStack republishes patched versions and
-      # GHSA-rmmr-r34h-pfm5 narrows its affected range (currently >=0 false
-      # positive against our pre-attack-window pinned versions).
+      - name: Production dependency audit
+        run: |
+          pnpm audit --prod --json > /tmp/dashboard-audit.json || true
+          node hack/vulnerability-gate.mjs audit \
+            --input /tmp/dashboard-audit.json \
+            --scope root
 
       - name: Verify package signatures
         run: pnpm audit signatures
@@ -51,6 +54,9 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+      - name: Release tooling tests
+        run: pnpm run test:release
 
       - name: License check
         run: pnpm run license:check
@@ -81,8 +87,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Security audit
-        run: pnpm audit --audit-level=high
+      - name: Production dependency audit
+        run: |
+          pnpm audit --prod --json > /tmp/api-audit.json || true
+          node ../hack/vulnerability-gate.mjs audit \
+            --input /tmp/api-audit.json \
+            --scope api \
+            --exceptions ../hack/vulnerability-exceptions.json
 
       - name: Verify package signatures
         run: pnpm audit signatures
@@ -132,7 +143,7 @@ jobs:
           image-ref: ${{ matrix.name }}:latest
           format: table
           exit-code: 1
-          severity: CRITICAL
+          severity: HIGH,CRITICAL
 
   e2e:
     name: E2E Tests

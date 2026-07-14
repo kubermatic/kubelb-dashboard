@@ -33,31 +33,27 @@ We follow coordinated disclosure practices. Please do not disclose vulnerabiliti
 
 ### Supply Chain Security
 
-- **Artifact Signing**: Container images and Helm charts are signed with [Sigstore Cosign](https://github.com/sigstore/cosign) using keyless signing on tagged releases
-- **SBOMs**: Docker BuildKit SBOMs are generated for all container images (`sbom: true`)
-- **Dependency Management**: Dependabot monitors npm, GitHub Actions, and Docker dependencies with weekly updates
-- **Immutable Releases**: GitHub releases are immutable — assets cannot be modified after publication
+- **Artifact signing**: Tagged image and chart digests use keyless Sigstore
+  Cosign signatures.
+- **SBOMs**: Tagged image digests have Syft SPDX JSON SBOM attestations and
+  matching GitHub Release assets.
+- **Provenance**: Images request maximal BuildKit provenance; images and charts
+  also receive GitHub build-provenance attestations bound to exact digests.
+- **Vulnerability policy**: HIGH and CRITICAL production dependency and exact
+  release-image findings block consumer-tag promotion unless a scoped, owned, expiring
+  exception exists.
+- **Dependency management**: Dependabot monitors root and API npm, GitHub
+  Actions, and both Dockerfiles with weekly updates.
+- **Release integrity**: GitHub Releases are created only after independent
+  signature, SBOM, provenance, manifest, and asset verification. Protected
+  `v*` tags, the protected `release` environment, and immutable GitHub Releases
+  are mandatory repository controls.
 
 ### Verification
 
-Verify artifact signatures before deployment:
-
-```bash
-# Verify dashboard image
-cosign verify quay.io/kubermatic/kubelb-dashboard:v0.1.0 \
-  --certificate-identity-regexp="^https://github.com/kubermatic/kubelb-dashboard/.github/workflows/publish.yml@refs/tags/v.*" \
-  --certificate-oidc-issuer=https://token.actions.githubusercontent.com
-
-# Verify API image
-cosign verify quay.io/kubermatic/kubelb-dashboard-api:v0.1.0 \
-  --certificate-identity-regexp="^https://github.com/kubermatic/kubelb-dashboard/.github/workflows/publish.yml@refs/tags/v.*" \
-  --certificate-oidc-issuer=https://token.actions.githubusercontent.com
-
-# Verify Helm chart
-cosign verify quay.io/kubermatic/helm-charts/kubelb-dashboard:v0.1.0 \
-  --certificate-identity-regexp="^https://github.com/kubermatic/kubelb-dashboard/.github/workflows/publish.yml@refs/tags/v.*" \
-  --certificate-oidc-issuer=https://token.actions.githubusercontent.com
-```
+Use the exact digests in the signed release manifest. The tested image, chart,
+SBOM, provenance, and manifest commands are documented in
+[the release guide](docs/release.md#consumer-verification).
 
 ## Embargo Policy
 
