@@ -14,10 +14,6 @@ RUN pnpm run build
 # nginxinc/nginx-unprivileged:1-alpine
 FROM nginxinc/nginx-unprivileged:1-alpine@sha256:e1e4338d90a31f3fc6c549f1383cc3610cbcdc7e8d79991f4281f8ddc3cc1ee8
 
-USER root
-RUN apk upgrade --no-cache
-USER 101
-
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubelb-dashboard"
 
 COPY --chown=101:101 nginx.conf /etc/nginx/conf.d/default.conf
