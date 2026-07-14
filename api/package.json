@@ -9,6 +9,7 @@
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc && mkdir -p dist/hubble && cp -R src/hubble/proto dist/hubble/proto",
+    "license:check": "bash ../hack/check-licenses.sh",
     "start": "node dist/server.js",
     "test": "vitest run"
   },
