@@ -18,18 +18,10 @@ import { readFileSync } from "node:fs";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
-const version = read("VERSION").trim();
 const semver =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 
 const errors = [];
-
-if (!semver.test(version)) {
-  errors.push(`VERSION must be SemVer without a leading v or build metadata; got ${version}`);
-}
-
-const dashboardPackage = JSON.parse(read("package.json"));
-const apiPackage = JSON.parse(read("api/package.json"));
 const chart = read("charts/kubelb-dashboard/Chart.yaml");
 
 function chartValue(key) {
@@ -37,17 +29,17 @@ function chartValue(key) {
   return match?.[1];
 }
 
-const mirrors = new Map([
-  ["package.json", [dashboardPackage.version, version]],
-  ["api/package.json", [apiPackage.version, version]],
-  ["Chart.yaml version", [chartValue("version"), version]],
-  ["Chart.yaml appVersion", [chartValue("appVersion"), `v${version}`]],
-]);
+const version = chartValue("version");
+const appVersion = chartValue("appVersion");
 
-for (const [name, [value, expected]] of mirrors) {
-  if (value !== expected) {
-    errors.push(`${name} has ${String(value)}; expected ${expected}`);
-  }
+if (!semver.test(version)) {
+  errors.push(
+    `Chart.yaml version must be SemVer without a leading v or build metadata; got ${String(version)}`,
+  );
+}
+
+if (appVersion !== `v${version}`) {
+  errors.push(`Chart.yaml appVersion has ${String(appVersion)}; expected v${String(version)}`);
 }
 
 const releaseTag = process.env.RELEASE_TAG;
@@ -60,4 +52,8 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Version metadata is consistent: ${version}`);
+if (process.argv.includes("--print")) {
+  console.log(version);
+} else {
+  console.log(`Chart version metadata is consistent: ${version}`);
+}
