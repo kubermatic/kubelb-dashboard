@@ -16,8 +16,10 @@ can select a tested Dashboard artifact.
 ## Decision
 
 - KubeLB Dashboard owns an independent Semantic Version.
-- `VERSION` is the canonical version source. Committed package and chart
-  metadata are mirrors and must pass `pnpm run version:check`.
+- The Helm chart `version` is the canonical committed version. Its `appVersion`
+  and the release tag are the same version with a leading `v` and must pass
+  `pnpm run version:check`. The private npm packages are not release artifacts
+  and do not mirror this version.
 - Release branches use `release/vMAJOR.MINOR`; release tags use
   `vMAJOR.MINOR.PATCH` with an optional SemVer prerelease suffix.
 - GitHub Releases are the canonical human-readable changelog.
@@ -31,6 +33,8 @@ can select a tested Dashboard artifact.
 
 - Dashboard releases can ship when Dashboard changes are ready.
 - KubeLB and Dashboard version numbers are not expected to match.
-- Release automation must validate version mirrors and compatibility evidence.
+- A release change updates two chart fields and a reviewed notes file; release
+  automation validates the chart/tag relationship.
+- Compatibility evidence is managed separately from artifact publication.
 - KubeLB release tooling needs a follow-up integration that records the selected
   Dashboard version and immutable artifact digests.

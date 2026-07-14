@@ -7,15 +7,16 @@ compatibility implications.
 
 ## Version metadata
 
-[`VERSION`](../VERSION) is canonical and contains SemVer without a leading `v`.
-Build metadata (`+...`) is not supported because it cannot be represented in all
-published OCI tags.
+`charts/kubelb-dashboard/Chart.yaml` is the only committed version source.
+Its `version` is SemVer without a leading `v`; its `appVersion` is the same
+version with a leading `v`. Build metadata (`+...`) is not supported because it
+cannot be represented in all published OCI tags. The private npm packages are
+not published and do not carry the Dashboard release version.
 
-| Consumer                                                             | Representation for version `1.2.3` |
-| -------------------------------------------------------------------- | ---------------------------------- |
-| `VERSION`, package manifests, Helm chart version                     | `1.2.3`                            |
-| Git tag, GitHub Release, Dashboard/API image tag, chart `appVersion` | `v1.2.3`                           |
-| Helm OCI chart version                                               | `1.2.3`                            |
+| Consumer                                                | Representation for version `1.2.3` |
+| ------------------------------------------------------- | ---------------------------------- |
+| Helm chart version and Helm OCI chart version           | `1.2.3`                            |
+| Chart `appVersion`, GitHub Release, images, and Git tag | `v1.2.3`                           |
 
 Run the consistency gate after changing release metadata:
 
@@ -24,7 +25,7 @@ pnpm run version:check
 ```
 
 CI and the publish workflow run the same gate. A tag build fails unless the tag
-is exactly `v` followed by the committed `VERSION`.
+is exactly `v` followed by the chart version and matches `appVersion`.
 
 ## Branches and tags
 
@@ -48,34 +49,22 @@ as supported without separate evidence for the exact refs.
 
 ### Prepare the reviewed change
 
-The Release Preparation workflow is read-only. Dispatch it with the proposed
-version to inspect the deterministic plan without creating a branch or granting
-write permissions:
-
-```bash
-gh workflow run release-prepare.yml -f version=1.2.0-rc.1
-```
-
-Prepare the actual change from a fork or trusted local checkout:
+Choose the version, update the two version fields in
+`charts/kubelb-dashboard/Chart.yaml`, and write the release notes:
 
 ```bash
 TARGET_VERSION=1.2.0-rc.1
-gh api --paginate --slurp \
-  "repos/kubermatic/kubelb-dashboard/pulls?state=closed&per_page=100" \
-  > /tmp/kubelb-dashboard-pulls.json
 mkdir -p docs/releases
-pnpm run release:prepare -- \
-  --version "$TARGET_VERSION" \
-  --pulls /tmp/kubelb-dashboard-pulls.json \
-  --output "docs/releases/v${TARGET_VERSION}.md"
+$EDITOR charts/kubelb-dashboard/Chart.yaml
+$EDITOR "docs/releases/v${TARGET_VERSION}.md"
 pnpm run version:check
 pnpm run test:release
 ```
 
-The command updates VERSION, both package manifests, and Helm chart metadata. It
-selects the nearest reachable SemVer tag and extracts non-empty release-note
-blocks from merged pull requests in that range. Review the generated notes and
-metadata in a normal pull request. Do not hand-edit generated notes after review.
+For `1.2.0-rc.1`, set `version: 1.2.0-rc.1` and
+`appVersion: "v1.2.0-rc.1"`. Summarize the user-visible changes since the
+previous tag in the notes file. Review the two version fields and notes in a
+normal pull request.
 
 ### Tag and publish
 
@@ -84,14 +73,14 @@ Before the first release, repository administrators must:
 - protect `v*` tags with a ruleset that restricts creation to release managers;
 - configure the `release` environment to accept protected `v*` tags only and
   require an approving release manager;
-- give the registry account write access to both `helm-charts-staging` and
-  `helm-charts` repositories; and
+- give the registry account write access to the existing `helm-charts`
+  repository; and
 - enable immutable GitHub Releases after a successful prerelease validation.
 
 Without the tag ruleset and protected environment, a repository writer could
 run unreviewed tagged workflow code with publication credentials.
 
-1. Merge the release-preparation pull request into release/vMAJOR.MINOR.
+1. Merge the release metadata pull request into release/vMAJOR.MINOR.
 2. Create a signed annotated vMAJOR.MINOR.PATCH tag at the reviewed commit.
 3. Push the tag without moving or reusing any previous release tag.
 4. The Publish workflow validates the committed version and reviewed notes.
@@ -101,8 +90,8 @@ run unreviewed tagged workflow code with publication credentials.
    findings before promoting consumer tags.
 7. It generates per-platform Syft SPDX JSON SBOMs from the exact image digests,
    signs both images, and attaches SBOM and GitHub provenance attestations.
-8. It stages and signs the chart, then recursively promotes the signed OCI
-   artifact to the consumer repository.
+8. After both image jobs pass, it pushes the chart to the existing repository,
+   then immediately signs and attests the exact chart digest.
 9. The final job rehashes all downloaded SBOMs and independently verifies exact
    SBOM predicates, signatures, and provenance before creating the GitHub
    Release.
@@ -112,6 +101,14 @@ run unreviewed tagged workflow code with publication credentials.
 Tag jobs are non-cancelling. A rerun refuses to mutate registry tags when the
 GitHub Release or immutable artifact tag already exists. Recover with a new
 reviewed version; do not delete or reuse a published version.
+
+After merging the reviewed release change:
+
+```bash
+TARGET_VERSION=1.2.0-rc.1
+git tag -s "v${TARGET_VERSION}" -m "KubeLB Dashboard v${TARGET_VERSION}"
+git push upstream "v${TARGET_VERSION}"
+```
 
 ### Vulnerability exceptions
 
@@ -123,10 +120,10 @@ exceptions bind to the exact image digest, never a mutable tag.
 ### Failure recovery
 
 If any scan, signing, attestation, or verification step fails, the GitHub Release
-is not created. Run-scoped image tags and the staging chart repository are not
-supported release locations. If consumer tags were already promoted, do not
-delete, move, or reuse them. Fix the cause through a new reviewed commit and
-release a new prerelease or patch version.
+is not created. Run-scoped image tags are not supported release locations. If
+an image or chart consumer tag was already published, do not delete, move, or
+reuse it. Fix the cause through a new reviewed commit and release a new
+prerelease or patch version.
 
 Tag rulesets, environment protection, and immutable-release settings are
 repository configuration and are intentionally not changed by the workflow.

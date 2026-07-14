@@ -38,11 +38,11 @@ jobs:
         env:
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         run: |
-          node hack/verify-version.mjs
+          VERSION="$(node hack/verify-version.mjs --print)"
           if [[ -n "$RELEASE_TAG" ]]; then
             test -f "docs/releases/${RELEASE_TAG}.md"
           fi
-          echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   preflight:
     name: Release Preflight
@@ -498,8 +498,6 @@ jobs:
 
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
-
       - name: Login to Quay.io (Helm)
         run: echo "${{ secrets.REGISTRY_PASSWORD }}" | helm registry login ${{ env.REGISTRY }} -u ${{ secrets.REGISTRY_USER }} --password-stdin
 
@@ -520,14 +518,14 @@ jobs:
           make helm-docs
           git diff --exit-code charts/kubelb-dashboard/README.md
 
-      - name: Package and stage chart
+      - name: Package and push chart
         id: push
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           CHART_NAME="kubelb-dashboard"
           helm package "charts/${CHART_NAME}"
-          helm push "${CHART_NAME}-${VERSION}.tgz" "oci://${{ env.REGISTRY }}/kubermatic/helm-charts-staging" | tee helm-push.txt
+          helm push "${CHART_NAME}-${VERSION}.tgz" "oci://${{ env.REGISTRY }}/kubermatic/helm-charts" | tee helm-push.txt
           DIGEST="$(awk '/^Digest: sha256:/{print $2}' helm-push.txt | tail -1)"
           if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             echo "Could not determine immutable chart digest" >&2
@@ -535,24 +533,12 @@ jobs:
           fi
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
-      - name: Sign staged chart
+      - name: Sign chart
         env:
           CHART_DIGEST: ${{ steps.push.outputs.digest }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          cosign sign --yes "${{ env.REGISTRY }}/kubermatic/helm-charts-staging/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
-
-      - name: Promote signed chart
-        env:
-          CHART_DIGEST: ${{ steps.push.outputs.digest }}
-          VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          SOURCE="${{ env.REGISTRY }}/kubermatic/helm-charts-staging/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
-          TARGET="${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}"
-          oras copy --recursive "$SOURCE" "$TARGET"
-          ACTUAL_DIGEST="$(oras manifest fetch --descriptor "$TARGET" | jq -r .digest)"
-          test "$ACTUAL_DIGEST" = "$CHART_DIGEST"
-          cosign sign --yes "${TARGET}@${CHART_DIGEST}"
+          cosign sign --yes "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
 
       - name: Attest chart provenance
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
