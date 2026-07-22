@@ -16,7 +16,7 @@
 
 import { Fragment, useState } from "react";
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { YAML_EDITOR_ENABLED } from "@/lib/feature-flags";
 import {

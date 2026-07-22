@@ -17,7 +17,7 @@
 import { useState } from "react";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { FileCode } from "lucide-react";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 
 import { KubeApiError } from "@/api/kube";
 import { DeleteDialog } from "@/components/common/delete-dialog";
