@@ -18,7 +18,7 @@ import { useCallback, useState } from "react";
 import { createLazyFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 import { PageHeader } from "@/components/common/page-header";
 import { BulkDeleteDialog } from "@/components/common/bulk-delete-dialog";

@@ -18,7 +18,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { createLazyFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Download, FileText, Pencil, Plus, Trash2, Users } from "lucide-react";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { sanitizeForEdit } from "@/lib/kube-sanitize";
 
 import { PageHeader } from "@/components/common/page-header";

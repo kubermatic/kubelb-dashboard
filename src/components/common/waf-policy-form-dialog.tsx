@@ -16,7 +16,7 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 
 import { Button } from "@/components/ui/button";
 import {

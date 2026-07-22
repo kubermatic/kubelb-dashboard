@@ -22,7 +22,7 @@ import { useConfigs } from "@/hooks/use-config";
 import { useEdition } from "@/hooks/use-edition";
 import { useReadOnly } from "@/hooks/use-read-only";
 import { useUpdateConfig } from "@/hooks/use-config-mutations";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import type { Config, EnvoyProxy, ConfigSpec } from "@/types/kubelb";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
