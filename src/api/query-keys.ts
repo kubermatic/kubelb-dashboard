@@ -142,4 +142,13 @@ export const queryKeys = {
   events: {
     list: (ns: string, name: string) => ["events", "list", ns, name] as const,
   },
+  virtualKeys: {
+    all: ["virtualkeys"] as const,
+    list: () => ["virtualkeys", "list"] as const,
+  },
+  aiSpend: {
+    tenant: (window: string) => ["ai-spend", "tenant", window] as const,
+    key: (tenant: string, window: string) => ["ai-spend", "key", tenant, window] as const,
+    model: (tenant: string, window: string) => ["ai-spend", "model", tenant, window] as const,
+  },
 } as const;

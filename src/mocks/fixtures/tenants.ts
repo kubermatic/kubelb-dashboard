@@ -44,6 +44,13 @@ export const tenants: Tenant[] = [
       loadBalancer: {},
       propagateAllAnnotations: true,
       tunnel: {},
+      ai: {
+        budgets: [
+          { window: "Day", tokens: 3_000_000, onExceed: "Throttle", alertThresholdPercent: 80 },
+          { window: "Week", tokens: 20_000_000, onExceed: "Notify" },
+          { window: "Month", tokens: 80_000_000, onExceed: "Block" },
+        ],
+      },
     },
   },
   {
@@ -68,6 +75,11 @@ export const tenants: Tenant[] = [
       loadBalancer: {},
       propagateAllAnnotations: true,
       tunnel: {},
+      ai: {
+        budgets: [
+          { window: "Day", tokens: 1_000_000, onExceed: "Notify", alertThresholdPercent: 80 },
+        ],
+      },
     },
   },
 ];

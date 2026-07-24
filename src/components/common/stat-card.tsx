@@ -34,9 +34,10 @@ interface StatCardProps {
   label: string;
   count: number;
   accent?: AccentColor;
+  format?: (count: number) => string;
 }
 
-export function StatCard({ icon: Icon, label, count, accent = "primary" }: StatCardProps) {
+export function StatCard({ icon: Icon, label, count, accent = "primary", format }: StatCardProps) {
   return (
     <Card className="transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="flex items-center gap-4">
@@ -49,7 +50,9 @@ export function StatCard({ icon: Icon, label, count, accent = "primary" }: StatC
           <Icon className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-2xl font-semibold tracking-tight">{count}</p>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums">
+            {format ? format(count) : count}
+          </p>
           <p className="text-sm text-muted-foreground">{label}</p>
         </div>
       </CardContent>

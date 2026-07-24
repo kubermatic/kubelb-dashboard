@@ -52,6 +52,23 @@ export function isTenantNamespace(namespace: string): boolean {
   return namespace.startsWith(TENANT_NS_PREFIX);
 }
 
+const compactNumber = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export function formatCompactNumber(value: number): string {
+  return compactNumber.format(value);
+}
+
+export function formatTokens(value: number): string {
+  return value >= 1000 ? compactNumber.format(value) : Math.round(value).toLocaleString("en");
+}
+
+export function formatUsd(value: number): string {
+  return value.toLocaleString("en", { style: "currency", currency: "USD" });
+}
+
 export function getOriginSource(labels: Record<string, string> | undefined): string {
   if (!labels) return "\u2014";
   const ns = labels[KUBELB_LABELS.ORIGIN_NS] ?? "";

@@ -17,6 +17,7 @@
 import { http, HttpResponse } from "msw";
 import { addressHandlers } from "./handlers/addresses";
 import { agentgatewayBackendHandlers } from "./handlers/agentgateway-backends";
+import { aiSpendHandlers } from "./handlers/ai-spend";
 import { backendTrafficPolicyHandlers } from "./handlers/backend-traffic-policies";
 import { clientTrafficPolicyHandlers } from "./handlers/client-traffic-policies";
 import { configHandlers } from "./handlers/configs";
@@ -37,6 +38,7 @@ import { trafficHandlers } from "./handlers/traffic";
 import { tenantHandlers } from "./handlers/tenants";
 import { tlsRouteHandlers } from "./handlers/tlsroutes";
 import { udpRouteHandlers } from "./handlers/udproutes";
+import { virtualKeyHandlers } from "./handlers/virtualkeys";
 import { wafPolicyHandlers } from "./handlers/waf-policies";
 
 export const handlers = [
@@ -82,4 +84,6 @@ export const handlers = [
   ...clientTrafficPolicyHandlers,
   ...observabilityHandlers,
   ...trafficHandlers,
+  ...virtualKeyHandlers,
+  ...aiSpendHandlers,
 ];
