@@ -43,12 +43,16 @@ export interface VirtualKeySpend {
 }
 
 export interface VirtualKeySpec {
-  tenant?: string;
   budgets?: AIBudget[];
+  rateLimit?: Record<string, unknown>;
+  expiresAfter?: string;
   disabled?: boolean;
 }
 
 export interface VirtualKeyStatus {
+  // Stable identifier surfaced on the Prometheus `key_id` label, format
+  // `<originName>-<6hex(sha256(uid))>`. Join per-key spend on this, not on name.
+  keyID?: string;
   spend?: VirtualKeySpend[];
 }
 

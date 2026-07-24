@@ -17,6 +17,10 @@
 // Deterministic AI spend dataset backing the mock /api/metrics/ai handler.
 // Numbers are chosen to exercise the UI: one tenant over its Day budget, one
 // comfortably under, multiple keys and models per tenant.
+//
+// keyId values are the Prometheus `key_id` label = VirtualKey status.keyID
+// (format `<originName>-<6hex>`), deliberately distinct from the VirtualKey
+// metadata.name so the mock exercises the real status.keyID -> key_id join.
 
 export interface ModelUsage {
   system: string;
@@ -41,7 +45,7 @@ export const aiUsage: TenantUsage[] = [
     tenantId: "primary",
     keys: [
       {
-        keyId: "team-alpha",
+        keyId: "team-alpha-a1b2c3",
         requests: 5200,
         models: [
           { system: "openai", model: "gpt-4o", inputTokens: 1_200_000, outputTokens: 380_000 },
@@ -54,7 +58,7 @@ export const aiUsage: TenantUsage[] = [
         ],
       },
       {
-        keyId: "team-beta",
+        keyId: "team-beta-d4e5f6",
         requests: 8100,
         models: [
           { system: "openai", model: "gpt-4o-mini", inputTokens: 900_000, outputTokens: 150_000 },
@@ -66,7 +70,7 @@ export const aiUsage: TenantUsage[] = [
     tenantId: "secondary",
     keys: [
       {
-        keyId: "prod-gateway",
+        keyId: "prod-gateway-9a8b7c",
         requests: 2400,
         models: [
           {

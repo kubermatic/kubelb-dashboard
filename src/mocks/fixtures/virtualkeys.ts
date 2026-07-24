@@ -30,13 +30,13 @@ export const virtualKeys: VirtualKey[] = [
       uid: "5f2a1c00-0001-4a00-9000-000000000001",
     },
     spec: {
-      tenant: "primary",
       budgets: [
         { window: "Day", tokens: 2_000_000, onExceed: "Throttle", alertThresholdPercent: 80 },
         { window: "Month", tokens: 50_000_000, onExceed: "Block" },
       ],
     },
     status: {
+      keyID: "team-alpha-a1b2c3",
       spend: [{ window: "Day", windowStart: WINDOW_START, tokens: 2_430_000 }],
     },
   },
@@ -50,12 +50,12 @@ export const virtualKeys: VirtualKey[] = [
       uid: "5f2a1c00-0002-4a00-9000-000000000002",
     },
     spec: {
-      tenant: "primary",
       budgets: [
         { window: "Day", tokens: 1_500_000, onExceed: "Notify", alertThresholdPercent: 75 },
       ],
     },
     status: {
+      keyID: "team-beta-d4e5f6",
       spend: [{ window: "Day", windowStart: WINDOW_START, tokens: 1_050_000 }],
     },
   },
@@ -69,10 +69,10 @@ export const virtualKeys: VirtualKey[] = [
       uid: "5f2a1c00-0003-4a00-9000-000000000003",
     },
     spec: {
-      tenant: "secondary",
       budgets: [{ window: "Day", tokens: 800_000, onExceed: "Block", alertThresholdPercent: 90 }],
     },
     status: {
+      keyID: "prod-gateway-9a8b7c",
       spend: [{ window: "Day", windowStart: WINDOW_START, tokens: 410_000 }],
     },
   },

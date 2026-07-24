@@ -38,7 +38,7 @@ import {
   utilizationPercent,
   type BudgetStatus,
 } from "@/lib/ai-spend";
-import { formatTokens, formatUsd } from "@/lib/format";
+import { formatTokens, formatUsd, namespaceToTenant } from "@/lib/format";
 import type { AIBudget, VirtualKey } from "@/types/ai";
 
 export const Route = createLazyFileRoute("/ai-showback/$tenant")({
@@ -47,6 +47,7 @@ export const Route = createLazyFileRoute("/ai-showback/$tenant")({
 
 interface KeyDetailRow {
   keyId: string;
+  displayName: string;
   tokens24h: number;
   requests24h: number;
   dayBudget?: number;
@@ -91,19 +92,29 @@ function TenantShowback() {
 
   const budgets = tenantQuery.data?.spec.ai?.budgets ?? [];
 
+  // The management-cluster VirtualKey lives in namespace `tenant-<tenantName>`;
+  // derive the tenant from the namespace (there is no spec.tenant field).
   const keysForTenant = useMemo(
-    () => (virtualKeys.data?.items ?? []).filter((k) => k.spec.tenant === tenant),
+    () =>
+      (virtualKeys.data?.items ?? []).filter(
+        (k) => namespaceToTenant(k.metadata.namespace ?? "") === tenant,
+      ),
     [virtualKeys.data, tenant],
   );
 
   const keyRows = useMemo<KeyDetailRow[]>(() => {
-    const vkByName = new Map<string, VirtualKey>(keysForTenant.map((k) => [k.metadata.name, k]));
-    const ids = new Set<string>([...keySpend.data.map((r) => r.keyId), ...vkByName.keys()]);
+    // Join per-key Prometheus series to VirtualKeys on status.keyID (== the
+    // `key_id` label), NOT metadata.name.
+    const vkByKeyID = new Map<string, VirtualKey>();
+    for (const k of keysForTenant) {
+      if (k.status?.keyID) vkByKeyID.set(k.status.keyID, k);
+    }
+    const ids = new Set<string>([...keySpend.data.map((r) => r.keyId), ...vkByKeyID.keys()]);
     const spendById = new Map(keySpend.data.map((r) => [r.keyId, r]));
     return [...ids]
       .map((keyId) => {
         const observed = spendById.get(keyId);
-        const vk = vkByName.get(keyId);
+        const vk = vkByKeyID.get(keyId);
         const dayBudget = tokenBudgetForWindow(vk?.spec.budgets, "Day");
         const daySpend = spendForWindow(vk?.status?.spend, "Day");
         const consumed = daySpend?.tokens ?? observed?.tokens24h ?? 0;
@@ -111,6 +122,7 @@ function TenantShowback() {
         const alert = vk?.spec.budgets?.find((b) => b.window === "Day")?.alertThresholdPercent;
         return {
           keyId,
+          displayName: vk?.metadata.name ?? keyId,
           tokens24h: observed?.tokens24h ?? 0,
           requests24h: observed?.requests24h ?? 0,
           dayBudget,
@@ -127,10 +139,17 @@ function TenantShowback() {
   const keyColumns = useMemo<ColumnDef<KeyDetailRow, unknown>[]>(
     () => [
       {
-        accessorKey: "keyId",
+        accessorKey: "displayName",
         id: "key",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Key" />,
-        cell: ({ row }) => <span className="font-medium">{row.original.keyId}</span>,
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span className="font-medium">{row.original.displayName}</span>
+            {row.original.displayName !== row.original.keyId && (
+              <span className="font-mono text-xs text-muted-foreground">{row.original.keyId}</span>
+            )}
+          </div>
+        ),
       },
       {
         accessorKey: "tokens24h",
