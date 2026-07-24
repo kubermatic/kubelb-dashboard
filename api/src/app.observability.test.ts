@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
 import type { CoreV1Api } from "@kubernetes/client-node";
 import { buildApp, type BuildAppOptions } from "./app.js";
@@ -88,5 +88,68 @@ describe("observability source gating", () => {
     apps.push(app);
     const flows = await app.inject({ method: "GET", url: "/api/traffic/flows?window=5m" });
     expect(flows.statusCode).toBe(404);
+  });
+
+  it("ai spend endpoint 404s when metrics are unavailable", async () => {
+    const app = await makeApp({
+      coreClient: null,
+      hubbleAutodiscover: false,
+      prometheusAutodiscover: false,
+    });
+    apps.push(app);
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/metrics/ai?metric=tokens&window=24h",
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});
+
+describe("ai spend endpoint with prometheus available", () => {
+  const apps: FastifyInstance[] = [];
+  afterEach(() => vi.restoreAllMocks());
+  afterAll(async () => {
+    await Promise.all(apps.map((a) => a.close()));
+  });
+
+  // Detection probes the envoy series; the AI query returns a vector.
+  function stubProm() {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((u: string | URL) => {
+        const url = String(u);
+        if (url.includes("envoy_http_downstream_rq_total")) {
+          return Promise.resolve(
+            Response.json({ status: "success", data: { result: [{ value: [0, "5"] }] } }),
+          );
+        }
+        return Promise.resolve(
+          Response.json({
+            status: "success",
+            data: {
+              resultType: "vector",
+              result: [{ metric: { tenant_id: "primary" }, value: [0, "42"] }],
+            },
+          }),
+        );
+      }),
+    );
+  }
+
+  it("returns a vector for a valid query", async () => {
+    stubProm();
+    const app = await makeApp({ prometheusUrl: "http://prom:9090", coreClient: null });
+    apps.push(app);
+    const res = await app.inject({ method: "GET", url: "/api/metrics/ai?metric=tokens&window=1h" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.result).toHaveLength(1);
+  });
+
+  it("rejects an unknown metric with 400", async () => {
+    stubProm();
+    const app = await makeApp({ prometheusUrl: "http://prom:9090", coreClient: null });
+    apps.push(app);
+    const res = await app.inject({ method: "GET", url: "/api/metrics/ai?metric=evil&window=1h" });
+    expect(res.statusCode).toBe(400);
   });
 });

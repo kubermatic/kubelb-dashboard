@@ -32,6 +32,7 @@ export const API_PATHS = {
   loadBalancers: (ns: string) => `${API_BASE}/namespaces/${ns}/loadbalancers`,
   addresses: (ns: string) => `${API_BASE}/namespaces/${ns}/addresses`,
   wafPolicies: `${API_BASE}/wafpolicies`,
+  virtualKeys: `${API_BASE}/virtualkeys`,
   namespaces: `${API_BASE}/namespaces`,
   agentgatewayBackends: `${AGENTGATEWAY_API_BASE}/agentgatewaybackends`,
   agentgatewayBackend: (ns: string) =>

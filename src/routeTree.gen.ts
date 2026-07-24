@@ -19,11 +19,13 @@ import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
 import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
 import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
+import { Route as AiShowbackIndexRouteImport } from "./routes/ai-showback/index"
 import { Route as AiGatewayIndexRouteImport } from "./routes/ai-gateway/index"
 import { Route as WafPoliciesNameRouteImport } from "./routes/waf-policies/$name"
 import { Route as TenantsNameRouteImport } from "./routes/tenants/$name"
 import { Route as RoutesDownstreamRouteImport } from "./routes/routes/downstream"
 import { Route as LoadBalancersServicesRouteImport } from "./routes/load-balancers/services"
+import { Route as AiShowbackTenantRouteImport } from "./routes/ai-showback/$tenant"
 import { Route as SyncSecretsNamespaceNameRouteImport } from "./routes/sync-secrets/$namespace.$name"
 import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namespace.$name"
 import { Route as LoadBalancersNamespaceNameRouteImport } from "./routes/load-balancers/$namespace.$name"
@@ -90,6 +92,13 @@ const ConfigurationIndexRoute = ConfigurationIndexRouteImport.update({
 } as any).lazy(() =>
   import("./routes/configuration/index.lazy").then((d) => d.Route),
 )
+const AiShowbackIndexRoute = AiShowbackIndexRouteImport.update({
+  id: "/ai-showback/",
+  path: "/ai-showback/",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/ai-showback/index.lazy").then((d) => d.Route),
+)
 const AiGatewayIndexRoute = AiGatewayIndexRouteImport.update({
   id: "/ai-gateway/",
   path: "/ai-gateway/",
@@ -122,6 +131,13 @@ const LoadBalancersServicesRoute = LoadBalancersServicesRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
   import("./routes/load-balancers/services.lazy").then((d) => d.Route),
+)
+const AiShowbackTenantRoute = AiShowbackTenantRouteImport.update({
+  id: "/ai-showback/$tenant",
+  path: "/ai-showback/$tenant",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/ai-showback/$tenant.lazy").then((d) => d.Route),
 )
 const SyncSecretsNamespaceNameRoute =
   SyncSecretsNamespaceNameRouteImport.update({
@@ -166,11 +182,13 @@ const AiGatewayNamespaceNameRoute = AiGatewayNamespaceNameRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/login": typeof LoginRoute
+  "/ai-showback/$tenant": typeof AiShowbackTenantRoute
   "/load-balancers/services": typeof LoadBalancersServicesRoute
   "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/ai-gateway/": typeof AiGatewayIndexRoute
+  "/ai-showback/": typeof AiShowbackIndexRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
@@ -188,11 +206,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/login": typeof LoginRoute
+  "/ai-showback/$tenant": typeof AiShowbackTenantRoute
   "/load-balancers/services": typeof LoadBalancersServicesRoute
   "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/ai-gateway": typeof AiGatewayIndexRoute
+  "/ai-showback": typeof AiShowbackIndexRoute
   "/configuration": typeof ConfigurationIndexRoute
   "/envoy-proxy": typeof EnvoyProxyIndexRoute
   "/load-balancers": typeof LoadBalancersIndexRoute
@@ -211,11 +231,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
   "/login": typeof LoginRoute
+  "/ai-showback/$tenant": typeof AiShowbackTenantRoute
   "/load-balancers/services": typeof LoadBalancersServicesRoute
   "/routes/downstream": typeof RoutesDownstreamRoute
   "/tenants/$name": typeof TenantsNameRoute
   "/waf-policies/$name": typeof WafPoliciesNameRoute
   "/ai-gateway/": typeof AiGatewayIndexRoute
+  "/ai-showback/": typeof AiShowbackIndexRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
@@ -235,11 +257,13 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/login"
+    | "/ai-showback/$tenant"
     | "/load-balancers/services"
     | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/ai-gateway/"
+    | "/ai-showback/"
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
@@ -257,11 +281,13 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/login"
+    | "/ai-showback/$tenant"
     | "/load-balancers/services"
     | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/ai-gateway"
+    | "/ai-showback"
     | "/configuration"
     | "/envoy-proxy"
     | "/load-balancers"
@@ -279,11 +305,13 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/login"
+    | "/ai-showback/$tenant"
     | "/load-balancers/services"
     | "/routes/downstream"
     | "/tenants/$name"
     | "/waf-policies/$name"
     | "/ai-gateway/"
+    | "/ai-showback/"
     | "/configuration/"
     | "/envoy-proxy/"
     | "/load-balancers/"
@@ -302,11 +330,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  AiShowbackTenantRoute: typeof AiShowbackTenantRoute
   LoadBalancersServicesRoute: typeof LoadBalancersServicesRoute
   RoutesDownstreamRoute: typeof RoutesDownstreamRoute
   TenantsNameRoute: typeof TenantsNameRoute
   WafPoliciesNameRoute: typeof WafPoliciesNameRoute
   AiGatewayIndexRoute: typeof AiGatewayIndexRoute
+  AiShowbackIndexRoute: typeof AiShowbackIndexRoute
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
   EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
   LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
@@ -394,6 +424,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ConfigurationIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/ai-showback/": {
+      id: "/ai-showback/"
+      path: "/ai-showback"
+      fullPath: "/ai-showback/"
+      preLoaderRoute: typeof AiShowbackIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/ai-gateway/": {
       id: "/ai-gateway/"
       path: "/ai-gateway"
@@ -427,6 +464,13 @@ declare module "@tanstack/react-router" {
       path: "/load-balancers/services"
       fullPath: "/load-balancers/services"
       preLoaderRoute: typeof LoadBalancersServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/ai-showback/$tenant": {
+      id: "/ai-showback/$tenant"
+      path: "/ai-showback/$tenant"
+      fullPath: "/ai-showback/$tenant"
+      preLoaderRoute: typeof AiShowbackTenantRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/sync-secrets/$namespace/$name": {
@@ -470,11 +514,13 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  AiShowbackTenantRoute: AiShowbackTenantRoute,
   LoadBalancersServicesRoute: LoadBalancersServicesRoute,
   RoutesDownstreamRoute: RoutesDownstreamRoute,
   TenantsNameRoute: TenantsNameRoute,
   WafPoliciesNameRoute: WafPoliciesNameRoute,
   AiGatewayIndexRoute: AiGatewayIndexRoute,
+  AiShowbackIndexRoute: AiShowbackIndexRoute,
   ConfigurationIndexRoute: ConfigurationIndexRoute,
   EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
   LoadBalancersIndexRoute: LoadBalancersIndexRoute,

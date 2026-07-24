@@ -35,4 +35,5 @@ export { tcpRoutes } from "./tcproutes";
 export { tenants } from "./tenants";
 export { tlsRoutes } from "./tlsroutes";
 export { udpRoutes } from "./udproutes";
+export { virtualKeys } from "./virtualkeys";
 export { wafPolicies } from "./waf-policies";

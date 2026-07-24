@@ -26,6 +26,7 @@ import {
   Server,
   GitBranch,
   Bot,
+  Coins,
   Waypoints,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -63,6 +64,12 @@ export const navItems: NavItem[] = [
     label: "AI & MCP Gateways",
     to: "/ai-gateway",
     icon: Bot,
+    requiresAgentgateway: true,
+  },
+  {
+    label: "AI Spend",
+    to: "/ai-showback",
+    icon: Coins,
     requiresAgentgateway: true,
   },
 ];
