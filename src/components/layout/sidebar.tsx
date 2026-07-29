@@ -21,6 +21,7 @@ import { ChevronRight, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 import { useEdition } from "@/hooks/use-edition";
 import { useAgentgatewayAvailable } from "@/hooks/use-agentgateway";
+import { useInsightsAvailable } from "@/hooks/use-insights";
 import { cn } from "@/lib/utils";
 import { navItems, type NavItem } from "@/lib/nav-items";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,7 +29,7 @@ import { env } from "@/lib/env";
 
 // Group nav items by category
 const navGroups = {
-  main: ["Overview", "Traffic"],
+  main: ["Overview", "Traffic", "Insights"],
   resources: ["Tenants", "Load Balancers", "Routes", "Sync Secrets"],
   infrastructure: ["Envoy Proxy", "Configuration"],
   security: ["WAF Policies"],
@@ -40,18 +41,23 @@ function NavLinks({
   onNavigate,
   ee,
   agentgatewayAvailable,
+  insightsAvailable,
 }: {
   collapsed: boolean;
   onNavigate?: () => void;
   ee?: boolean;
   agentgatewayAvailable?: boolean;
+  insightsAvailable?: boolean;
 }) {
   const filtered = useMemo(
     () =>
       navItems.filter(
-        (item) => (!item.ee || ee) && (!item.requiresAgentgateway || agentgatewayAvailable),
+        (item) =>
+          (!item.ee || ee) &&
+          (!item.requiresAgentgateway || agentgatewayAvailable) &&
+          (!item.requiresInsights || insightsAvailable),
       ),
-    [ee, agentgatewayAvailable],
+    [ee, agentgatewayAvailable, insightsAvailable],
   );
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
   const { pathname } = useLocation();
@@ -290,6 +296,7 @@ export function Sidebar() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const { isEE, loading: editionLoading } = useEdition();
   const { available: agentgatewayAvailable } = useAgentgatewayAvailable();
+  const { available: insightsAvailable } = useInsightsAvailable();
 
   return (
     <aside
@@ -299,7 +306,12 @@ export function Sidebar() {
         collapsed ? "w-[72px]" : "w-[260px]",
       )}
     >
-      <NavLinks collapsed={collapsed} ee={isEE} agentgatewayAvailable={agentgatewayAvailable} />
+      <NavLinks
+        collapsed={collapsed}
+        ee={isEE}
+        agentgatewayAvailable={agentgatewayAvailable}
+        insightsAvailable={insightsAvailable}
+      />
 
       <div className="shrink-0 border-t border-sidebar-border">
         {!collapsed && !editionLoading && (
@@ -343,6 +355,7 @@ export function MobileSidebar() {
   const close = useUIStore((s) => s.closeMobileSidebar);
   const { isEE } = useEdition();
   const { available: agentgatewayAvailable } = useAgentgatewayAvailable();
+  const { available: insightsAvailable } = useInsightsAvailable();
 
   useEffect(() => {
     if (!open) return;
@@ -378,6 +391,7 @@ export function MobileSidebar() {
           onNavigate={close}
           ee={isEE}
           agentgatewayAvailable={agentgatewayAvailable}
+          insightsAvailable={insightsAvailable}
         />
       </aside>
     </div>

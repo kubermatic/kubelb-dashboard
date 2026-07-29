@@ -16,6 +16,7 @@
 
 import {
   LayoutDashboard,
+  Lightbulb,
   Users,
   Network,
   Route,
@@ -37,12 +38,14 @@ export interface NavItem {
   icon: LucideIcon;
   ee?: boolean;
   requiresAgentgateway?: boolean;
+  requiresInsights?: boolean;
   children?: NavItem[];
 }
 
 export const navItems: NavItem[] = [
   { label: "Overview", to: "/", icon: LayoutDashboard },
   { label: "Traffic", to: "/traffic", icon: Waypoints },
+  { label: "Insights", to: "/insights", icon: Lightbulb, requiresInsights: true },
   { label: "Tenants", to: "/tenants", icon: Users },
   {
     label: "Load Balancers",

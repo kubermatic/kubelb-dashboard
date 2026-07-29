@@ -56,6 +56,16 @@ export const queryKeys = {
     list: () => ["wafpolicies", "list"] as const,
     detail: (name: string) => ["wafpolicies", "detail", name] as const,
   },
+  insights: {
+    all: ["insights"] as const,
+    available: () => ["insights", "available"] as const,
+    list: (ns?: string) =>
+      ns ? (["insights", "list", ns] as const) : (["insights", "list"] as const),
+    detail: (ns: string, name: string) => ["insights", "detail", ns, name] as const,
+  },
+  posture: {
+    scores: () => ["posture", "scores"] as const,
+  },
   addresses: {
     all: ["addresses"] as const,
     detail: (ns: string, name: string) => ["addresses", "detail", ns, name] as const,

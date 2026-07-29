@@ -354,3 +354,68 @@ export interface WAFSettings {
   wasmInitContainerImage?: string;
   skipValidation?: boolean;
 }
+
+export type InsightCategory = "security" | "reliability" | "cost" | "hygiene" | "migration";
+
+export type InsightSeverity = "critical" | "high" | "medium" | "low" | "info";
+
+export type InsightTriageState = "Acknowledged" | "Snoozed" | "Dismissed";
+
+export type InsightDismissalReason =
+  "working_as_intended" | "accepted_risk" | "false_positive" | "low_priority" | "other";
+
+export type InsightState = "Open" | "Acknowledged" | "Snoozed" | "Dismissed" | "Fixed";
+
+export interface InsightTargetRef {
+  apiVersion: string;
+  kind: string;
+  name: string;
+  namespace?: string;
+}
+
+export type InsightEvidenceType = "FieldRef" | "Condition" | "ObjectRef";
+
+export interface InsightEvidence {
+  type: InsightEvidenceType;
+  ref: string;
+  note?: string;
+}
+
+export interface InsightRemediation {
+  summary?: string;
+  snippet?: string;
+}
+
+export interface InsightTriage {
+  state: InsightTriageState;
+  reason?: InsightDismissalReason;
+  snoozeUntil?: string;
+}
+
+export interface InsightSpec {
+  check: string;
+  slug: string;
+  category: InsightCategory;
+  severity: InsightSeverity;
+  message: string;
+  targetRefs: InsightTargetRef[];
+  evidence?: InsightEvidence[];
+  remediation?: InsightRemediation;
+  docsURL?: string;
+  triage?: InsightTriage | null;
+}
+
+export interface InsightStatus {
+  state?: InsightState;
+  firstSeen?: string;
+  lastEvaluated?: string;
+  fixedAt?: string;
+}
+
+export interface Insight {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMeta;
+  spec: InsightSpec;
+  status?: InsightStatus;
+}

@@ -141,11 +141,13 @@ export async function kubeDelete(path: string): Promise<void> {
   }
 }
 
+// JSON merge patch (RFC 7386): CRDs reject strategic merge patch, and null
+// values delete the field they target, which is how triage fields are cleared.
 export async function kubePatch<T>(path: string, patch: unknown): Promise<T> {
   assertWritable();
   const response = await fetch(`${KUBE_PREFIX}${path}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/strategic-merge-patch+json" },
+    headers: { "Content-Type": "application/merge-patch+json" },
     credentials: "include",
     body: JSON.stringify(patch),
   });

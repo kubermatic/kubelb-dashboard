@@ -26,6 +26,7 @@ export { gateways } from "./gateways";
 export { grpcRoutes } from "./grpcroutes";
 export { httpRoutes } from "./httproutes";
 export { ingresses } from "./ingresses";
+export { insights } from "./insights";
 export { loadBalancers } from "./load-balancers";
 export { namespaces } from "./namespaces";
 export { routes } from "./routes";

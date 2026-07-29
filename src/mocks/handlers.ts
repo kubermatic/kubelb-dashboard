@@ -27,6 +27,7 @@ import { gatewayHandlers } from "./handlers/gateways";
 import { grpcRouteHandlers } from "./handlers/grpcroutes";
 import { httpRouteHandlers } from "./handlers/httproutes";
 import { ingressHandlers } from "./handlers/ingresses";
+import { insightHandlers } from "./handlers/insights";
 import { loadBalancerHandlers } from "./handlers/load-balancers";
 import { namespaceHandlers } from "./handlers/namespaces";
 import { observabilityHandlers } from "./handlers/observability";
@@ -72,6 +73,7 @@ export const handlers = [
   ...eventHandlers,
   ...namespaceHandlers,
   ...wafPolicyHandlers,
+  ...insightHandlers,
   ...gatewayHandlers,
   ...httpRouteHandlers,
   ...tcpRouteHandlers,

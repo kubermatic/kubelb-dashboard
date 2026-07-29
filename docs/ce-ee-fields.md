@@ -55,10 +55,11 @@
 
 ## EE-Only Resources
 
-| Resource            | Notes                                                                           |
-| ------------------- | ------------------------------------------------------------------------------- |
-| WAFPolicy           | Full CRUD, `/waf-policies` page                                                 |
-| AgentgatewayBackend | Read-only, `/ai-gateway` page. EE + agentgateway addon (`agentgateway.dev` CRD) |
+| Resource            | Notes                                                                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WAFPolicy           | Full CRUD, `/waf-policies` page                                                                                                                     |
+| AgentgatewayBackend | Read-only, `/ai-gateway` page. EE + agentgateway addon (`agentgateway.dev` CRD)                                                                     |
+| Insight             | Read + triage patch only, `/insights` page. Gated on a CRD discovery probe for `insights.kubelb.k8c.io` — the CRD ships with the EE insights engine |
 
 ## AgentgatewayBackend (EE + agentgateway addon)
 

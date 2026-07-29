@@ -28,6 +28,8 @@ describe("isAllowedKubePath", () => {
     "/apis/gateway.networking.k8s.io/v1/httproutes",
     "/apis/apiextensions.k8s.io/v1/customresourcedefinitions/routes.kubelb.k8c.io",
     "/apis/kubelb.k8c.io/v1alpha1/wafpolicies",
+    "/apis/kubelb.k8c.io/v1alpha1/insights",
+    "/apis/kubelb.k8c.io/v1alpha1/namespaces/tenant-foo/insights/klb014-3fa2c81b",
     "/apis/agentgateway.dev/v1alpha1",
   ])("allows %s", (path) => {
     expect(isAllowedKubePath(path)).toBe(true);

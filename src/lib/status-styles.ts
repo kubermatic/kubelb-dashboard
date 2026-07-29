@@ -16,6 +16,7 @@
 
 import type { HealthState } from "@/lib/status-mapper";
 import type { Condition } from "@/types/kubernetes";
+import type { InsightSeverity, InsightState } from "@/types/kubelb";
 
 export const statusStyles: Record<HealthState, string> = {
   Ready: "bg-success/10 text-success hover:bg-success/20",
@@ -35,3 +36,19 @@ export const booleanStyles = {
   enabled: "bg-success/10 text-success",
   disabled: "bg-muted text-muted-foreground",
 } as const;
+
+export const severityStyles: Record<InsightSeverity, string> = {
+  critical: "bg-destructive text-white",
+  high: "bg-destructive/10 text-destructive",
+  medium: "bg-warning/10 text-warning",
+  low: "bg-muted text-muted-foreground",
+  info: "bg-primary/10 text-primary",
+};
+
+export const insightStateStyles: Record<InsightState, string> = {
+  Open: "bg-destructive/10 text-destructive",
+  Acknowledged: "bg-warning/10 text-warning",
+  Snoozed: "bg-muted text-muted-foreground",
+  Dismissed: "bg-muted text-muted-foreground",
+  Fixed: "bg-success/10 text-success",
+};

@@ -59,4 +59,18 @@ export const observabilityHandlers = [
       },
     });
   }),
+
+  http.get("/api/metrics/posture", () => {
+    const now = Math.floor(Date.now() / 1000);
+    return HttpResponse.json({
+      status: "success",
+      data: {
+        resultType: "vector",
+        result: [
+          { metric: { tenant: "primary", category: "" }, value: [now, "0.62"] },
+          { metric: { tenant: "secondary", category: "" }, value: [now, "0.88"] },
+        ],
+      },
+    });
+  }),
 ];

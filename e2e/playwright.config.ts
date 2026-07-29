@@ -65,7 +65,7 @@ export default defineConfig({
         storageState: "e2e/.auth/user.json",
       },
       dependencies: ["setup"],
-      testMatch: /\/(tenants|waf-policies|sync-secrets)\//,
+      testMatch: /\/(tenants|waf-policies|sync-secrets|insights)\//,
       fullyParallel: false,
     },
     {

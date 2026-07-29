@@ -33,6 +33,8 @@ export const API_PATHS = {
   addresses: (ns: string) => `${API_BASE}/namespaces/${ns}/addresses`,
   wafPolicies: `${API_BASE}/wafpolicies`,
   virtualKeys: `${API_BASE}/virtualkeys`,
+  insights: (ns: string) => `${API_BASE}/namespaces/${ns}/insights`,
+  insightsAll: `${API_BASE}/insights`,
   namespaces: `${API_BASE}/namespaces`,
   agentgatewayBackends: `${AGENTGATEWAY_API_BASE}/agentgatewaybackends`,
   agentgatewayBackend: (ns: string) =>
@@ -44,6 +46,9 @@ export const KUBELB_LABELS = {
   ORIGIN_NS: `${API_GROUP}/origin-ns`,
   MANAGED_BY: `${API_GROUP}/managed-by`,
   TENANT: `${API_GROUP}/tenant`,
+  INSIGHT_CHECK: `${API_GROUP}/insight-check`,
+  INSIGHT_SEVERITY: `${API_GROUP}/insight-severity`,
+  INSIGHT_CATEGORY: `${API_GROUP}/insight-category`,
 } as const;
 
 export const KUBELB_ANNOTATIONS = {

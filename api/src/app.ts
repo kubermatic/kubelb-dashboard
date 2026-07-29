@@ -40,7 +40,7 @@ import {
   hubbleAutodiscover as defaultHubbleAutodiscover,
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
-import { detectPrometheus, queryRange } from "./metrics.js";
+import { detectPrometheus, queryPosture, queryRange } from "./metrics.js";
 import { queryAISpend, validateAIParams } from "./ai-metrics.js";
 import { discoverHubble, discoverPrometheus } from "./discovery.js";
 import {
@@ -277,6 +277,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       const message = err instanceof Error ? err.message : "query failed";
       const code = message.startsWith("unknown") || message.startsWith("invalid") ? 400 : 502;
       return reply.code(code).send({ error: message });
+    }
+  });
+
+  app.get("/api/metrics/posture", async (_request, reply) => {
+    if (!(await isMetricsAvailable()) || !resolvedPromUrl) {
+      return reply.code(404).send({ error: "metrics not available" });
+    }
+    try {
+      return await queryPosture(resolvedPromUrl);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "query failed";
+      return reply.code(502).send({ error: message });
     }
   });
 
