@@ -20,26 +20,33 @@
 
 const NAMESPACE_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 
+export const METRIC_KEYS = [
+  "request_rate",
+  "error_rate",
+  "p99_latency",
+  "active_connections",
+] as const;
+
+export type MetricKey = (typeof METRIC_KEYS)[number];
+
+export function isMetricKey(v: string): v is MetricKey {
+  return (METRIC_KEYS as readonly string[]).includes(v);
+}
+
 // Named per-proxy metrics. Templates filter to a tenant namespace; internal
 // listeners (admin/health_check/stats_*) are excluded where relevant so the
 // numbers reflect real data-plane traffic. See docs/adr/001-traffic-metrics.md.
-export const METRIC_QUERIES = new Map<string, (ns: string) => string>([
-  ["request_rate", (ns) => `sum(rate(envoy_http_downstream_rq_total{namespace="${ns}"}[5m]))`],
-  [
-    "error_rate",
-    (ns) =>
-      `sum(rate(envoy_http_downstream_rq_xx{namespace="${ns}",envoy_response_code_class="5"}[5m]))`,
-  ],
-  [
-    "p99_latency",
-    (ns) =>
-      `histogram_quantile(0.99, sum(rate(envoy_http_downstream_rq_time_bucket{namespace="${ns}"}[5m])) by (le))`,
-  ],
-  ["active_connections", (ns) => `sum(envoy_http_downstream_cx_active{namespace="${ns}"})`],
-]);
-
-export function isMetricKey(v: string): boolean {
-  return METRIC_QUERIES.has(v);
+export function buildMetricQuery(metric: MetricKey, ns: string): string {
+  switch (metric) {
+    case "request_rate":
+      return `sum(rate(envoy_http_downstream_rq_total{namespace="${ns}"}[5m]))`;
+    case "error_rate":
+      return `sum(rate(envoy_http_downstream_rq_xx{namespace="${ns}",envoy_response_code_class="5"}[5m]))`;
+    case "p99_latency":
+      return `histogram_quantile(0.99, sum(rate(envoy_http_downstream_rq_time_bucket{namespace="${ns}"}[5m])) by (le))`;
+    case "active_connections":
+      return `sum(envoy_http_downstream_cx_active{namespace="${ns}"})`;
+  }
 }
 
 export function isValidNamespace(ns: string): boolean {
@@ -85,10 +92,9 @@ export async function queryRange(
   baseUrl: string,
   { metric, namespace, windowSeconds, step, now }: RangeParams,
 ): Promise<unknown> {
-  const buildQuery = METRIC_QUERIES.get(metric);
-  if (!buildQuery) throw new Error("unknown metric");
+  if (!isMetricKey(metric)) throw new Error("unknown metric");
   if (!isValidNamespace(namespace)) throw new Error("invalid namespace");
-  const query = buildQuery(namespace);
+  const query = buildMetricQuery(metric, namespace);
   const end = now;
   const start = end - windowSeconds;
   const qs = new URLSearchParams({
