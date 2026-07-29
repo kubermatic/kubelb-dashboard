@@ -13,6 +13,15 @@ rules:
     {{- else }}
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     {{- end }}
+  # Insights are engine-owned: the dashboard only reads findings and patches
+  # spec.triage, so it never gets create/update/delete on them.
+  - apiGroups: ["kubelb.k8c.io"]
+    resources: ["insights"]
+    {{- if .Values.readOnly }}
+    verbs: ["get", "list", "watch"]
+    {{- else }}
+    verbs: ["get", "list", "watch", "patch"]
+    {{- end }}
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "watch"]

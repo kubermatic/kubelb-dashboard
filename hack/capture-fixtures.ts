@@ -73,6 +73,13 @@ const RESOURCES: ResourceConfig[] = [
     typeImport: "@/types/kubelb",
   },
   {
+    kubectl: "get insights -A -o json",
+    file: "insights.ts",
+    exportName: "insights",
+    typeName: "Insight",
+    typeImport: "@/types/kubelb",
+  },
+  {
     kubectl: "get deployments -n kubelb -l app.kubernetes.io/name=envoy -o json",
     file: "deployments.ts",
     exportName: "deployments",

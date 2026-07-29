@@ -80,6 +80,15 @@ export async function detectPrometheus(baseUrl: string | undefined): Promise<boo
   }
 }
 
+// Overall posture per tenant, exported by the KubeLB manager's insights
+// engine. Fixed query, no client input.
+export async function queryPosture(baseUrl: string): Promise<unknown> {
+  const query = 'kubelb_manager_posture_score{category=""}';
+  const res = await promFetch(baseUrl, `/api/v1/query?query=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error(`prometheus ${String(res.status)}`);
+  return res.json();
+}
+
 export interface RangeParams {
   metric: string;
   namespace: string;

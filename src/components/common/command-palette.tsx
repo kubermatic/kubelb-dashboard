@@ -17,13 +17,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
-import { Users, Network, Route, KeyRound, ShieldAlert, Search } from "lucide-react";
+import { Users, Network, Route, KeyRound, Lightbulb, ShieldAlert, Search } from "lucide-react";
 import { useEdition } from "@/hooks/use-edition";
 import { useTenants } from "@/hooks/use-tenants";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
 import { useWAFPolicies } from "@/hooks/use-waf-policies";
+import { useInsights, useInsightsAvailable } from "@/hooks/use-insights";
 import { navItems } from "@/lib/nav-items";
 import type { LucideIcon } from "lucide-react";
 
@@ -37,6 +38,8 @@ export function CommandPalette() {
   const { data: routes } = useRoutes(undefined, { enabled: open });
   const { data: syncSecrets } = useSyncSecrets(undefined, { enabled: open });
   const { data: wafPolicies } = useWAFPolicies({ enabled: open });
+  const { available: insightsAvailable } = useInsightsAvailable();
+  const { data: insights } = useInsights(undefined, { enabled: open && insightsAvailable });
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -58,7 +61,7 @@ export function CommandPalette() {
   );
 
   const filteredPages = navItems
-    .filter((p) => !p.ee || isEE)
+    .filter((p) => (!p.ee || isEE) && (!p.requiresInsights || insightsAvailable))
     .flatMap((p) => (p.children ? [p, ...p.children] : [p]));
 
   if (!open) return null;
@@ -137,6 +140,15 @@ export function CommandPalette() {
                 icon={ShieldAlert}
                 items={wafPolicies?.items}
                 onSelect={(name) => select(`/waf-policies/${name}`)}
+              />
+            )}
+
+            {insightsAvailable && (
+              <ResourceGroup
+                heading="Insights"
+                icon={Lightbulb}
+                items={insights?.items}
+                onSelect={(name, ns) => select(`/insights/${ns}/${name}`)}
               />
             )}
           </Command.List>

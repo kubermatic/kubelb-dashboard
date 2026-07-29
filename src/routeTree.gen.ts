@@ -17,6 +17,7 @@ import { Route as TenantsIndexRouteImport } from "./routes/tenants/index"
 import { Route as SyncSecretsIndexRouteImport } from "./routes/sync-secrets/index"
 import { Route as RoutesIndexRouteImport } from "./routes/routes/index"
 import { Route as LoadBalancersIndexRouteImport } from "./routes/load-balancers/index"
+import { Route as InsightsIndexRouteImport } from "./routes/insights/index"
 import { Route as EnvoyProxyIndexRouteImport } from "./routes/envoy-proxy/index"
 import { Route as ConfigurationIndexRouteImport } from "./routes/configuration/index"
 import { Route as AiShowbackIndexRouteImport } from "./routes/ai-showback/index"
@@ -29,6 +30,7 @@ import { Route as AiShowbackTenantRouteImport } from "./routes/ai-showback/$tena
 import { Route as SyncSecretsNamespaceNameRouteImport } from "./routes/sync-secrets/$namespace.$name"
 import { Route as RoutesNamespaceNameRouteImport } from "./routes/routes/$namespace.$name"
 import { Route as LoadBalancersNamespaceNameRouteImport } from "./routes/load-balancers/$namespace.$name"
+import { Route as InsightsNamespaceNameRouteImport } from "./routes/insights/$namespace.$name"
 import { Route as EnvoyProxyNamespaceNameRouteImport } from "./routes/envoy-proxy/$namespace.$name"
 import { Route as AiGatewayNamespaceNameRouteImport } from "./routes/ai-gateway/$namespace.$name"
 
@@ -77,6 +79,13 @@ const LoadBalancersIndexRoute = LoadBalancersIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
   import("./routes/load-balancers/index.lazy").then((d) => d.Route),
+)
+const InsightsIndexRoute = InsightsIndexRouteImport.update({
+  id: "/insights/",
+  path: "/insights/",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/insights/index.lazy").then((d) => d.Route),
 )
 const EnvoyProxyIndexRoute = EnvoyProxyIndexRouteImport.update({
   id: "/envoy-proxy/",
@@ -164,6 +173,13 @@ const LoadBalancersNamespaceNameRoute =
       (d) => d.Route,
     ),
   )
+const InsightsNamespaceNameRoute = InsightsNamespaceNameRouteImport.update({
+  id: "/insights/$namespace/$name",
+  path: "/insights/$namespace/$name",
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import("./routes/insights/$namespace.$name.lazy").then((d) => d.Route),
+)
 const EnvoyProxyNamespaceNameRoute = EnvoyProxyNamespaceNameRouteImport.update({
   id: "/envoy-proxy/$namespace/$name",
   path: "/envoy-proxy/$namespace/$name",
@@ -191,6 +207,7 @@ export interface FileRoutesByFullPath {
   "/ai-showback/": typeof AiShowbackIndexRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
+  "/insights/": typeof InsightsIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
@@ -199,6 +216,7 @@ export interface FileRoutesByFullPath {
   "/waf-policies/": typeof WafPoliciesIndexRoute
   "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
+  "/insights/$namespace/$name": typeof InsightsNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
   "/sync-secrets/$namespace/$name": typeof SyncSecretsNamespaceNameRoute
@@ -215,6 +233,7 @@ export interface FileRoutesByTo {
   "/ai-showback": typeof AiShowbackIndexRoute
   "/configuration": typeof ConfigurationIndexRoute
   "/envoy-proxy": typeof EnvoyProxyIndexRoute
+  "/insights": typeof InsightsIndexRoute
   "/load-balancers": typeof LoadBalancersIndexRoute
   "/routes": typeof RoutesIndexRoute
   "/sync-secrets": typeof SyncSecretsIndexRoute
@@ -223,6 +242,7 @@ export interface FileRoutesByTo {
   "/waf-policies": typeof WafPoliciesIndexRoute
   "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
+  "/insights/$namespace/$name": typeof InsightsNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
   "/sync-secrets/$namespace/$name": typeof SyncSecretsNamespaceNameRoute
@@ -240,6 +260,7 @@ export interface FileRoutesById {
   "/ai-showback/": typeof AiShowbackIndexRoute
   "/configuration/": typeof ConfigurationIndexRoute
   "/envoy-proxy/": typeof EnvoyProxyIndexRoute
+  "/insights/": typeof InsightsIndexRoute
   "/load-balancers/": typeof LoadBalancersIndexRoute
   "/routes/": typeof RoutesIndexRoute
   "/sync-secrets/": typeof SyncSecretsIndexRoute
@@ -248,6 +269,7 @@ export interface FileRoutesById {
   "/waf-policies/": typeof WafPoliciesIndexRoute
   "/ai-gateway/$namespace/$name": typeof AiGatewayNamespaceNameRoute
   "/envoy-proxy/$namespace/$name": typeof EnvoyProxyNamespaceNameRoute
+  "/insights/$namespace/$name": typeof InsightsNamespaceNameRoute
   "/load-balancers/$namespace/$name": typeof LoadBalancersNamespaceNameRoute
   "/routes/$namespace/$name": typeof RoutesNamespaceNameRoute
   "/sync-secrets/$namespace/$name": typeof SyncSecretsNamespaceNameRoute
@@ -266,6 +288,7 @@ export interface FileRouteTypes {
     | "/ai-showback/"
     | "/configuration/"
     | "/envoy-proxy/"
+    | "/insights/"
     | "/load-balancers/"
     | "/routes/"
     | "/sync-secrets/"
@@ -274,6 +297,7 @@ export interface FileRouteTypes {
     | "/waf-policies/"
     | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
+    | "/insights/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
     | "/sync-secrets/$namespace/$name"
@@ -290,6 +314,7 @@ export interface FileRouteTypes {
     | "/ai-showback"
     | "/configuration"
     | "/envoy-proxy"
+    | "/insights"
     | "/load-balancers"
     | "/routes"
     | "/sync-secrets"
@@ -298,6 +323,7 @@ export interface FileRouteTypes {
     | "/waf-policies"
     | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
+    | "/insights/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
     | "/sync-secrets/$namespace/$name"
@@ -314,6 +340,7 @@ export interface FileRouteTypes {
     | "/ai-showback/"
     | "/configuration/"
     | "/envoy-proxy/"
+    | "/insights/"
     | "/load-balancers/"
     | "/routes/"
     | "/sync-secrets/"
@@ -322,6 +349,7 @@ export interface FileRouteTypes {
     | "/waf-policies/"
     | "/ai-gateway/$namespace/$name"
     | "/envoy-proxy/$namespace/$name"
+    | "/insights/$namespace/$name"
     | "/load-balancers/$namespace/$name"
     | "/routes/$namespace/$name"
     | "/sync-secrets/$namespace/$name"
@@ -339,6 +367,7 @@ export interface RootRouteChildren {
   AiShowbackIndexRoute: typeof AiShowbackIndexRoute
   ConfigurationIndexRoute: typeof ConfigurationIndexRoute
   EnvoyProxyIndexRoute: typeof EnvoyProxyIndexRoute
+  InsightsIndexRoute: typeof InsightsIndexRoute
   LoadBalancersIndexRoute: typeof LoadBalancersIndexRoute
   RoutesIndexRoute: typeof RoutesIndexRoute
   SyncSecretsIndexRoute: typeof SyncSecretsIndexRoute
@@ -347,6 +376,7 @@ export interface RootRouteChildren {
   WafPoliciesIndexRoute: typeof WafPoliciesIndexRoute
   AiGatewayNamespaceNameRoute: typeof AiGatewayNamespaceNameRoute
   EnvoyProxyNamespaceNameRoute: typeof EnvoyProxyNamespaceNameRoute
+  InsightsNamespaceNameRoute: typeof InsightsNamespaceNameRoute
   LoadBalancersNamespaceNameRoute: typeof LoadBalancersNamespaceNameRoute
   RoutesNamespaceNameRoute: typeof RoutesNamespaceNameRoute
   SyncSecretsNamespaceNameRoute: typeof SyncSecretsNamespaceNameRoute
@@ -408,6 +438,13 @@ declare module "@tanstack/react-router" {
       path: "/load-balancers"
       fullPath: "/load-balancers/"
       preLoaderRoute: typeof LoadBalancersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/insights/": {
+      id: "/insights/"
+      path: "/insights"
+      fullPath: "/insights/"
+      preLoaderRoute: typeof InsightsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/envoy-proxy/": {
@@ -494,6 +531,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LoadBalancersNamespaceNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/insights/$namespace/$name": {
+      id: "/insights/$namespace/$name"
+      path: "/insights/$namespace/$name"
+      fullPath: "/insights/$namespace/$name"
+      preLoaderRoute: typeof InsightsNamespaceNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/envoy-proxy/$namespace/$name": {
       id: "/envoy-proxy/$namespace/$name"
       path: "/envoy-proxy/$namespace/$name"
@@ -523,6 +567,7 @@ const rootRouteChildren: RootRouteChildren = {
   AiShowbackIndexRoute: AiShowbackIndexRoute,
   ConfigurationIndexRoute: ConfigurationIndexRoute,
   EnvoyProxyIndexRoute: EnvoyProxyIndexRoute,
+  InsightsIndexRoute: InsightsIndexRoute,
   LoadBalancersIndexRoute: LoadBalancersIndexRoute,
   RoutesIndexRoute: RoutesIndexRoute,
   SyncSecretsIndexRoute: SyncSecretsIndexRoute,
@@ -531,6 +576,7 @@ const rootRouteChildren: RootRouteChildren = {
   WafPoliciesIndexRoute: WafPoliciesIndexRoute,
   AiGatewayNamespaceNameRoute: AiGatewayNamespaceNameRoute,
   EnvoyProxyNamespaceNameRoute: EnvoyProxyNamespaceNameRoute,
+  InsightsNamespaceNameRoute: InsightsNamespaceNameRoute,
   LoadBalancersNamespaceNameRoute: LoadBalancersNamespaceNameRoute,
   RoutesNamespaceNameRoute: RoutesNamespaceNameRoute,
   SyncSecretsNamespaceNameRoute: SyncSecretsNamespaceNameRoute,

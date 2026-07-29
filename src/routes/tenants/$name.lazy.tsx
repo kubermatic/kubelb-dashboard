@@ -48,8 +48,10 @@ import { Separator } from "@/components/ui/separator";
 import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InsightsTable } from "@/components/common/insights-table";
 import { useEdition } from "@/hooks/use-edition";
 import { useReadOnly } from "@/hooks/use-read-only";
+import { useInsights, useInsightsAvailable } from "@/hooks/use-insights";
 import { useLoadBalancers } from "@/hooks/use-load-balancers";
 import { useRoutes } from "@/hooks/use-routes";
 import { useSyncSecrets } from "@/hooks/use-sync-secrets";
@@ -79,6 +81,8 @@ function TenantDetail() {
   const updateTenant = useUpdateTenant();
   const deleteTenant = useDeleteTenant();
   const readOnly = useReadOnly();
+
+  const { available: insightsAvailable } = useInsightsAvailable();
 
   const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -138,6 +142,7 @@ function TenantDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
+          {insightsAvailable && <TabsTrigger value="insights">Insights</TabsTrigger>}
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
         </TabsList>
 
@@ -149,6 +154,12 @@ function TenantDetail() {
         <TabsContent value="configuration" className="space-y-4">
           <ConfigurationTab tenant={tenant} />
         </TabsContent>
+
+        {insightsAvailable && (
+          <TabsContent value="insights">
+            <TenantInsightsTab tenantName={name} />
+          </TabsContent>
+        )}
 
         <TabsContent value="metadata">
           <MetadataSection metadata={tenant.metadata} />
@@ -249,6 +260,27 @@ function ResourcesTab({ tenantName }: { tenantName: string }) {
         })}
       </div>
     </div>
+  );
+}
+
+function TenantInsightsTab({ tenantName }: { tenantName: string }) {
+  const namespace = tenantToNamespace(tenantName);
+  const { data, isLoading, isRefetching, isError, error, refetch, dataUpdatedAt } =
+    useInsights(namespace);
+
+  if (isError && error) {
+    return <QueryError error={error} onRetry={() => void refetch()} />;
+  }
+
+  return (
+    <InsightsTable
+      items={data?.items ?? []}
+      isLoading={isLoading}
+      showTenant={false}
+      onRefresh={() => void refetch()}
+      isRefetching={isRefetching}
+      dataUpdatedAt={dataUpdatedAt}
+    />
   );
 }
 
