@@ -16,11 +16,12 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  buildMetricQuery,
   detectPrometheus,
   isMetricKey,
   isValidNamespace,
   queryRange,
-  METRIC_QUERIES,
+  METRIC_KEYS,
 } from "./metrics.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -48,8 +49,8 @@ describe("metric key + namespace validation", () => {
   });
 
   it("every template scopes to the namespace and only envoy_ metrics", () => {
-    for (const build of Object.values(METRIC_QUERIES)) {
-      const q = build("tenant-x");
+    for (const key of METRIC_KEYS) {
+      const q = buildMetricQuery(key, "tenant-x");
       expect(q).toContain('namespace="tenant-x"');
       expect(q).toContain("envoy_");
       expect(q).not.toMatch(/\b(node_|kube_|apiserver_|container_)/);

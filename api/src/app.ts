@@ -17,6 +17,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
 import proxy from "@fastify/http-proxy";
+import rateLimit from "@fastify/rate-limit";
 import type { CoreV1Api } from "@kubernetes/client-node";
 import {
   loadKubeProxyConfig,
@@ -107,6 +108,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const app = Fastify({ logger: options.logger ?? true });
 
   await app.register(cookie);
+
+  // Ceiling is per client IP and sized well above the dashboard's polling
+  // traffic; it exists to throttle abuse (e.g. brute-forcing auth endpoints),
+  // not to shape legitimate use.
+  await app.register(rateLimit, { max: 1000, timeWindow: "1 minute" });
 
   if (authEnabled) {
     await initOidc({
