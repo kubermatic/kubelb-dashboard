@@ -48,7 +48,7 @@ describe("metric key + namespace validation", () => {
   });
 
   it("every template scopes to the namespace and only envoy_ metrics", () => {
-    for (const build of Object.values(METRIC_QUERIES)) {
+    for (const build of METRIC_QUERIES.values()) {
       const q = build("tenant-x");
       expect(q).toContain('namespace="tenant-x"');
       expect(q).toContain("envoy_");
