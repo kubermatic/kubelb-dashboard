@@ -1,5 +1,7 @@
 # node:26-alpine
-FROM node:26-alpine@sha256:7c6af15abe4e3de859690e7db171d0d711bf37d27528eddfe625b2fe89e097f8 AS build
+# Runs on the build platform: only the static dist/ is carried into the runtime
+# stage, so emulating the target arch here only risks QEMU faults during install.
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:7c6af15abe4e3de859690e7db171d0d711bf37d27528eddfe625b2fe89e097f8 AS build
 
 WORKDIR /app
 
