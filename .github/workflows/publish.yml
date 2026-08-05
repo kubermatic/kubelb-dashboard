@@ -33,15 +33,12 @@ jobs:
         with:
           node-version: 24
 
-      - name: Validate version metadata
+      - name: Resolve version metadata
         id: check
         env:
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         run: |
           VERSION="$(node hack/verify-version.mjs --print)"
-          if [[ -n "$RELEASE_TAG" ]]; then
-            test -f "docs/releases/${RELEASE_TAG}.md"
-          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   preflight:
@@ -515,10 +512,21 @@ jobs:
           go-version: stable
           cache: false
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
       - name: Verify generated Helm documentation
         run: |
           make helm-docs
           git diff --exit-code charts/kubelb-dashboard/README.md
+
+      - name: Prepare chart metadata from tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node hack/verify-version.mjs --write
+          make helm-docs
 
       - name: Package and push chart
         id: push
@@ -748,9 +756,14 @@ jobs:
             RELEASE_FLAGS=(--prerelease --latest=false)
           fi
 
+          NOTES_FLAGS=(--generate-notes)
+          if [[ -f "$NOTES" ]]; then
+            NOTES_FLAGS=(--notes-file "$NOTES")
+          fi
+
           gh release create "$RELEASE_TAG" "${ASSETS[@]}" \
             --verify-tag \
             --fail-on-no-commits \
             --title "$RELEASE_TAG" \
-            --notes-file "$NOTES" \
+            "${NOTES_FLAGS[@]}" \
             "${RELEASE_FLAGS[@]}"
