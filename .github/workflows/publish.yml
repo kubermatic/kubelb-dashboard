@@ -23,10 +23,13 @@ jobs:
     permissions:
       contents: read
     outputs:
+      chart_version: ${{ steps.check.outputs.chart_version }}
+      previous_tag: ${{ steps.check.outputs.previous_tag }}
       version: ${{ steps.check.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -39,7 +42,27 @@ jobs:
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
         run: |
           VERSION="$(node hack/verify-version.mjs --print)"
+          echo "chart_version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          PREVIOUS_TAG=""
+          if [[ -n "$RELEASE_TAG" ]]; then
+            RELEASE_COMMIT="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+            while IFS= read -r TAG; do
+              if [[ "$TAG" != "$RELEASE_TAG" ]] && \
+                [[ "$(git rev-parse "${TAG}^{commit}")" == "$RELEASE_COMMIT" ]]; then
+                echo "$RELEASE_TAG and $TAG point to the same commit; refusing an empty release" >&2
+                exit 1
+              fi
+            done < <(git tag --list 'v*')
+
+            PREVIOUS_TAG="$(git describe --tags --match 'v*' --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || true)"
+            if [[ -n "$PREVIOUS_TAG" ]]; then
+              COMMIT_COUNT="$(git rev-list --count "${PREVIOUS_TAG}..${RELEASE_TAG}")"
+              echo "Release range: ${PREVIOUS_TAG}..${RELEASE_TAG} ($COMMIT_COUNT commits)"
+            fi
+          fi
+          echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
 
   preflight:
     name: Release Preflight
@@ -59,6 +82,7 @@ jobs:
       - name: Refuse to overwrite release artifacts
         if: startsWith(github.ref, 'refs/tags/v')
         env:
+          CHART_VERSION: ${{ needs.version.outputs.chart_version }}
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
@@ -94,7 +118,7 @@ jobs:
           assert_release_absent
           assert_registry_ref_absent "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard:${GITHUB_REF_NAME}"
           assert_registry_ref_absent "${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api:${GITHUB_REF_NAME}"
-          assert_registry_ref_absent "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}"
+          assert_registry_ref_absent "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${CHART_VERSION}"
 
           if [[ "$VERSION" != "${GITHUB_REF_NAME#v}" ]]; then
             echo "Tag and version diverged after validation" >&2
@@ -531,11 +555,11 @@ jobs:
       - name: Package and push chart
         id: push
         env:
-          VERSION: ${{ needs.version.outputs.version }}
+          CHART_VERSION: ${{ needs.version.outputs.chart_version }}
         run: |
           CHART_NAME="kubelb-dashboard"
           helm package "charts/${CHART_NAME}"
-          helm push "${CHART_NAME}-${VERSION}.tgz" "oci://${{ env.REGISTRY }}/kubermatic/helm-charts" | tee helm-push.txt
+          helm push "${CHART_NAME}-${CHART_VERSION}.tgz" "oci://${{ env.REGISTRY }}/kubermatic/helm-charts" | tee helm-push.txt
           DIGEST="$(awk '/^Digest: sha256:/{print $2}' helm-push.txt | tail -1)"
           if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             echo "Could not determine immutable chart digest" >&2
@@ -546,9 +570,9 @@ jobs:
       - name: Sign chart
         env:
           CHART_DIGEST: ${{ steps.push.outputs.digest }}
-          VERSION: ${{ needs.version.outputs.version }}
+          CHART_VERSION: ${{ needs.version.outputs.chart_version }}
         run: |
-          cosign sign --yes "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
+          cosign sign --yes "${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${CHART_VERSION}@${CHART_DIGEST}"
 
       - name: Attest chart provenance
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
@@ -560,7 +584,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-chart
-          path: kubelb-dashboard-${{ needs.version.outputs.version }}.tgz
+          path: kubelb-dashboard-${{ needs.version.outputs.chart_version }}.tgz
           retention-days: 90
 
   release:
@@ -600,6 +624,7 @@ jobs:
           API_SBOM_AMD64_DIGEST: ${{ needs.api.outputs.sbom-amd64-digest }}
           API_SBOM_ARM64_DIGEST: ${{ needs.api.outputs.sbom-arm64-digest }}
           CHART_DIGEST: ${{ needs.chart.outputs.digest }}
+          CHART_VERSION: ${{ needs.version.outputs.chart_version }}
           DASHBOARD_DIGEST: ${{ needs.dashboard.outputs.digest }}
           DASHBOARD_SBOM_AMD64_DIGEST: ${{ needs.dashboard.outputs.sbom-amd64-digest }}
           DASHBOARD_SBOM_ARM64_DIGEST: ${{ needs.dashboard.outputs.sbom-arm64-digest }}
@@ -623,7 +648,7 @@ jobs:
 
           DASHBOARD_REF="${{ env.REGISTRY_PREFIX }}/kubelb-dashboard:${GITHUB_REF_NAME}@${DASHBOARD_DIGEST}"
           API_REF="${{ env.REGISTRY_PREFIX }}/kubelb-dashboard-api:${GITHUB_REF_NAME}@${API_DIGEST}"
-          CHART_REF="${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${VERSION}@${CHART_DIGEST}"
+          CHART_REF="${{ env.REGISTRY }}/kubermatic/helm-charts/kubelb-dashboard:${CHART_VERSION}@${CHART_DIGEST}"
           WORKFLOW_IDENTITY="${GITHUB_SERVER_URL}/${GITHUB_WORKFLOW_REF}"
 
           node hack/release-manifest.mjs generate \
@@ -732,7 +757,9 @@ jobs:
 
       - name: Create immutable-ready GitHub Release
         env:
+          CHART_VERSION: ${{ needs.version.outputs.chart_version }}
           GH_TOKEN: ${{ github.token }}
+          PREVIOUS_TAG: ${{ needs.version.outputs.previous_tag }}
           RELEASE_TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
@@ -746,7 +773,7 @@ jobs:
             release-assets/api-linux-arm64.spdx.json
             release-assets/api-linux-amd64.trivy.json
             release-assets/api-linux-arm64.trivy.json
-            "release-assets/kubelb-dashboard-${VERSION}.tgz"
+            "release-assets/kubelb-dashboard-${CHART_VERSION}.tgz"
             release-assets/release-manifest.json
             release-assets/release-manifest.sigstore.json
           )
@@ -757,13 +784,15 @@ jobs:
           fi
 
           NOTES_FLAGS=(--generate-notes)
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            NOTES_FLAGS+=(--notes-start-tag "$PREVIOUS_TAG")
+          fi
           if [[ -f "$NOTES" ]]; then
             NOTES_FLAGS=(--notes-file "$NOTES")
           fi
 
           gh release create "$RELEASE_TAG" "${ASSETS[@]}" \
             --verify-tag \
-            --fail-on-no-commits \
             --title "$RELEASE_TAG" \
             "${NOTES_FLAGS[@]}" \
             "${RELEASE_FLAGS[@]}"

@@ -65,7 +65,7 @@ test("writes release metadata without changing the source version first", () => 
     const result = run(["--write", "--chart", chartPath], "v1.1.0-beta.0");
 
     assert.equal(result.status, 0);
-    assert.match(readFileSync(chartPath, "utf8"), /^version: 1\.1\.0-beta\.0$/m);
+    assert.match(readFileSync(chartPath, "utf8"), /^version: v1\.1\.0-beta\.0$/m);
     assert.match(readFileSync(chartPath, "utf8"), /^appVersion: "v1\.1\.0-beta\.0"$/m);
   } finally {
     rmSync(directory, { force: true, recursive: true });

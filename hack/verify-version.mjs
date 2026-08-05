@@ -74,10 +74,10 @@ if (errors.length > 0) {
 
 if (process.argv.includes("--write")) {
   const releaseChart = chart
-    .replace(/^version:\s*.*$/m, `version: ${resolvedVersion}`)
-    .replace(/^appVersion:\s*.*$/m, `appVersion: "v${resolvedVersion}"`);
+    .replace(/^version:\s*.*$/m, `version: ${releaseTag}`)
+    .replace(/^appVersion:\s*.*$/m, `appVersion: "${releaseTag}"`);
   writeFileSync(chartPath, releaseChart);
-  console.log(`Prepared Chart.yaml for release v${resolvedVersion}`);
+  console.log(`Prepared Chart.yaml for release ${releaseTag}`);
 } else if (process.argv.includes("--print")) {
   console.log(resolvedVersion);
 } else if (releaseTag) {

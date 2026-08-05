@@ -286,7 +286,7 @@ export function validateManifest(manifest) {
       `:${release.tag}`,
       errors,
     );
-    validateArtifact(artifacts.helmChart, "artifacts.helmChart", `:${release.version}`, errors);
+    validateArtifact(artifacts.helmChart, "artifacts.helmChart", `:${release.tag}`, errors);
   }
 
   const sboms = exactObject(root.sboms, "sboms", ["apiImage", "dashboardImage"], errors);

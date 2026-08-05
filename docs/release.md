@@ -8,9 +8,10 @@ version sourcing.
 
 ## Version metadata
 
-The Git tag is the canonical release version. It uses a leading `v`; Helm chart
-versions omit that prefix. During a tag build, CI writes the tag-derived version
-into its chart workspace before packaging. The committed
+The Git tag is the canonical release version. Helm chart versions retain the
+tag's leading `v`, matching KubeLB CE/EE and existing Dashboard releases.
+During a tag build, CI writes the tag-derived version into its chart workspace
+before packaging. The committed
 `charts/kubelb-dashboard/Chart.yaml` uses the permanent `0.0.0-dev` /
 `v0.0.0-dev` development sentinel and does not change for releases.
 
@@ -18,10 +19,10 @@ Build metadata (`+...`) is not supported because it cannot be represented in
 all published OCI tags. The private npm packages are not published and do not
 carry the Dashboard release version.
 
-| Consumer                                                | Representation for version `1.2.3` |
-| ------------------------------------------------------- | ---------------------------------- |
-| Helm chart version and Helm OCI chart version           | `1.2.3`                            |
-| Chart `appVersion`, GitHub Release, images, and Git tag | `v1.2.3`                           |
+| Consumer                                                        | Representation for version `1.2.3` |
+| --------------------------------------------------------------- | ---------------------------------- |
+| Release manifest `release.version`                              | `1.2.3`                            |
+| Helm chart, Helm OCI, `appVersion`, GitHub, images, and Git tag | `v1.2.3`                           |
 
 Run the consistency gate after changing committed chart metadata:
 
