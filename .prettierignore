@@ -3,6 +3,7 @@ node_modules
 src/routeTree.gen.ts
 public/mockServiceWorker.js
 charts/**/templates
+charts/**/README.md
 .claude
 pnpm-lock.yaml
 api/pnpm-lock.yaml

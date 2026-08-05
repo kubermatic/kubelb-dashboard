@@ -2,30 +2,35 @@
 
 The Dashboard follows independent [Semantic Versioning](https://semver.org/).
 It does not automatically inherit the KubeLB version. See
-[ADR 0001](adr/0001-independent-dashboard-releases.md) for the decision and its
-compatibility implications.
+[ADR 0001](adr/0001-independent-dashboard-releases.md) for the independent
+release decision and [ADR 0002](adr/0002-tag-derived-release-version.md) for
+version sourcing.
 
 ## Version metadata
 
-`charts/kubelb-dashboard/Chart.yaml` is the only committed version source.
-Its `version` is SemVer without a leading `v`; its `appVersion` is the same
-version with a leading `v`. Build metadata (`+...`) is not supported because it
-cannot be represented in all published OCI tags. The private npm packages are
-not published and do not carry the Dashboard release version.
+The Git tag is the canonical release version. It uses a leading `v`; Helm chart
+versions omit that prefix. During a tag build, CI writes the tag-derived version
+into its chart workspace before packaging. The committed
+`charts/kubelb-dashboard/Chart.yaml` uses the permanent `0.0.0-dev` /
+`v0.0.0-dev` development sentinel and does not change for releases.
+
+Build metadata (`+...`) is not supported because it cannot be represented in
+all published OCI tags. The private npm packages are not published and do not
+carry the Dashboard release version.
 
 | Consumer                                                | Representation for version `1.2.3` |
 | ------------------------------------------------------- | ---------------------------------- |
 | Helm chart version and Helm OCI chart version           | `1.2.3`                            |
 | Chart `appVersion`, GitHub Release, images, and Git tag | `v1.2.3`                           |
 
-Run the consistency gate after changing release metadata:
+Run the consistency gate after changing committed chart metadata:
 
 ```bash
 pnpm run version:check
 ```
 
-CI and the publish workflow run the same gate. A tag build fails unless the tag
-is exactly `v` followed by the chart version and matches `appVersion`.
+CI runs the same gate. A tag build additionally requires `v` followed by valid
+SemVer and uses that version for every published artifact.
 
 ## Branches and tags
 
@@ -47,24 +52,19 @@ as supported without separate evidence for the exact refs.
 
 ## Release process
 
-### Prepare the reviewed change
+### Prepare the release
 
-Choose the version, update the two version fields in
-`charts/kubelb-dashboard/Chart.yaml`, and write the release notes:
+Choose the version and verify the commit to release:
 
 ```bash
 TARGET_VERSION=1.2.0-rc.1
-mkdir -p docs/releases
-$EDITOR charts/kubelb-dashboard/Chart.yaml
-$EDITOR "docs/releases/v${TARGET_VERSION}.md"
 pnpm run version:check
 pnpm run test:release
 ```
 
-For `1.2.0-rc.1`, set `version: 1.2.0-rc.1` and
-`appVersion: "v1.2.0-rc.1"`. Summarize the user-visible changes since the
-previous tag in the notes file. Review the two version fields and notes in a
-normal pull request.
+No version-only source change is required. To use curated notes instead of
+GitHub-generated notes, add `docs/releases/v${TARGET_VERSION}.md` in a normal
+pull request before tagging.
 
 ### Tag and publish
 
@@ -80,10 +80,12 @@ Before the first release, repository administrators must:
 Without the tag ruleset and protected environment, a repository writer could
 run unreviewed tagged workflow code with publication credentials.
 
-1. Merge the release metadata pull request into release/vMAJOR.MINOR.
-2. Create a signed annotated vMAJOR.MINOR.PATCH tag at the reviewed commit.
-3. Push the tag without moving or reusing any previous release tag.
-4. The Publish workflow validates the committed version and reviewed notes.
+1. Create a signed annotated vMAJOR.MINOR.PATCH tag at the reviewed commit.
+2. Push the tag without moving or reusing any previous release tag.
+3. The Publish workflow validates the tag and derives all artifact versions
+   from it.
+4. It uses curated notes when present, otherwise it generates GitHub release
+   notes.
 5. It builds both multi-architecture images once under run-scoped staging tags
    with maximal BuildKit provenance.
 6. It blocks HIGH or CRITICAL production dependency and per-platform exact-image
@@ -102,7 +104,7 @@ Tag jobs are non-cancelling. A rerun refuses to mutate registry tags when the
 GitHub Release or immutable artifact tag already exists. Recover with a new
 reviewed version; do not delete or reuse a published version.
 
-After merging the reviewed release change:
+From the reviewed commit:
 
 ```bash
 TARGET_VERSION=1.2.0-rc.1

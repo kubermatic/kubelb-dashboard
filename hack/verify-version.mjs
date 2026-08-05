@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-const root = new URL("../", import.meta.url);
-const read = (path) => readFileSync(new URL(path, root), "utf8");
 const semver =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 
+const chartOption = process.argv.indexOf("--chart");
+if (chartOption !== -1 && !process.argv[chartOption + 1]) {
+  console.error("--chart requires a path");
+  process.exit(1);
+}
+
+const chartPath =
+  chartOption === -1
+    ? new URL("../charts/kubelb-dashboard/Chart.yaml", import.meta.url)
+    : process.argv[chartOption + 1];
 const errors = [];
-const chart = read("charts/kubelb-dashboard/Chart.yaml");
+const chart = readFileSync(chartPath, "utf8");
 
 function chartValue(key) {
   const match = chart.match(new RegExp(`^${key}:\\s*["']?([^"'\\s#]+)["']?\\s*$`, "m"));
@@ -43,8 +51,20 @@ if (appVersion !== `v${version}`) {
 }
 
 const releaseTag = process.env.RELEASE_TAG;
-if (releaseTag && releaseTag !== `v${version}`) {
-  errors.push(`release tag is ${releaseTag}; expected v${version}`);
+let resolvedVersion = version;
+if (releaseTag) {
+  const taggedVersion = releaseTag.startsWith("v") ? releaseTag.slice(1) : "";
+  if (!semver.test(taggedVersion)) {
+    errors.push(
+      `release tag must be v followed by SemVer without build metadata; got ${releaseTag}`,
+    );
+  } else {
+    resolvedVersion = taggedVersion;
+  }
+}
+
+if (process.argv.includes("--write") && !releaseTag) {
+  errors.push("--write requires RELEASE_TAG");
 }
 
 if (errors.length > 0) {
@@ -52,8 +72,16 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-if (process.argv.includes("--print")) {
-  console.log(version);
+if (process.argv.includes("--write")) {
+  const releaseChart = chart
+    .replace(/^version:\s*.*$/m, `version: ${resolvedVersion}`)
+    .replace(/^appVersion:\s*.*$/m, `appVersion: "v${resolvedVersion}"`);
+  writeFileSync(chartPath, releaseChart);
+  console.log(`Prepared Chart.yaml for release v${resolvedVersion}`);
+} else if (process.argv.includes("--print")) {
+  console.log(resolvedVersion);
+} else if (releaseTag) {
+  console.log(`Release version resolved from tag: ${resolvedVersion}`);
 } else {
-  console.log(`Chart version metadata is consistent: ${version}`);
+  console.log(`Chart version metadata is consistent: ${resolvedVersion}`);
 }
