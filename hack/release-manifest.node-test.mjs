@@ -31,7 +31,7 @@ const cli = fileURLToPath(new URL("./release-manifest.mjs", import.meta.url));
 function values() {
   const apiImageRef = `quay.io/kubermatic/kubelb-dashboard-api:v1.2.3@${digest("b")}`;
   const dashboardImageRef = `quay.io/kubermatic/kubelb-dashboard:v1.2.3@${digest("a")}`;
-  const helmChartRef = `oci://quay.io/kubermatic/helm-charts/kubelb-dashboard:1.2.3@${digest("e")}`;
+  const helmChartRef = `oci://quay.io/kubermatic/helm-charts/kubelb-dashboard:v1.2.3@${digest("e")}`;
   return {
     "api-image-digest": digest("b"),
     "api-image-ref": apiImageRef,
@@ -75,9 +75,18 @@ test("canonical JSON is stable regardless of object insertion order", () => {
 test("rejects version and artifact tag mismatches", () => {
   const manifest = createManifest(values());
   manifest.release.tag = "v1.2.4";
-  manifest.artifacts.helmChart.ref = manifest.artifacts.helmChart.ref.replace(":1.2.3@", ":1.2.4@");
   const errors = validateManifest(manifest);
   assert(errors.includes("release.tag must be v followed by release.version"));
+  assert(errors.some((error) => error.startsWith("artifacts.helmChart.ref must end")));
+});
+
+test("rejects Helm chart tags without the release v prefix", () => {
+  const manifest = createManifest(values());
+  manifest.artifacts.helmChart.ref = manifest.artifacts.helmChart.ref.replace(
+    ":v1.2.3@",
+    ":1.2.3@",
+  );
+  const errors = validateManifest(manifest);
   assert(errors.some((error) => error.startsWith("artifacts.helmChart.ref must end")));
 });
 
