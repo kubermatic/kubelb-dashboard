@@ -43,6 +43,19 @@ interface AuthRouteOptions {
 
 const TEMP_COOKIE_MAX_AGE = 300;
 
+// The global limiter is sized for the dashboard's API polling and is far too
+// loose for the OIDC endpoints, which reach out to the identity provider.
+// `/auth/callback` is the sharpest edge: it is unauthenticated and every
+// request carrying a self-set `state` cookie drives an outbound token
+// exchange, so an attacker could use it to amplify traffic at the IdP.
+// Limits are per client IP, so they are sized to absorb an office behind a
+// single NAT egress address rather than a single user.
+const FLOW_RATE_LIMIT = { max: 30, timeWindow: "1 minute" } as const;
+
+// Cheap for unauthenticated callers (no session cookie short-circuits to
+// `{authenticated:false}`) but the browser polls it, so it gets more headroom.
+const SESSION_RATE_LIMIT = { max: 120, timeWindow: "1 minute" } as const;
+
 function isRelativePath(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//");
 }
@@ -58,74 +71,82 @@ function tempCookieOpts(secure: boolean) {
 }
 
 export async function authRoutes(app: FastifyInstance, opts: AuthRouteOptions): Promise<void> {
-  app.get<{ Querystring: { return_to?: string } }>("/auth/login", async (request, reply) => {
-    const state = generateState();
-    const codeVerifier = generateCodeVerifier();
-    const codeChallenge = await computeCodeChallenge(codeVerifier);
+  app.get<{ Querystring: { return_to?: string } }>(
+    "/auth/login",
+    { config: { rateLimit: FLOW_RATE_LIMIT } },
+    async (request, reply) => {
+      const state = generateState();
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await computeCodeChallenge(codeVerifier);
 
-    const cookieOpts = tempCookieOpts(opts.secureCookies);
-    reply.setCookie("oauth_state", state, cookieOpts);
-    reply.setCookie("code_verifier", codeVerifier, cookieOpts);
+      const cookieOpts = tempCookieOpts(opts.secureCookies);
+      reply.setCookie("oauth_state", state, cookieOpts);
+      reply.setCookie("code_verifier", codeVerifier, cookieOpts);
 
-    const returnTo = request.query.return_to;
-    if (returnTo && isRelativePath(returnTo)) {
-      reply.setCookie("return_to", returnTo, cookieOpts);
-    }
+      const returnTo = request.query.return_to;
+      if (returnTo && isRelativePath(returnTo)) {
+        reply.setCookie("return_to", returnTo, cookieOpts);
+      }
 
-    const authorizeUrl = buildAuthorizeUrl({
-      state,
-      codeChallenge,
-      scopes: opts.scopes.split(" "),
-    });
+      const authorizeUrl = buildAuthorizeUrl({
+        state,
+        codeChallenge,
+        scopes: opts.scopes.split(" "),
+      });
 
-    return reply.redirect(authorizeUrl.toString());
-  });
+      return reply.redirect(authorizeUrl.toString());
+    },
+  );
 
-  app.get<{ Querystring: { state?: string } }>("/auth/callback", async (request, reply) => {
-    const expectedState = request.cookies["oauth_state"];
-    const queryState = request.query.state;
+  app.get<{ Querystring: { state?: string } }>(
+    "/auth/callback",
+    { config: { rateLimit: FLOW_RATE_LIMIT } },
+    async (request, reply) => {
+      const expectedState = request.cookies["oauth_state"];
+      const queryState = request.query.state;
 
-    if (!expectedState || !queryState || queryState !== expectedState) {
-      return reply.code(403).send({ error: "state mismatch" });
-    }
+      if (!expectedState || !queryState || queryState !== expectedState) {
+        return reply.code(403).send({ error: "state mismatch" });
+      }
 
-    const codeVerifier = request.cookies["code_verifier"];
-    if (!codeVerifier) {
-      return reply.code(403).send({ error: "missing code_verifier" });
-    }
+      const codeVerifier = request.cookies["code_verifier"];
+      if (!codeVerifier) {
+        return reply.code(403).send({ error: "missing code_verifier" });
+      }
 
-    const callbackUrl = new URL(request.url, opts.redirectUri);
+      const callbackUrl = new URL(request.url, opts.redirectUri);
 
-    const tokens = await exchangeCode(callbackUrl, codeVerifier, expectedState);
-    const claims = decodeIdTokenClaims(tokens.idToken);
+      const tokens = await exchangeCode(callbackUrl, codeVerifier, expectedState);
+      const claims = decodeIdTokenClaims(tokens.idToken);
 
-    const session: SessionPayload = {
-      sub: String(claims["sub"] ?? ""),
-      email: String(claims["email"] ?? ""),
-      name: String(claims["name"] ?? claims["preferred_username"] ?? ""),
-      groups: Array.isArray(claims["groups"]) ? (claims["groups"] as string[]) : [],
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      accessTokenExp: tokens.expiresAt,
-    };
+      const session: SessionPayload = {
+        sub: String(claims["sub"] ?? ""),
+        email: String(claims["email"] ?? ""),
+        name: String(claims["name"] ?? claims["preferred_username"] ?? ""),
+        groups: Array.isArray(claims["groups"]) ? (claims["groups"] as string[]) : [],
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        accessTokenExp: tokens.expiresAt,
+      };
 
-    const encrypted = await encryptSession(session, opts.sessionMaxAge);
-    setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
+      const encrypted = await encryptSession(session, opts.sessionMaxAge);
+      setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
 
-    const clearOpts = tempCookieOpts(opts.secureCookies);
-    clearOpts.maxAge = 0;
-    reply.clearCookie("oauth_state", clearOpts);
-    reply.clearCookie("code_verifier", clearOpts);
+      const clearOpts = tempCookieOpts(opts.secureCookies);
+      clearOpts.maxAge = 0;
+      reply.clearCookie("oauth_state", clearOpts);
+      reply.clearCookie("code_verifier", clearOpts);
 
-    const returnTo = request.cookies["return_to"];
-    reply.clearCookie("return_to", clearOpts);
+      const returnTo = request.cookies["return_to"];
+      reply.clearCookie("return_to", clearOpts);
 
-    const redirectTo = returnTo && isRelativePath(returnTo) ? returnTo : "/";
+      const redirectTo = returnTo && isRelativePath(returnTo) ? returnTo : "/";
 
-    return reply.redirect(redirectTo);
-  });
+      return reply.redirect(redirectTo);
+    },
+  );
 
-  app.post("/auth/logout", async (request, reply) => {
+  app.post("/auth/logout", { config: { rateLimit: FLOW_RATE_LIMIT } }, async (request, reply) => {
     clearSessionCookies(reply, request, opts.secureCookies);
 
     const origin = `${request.protocol}://${request.host}`;
@@ -134,29 +155,33 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRouteOptions): 
     return { logoutUrl };
   });
 
-  app.get("/auth/session", async (request, reply) => {
-    const session = await getSession(request);
-    if (!session) {
-      return { authenticated: false };
-    }
+  app.get(
+    "/auth/session",
+    { config: { rateLimit: SESSION_RATE_LIMIT } },
+    async (request, reply) => {
+      const session = await getSession(request);
+      if (!session) {
+        return { authenticated: false };
+      }
 
-    const refreshed = await refreshSessionIfNeeded(session);
-    if (!refreshed) {
-      return { authenticated: false };
-    }
+      const refreshed = await refreshSessionIfNeeded(session);
+      if (!refreshed) {
+        return { authenticated: false };
+      }
 
-    if (refreshed !== session) {
-      const encrypted = await encryptSession(refreshed, opts.sessionMaxAge);
-      setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
-    }
+      if (refreshed !== session) {
+        const encrypted = await encryptSession(refreshed, opts.sessionMaxAge);
+        setSessionCookies(reply, encrypted, opts.sessionMaxAge, opts.secureCookies);
+      }
 
-    return {
-      authenticated: true,
-      user: {
-        email: refreshed.email,
-        name: refreshed.name,
-        groups: refreshed.groups,
-      },
-    };
-  });
+      return {
+        authenticated: true,
+        user: {
+          email: refreshed.email,
+          name: refreshed.name,
+          groups: refreshed.groups,
+        },
+      };
+    },
+  );
 }
