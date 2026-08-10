@@ -32,7 +32,6 @@ export const API_PATHS = {
   loadBalancers: (ns: string) => `${API_BASE}/namespaces/${ns}/loadbalancers`,
   addresses: (ns: string) => `${API_BASE}/namespaces/${ns}/addresses`,
   wafPolicies: `${API_BASE}/wafpolicies`,
-  virtualKeys: `${API_BASE}/virtualkeys`,
   insights: (ns: string) => `${API_BASE}/namespaces/${ns}/insights`,
   insightsAll: `${API_BASE}/insights`,
   namespaces: `${API_BASE}/namespaces`,

@@ -449,41 +449,4 @@ export const insights: Insight[] = [
       lastEvaluated: "2026-07-29T07:24:07Z",
     },
   },
-  {
-    apiVersion: "kubelb.k8c.io/v1alpha1",
-    kind: "Insight",
-    metadata: {
-      name: "klb005-2e6b7f01",
-      namespace: "kubelb",
-      uid: "7c1f5a02-4a37-4a1e-9a63-b1f0a3c2d011",
-      resourceVersion: "2211",
-      creationTimestamp: "2026-07-29T06:10:22Z",
-      labels: labels("KLB005", "low", "cost"),
-    },
-    spec: {
-      check: "KLB005",
-      slug: "ai-spend-metering-disabled",
-      category: "cost",
-      severity: "low",
-      message:
-        "The AI gateway is in use and no Prometheus is configured, so no key reports its spend and Week and Month budgets are not enforced.",
-      targetRefs: [
-        {
-          apiVersion: "kubelb.k8c.io/v1alpha1",
-          kind: "Config",
-          name: "default",
-          namespace: "kubelb",
-        },
-      ],
-      remediation: {
-        summary: "Set spec.prometheus on the Config.",
-      },
-      docsURL: `${DOCS}/#klb005`,
-    },
-    status: {
-      state: "Open",
-      firstSeen: "2026-07-29T06:10:22Z",
-      lastEvaluated: "2026-07-29T07:24:07Z",
-    },
-  },
 ];

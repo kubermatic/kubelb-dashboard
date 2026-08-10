@@ -58,15 +58,14 @@
 | Resource            | Notes                                                                                                                                               |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | WAFPolicy           | Full CRUD, `/waf-policies` page                                                                                                                     |
-| AgentgatewayBackend | Read-only, `/ai-gateway` page. EE + agentgateway addon (`agentgateway.dev` CRD)                                                                     |
+| AgentgatewayBackend | Read-only, `/ai-gateway` page. Gated on the agentgateway addon (`agentgateway.dev` CRD), not on the edition                                         |
 | Insight             | Read + triage patch only, `/insights` page. Gated on a CRD discovery probe for `insights.kubelb.k8c.io` — the CRD ships with the EE insights engine |
 
-## AgentgatewayBackend (EE + agentgateway addon)
+## AgentgatewayBackend (agentgateway addon)
 
 `agentgateway.dev/v1alpha1`, namespaced. Surfaced read-only on `/ai-gateway`. Gated solely
-on a CRD discovery probe for `agentgatewaybackends.agentgateway.dev` — the addon is EE-only,
-so its presence already implies EE. It is deliberately **not** coupled to the WAF-based
-`isEE` signal, since an EE cluster can have the agentgateway addon without the WAF addon.
+on a CRD discovery probe for `agentgatewaybackends.agentgateway.dev`. The addon ships in
+both editions, so this is deliberately **not** coupled to the WAF-based `isEE` signal.
 
 | Field                           | Notes                                                                 |
 | ------------------------------- | --------------------------------------------------------------------- |
