@@ -15,7 +15,6 @@
  */
 
 import type { Condition, ObjectMeta, ObjectReference } from "./kubernetes";
-import type { TenantAISettings } from "./ai";
 
 // Addresses
 
@@ -204,7 +203,6 @@ export interface TenantSpec {
   tunnel?: TenantTunnelSettings;
   circuitBreaker?: CircuitBreaker;
   allowedDomains?: string[];
-  ai?: TenantAISettings;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

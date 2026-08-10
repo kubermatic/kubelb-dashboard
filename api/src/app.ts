@@ -42,7 +42,6 @@ import {
 } from "./env.js";
 import { isAllowedKubePath } from "./allowlist.js";
 import { detectPrometheus, queryPosture, queryRange } from "./metrics.js";
-import { queryAISpend, validateAIParams } from "./ai-metrics.js";
 import { discoverHubble, discoverPrometheus } from "./discovery.js";
 import {
   buildFlowGraph,
@@ -267,21 +266,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     } catch (err) {
       const message = err instanceof Error ? err.message : "query failed";
       const code = message === "unknown metric" || message === "invalid namespace" ? 400 : 502;
-      return reply.code(code).send({ error: message });
-    }
-  });
-
-  app.get("/api/metrics/ai", async (request, reply) => {
-    if (!(await isMetricsAvailable()) || !resolvedPromUrl) {
-      return reply.code(404).send({ error: "metrics not available" });
-    }
-    const q = request.query as Record<string, string | undefined>;
-    try {
-      const params = validateAIParams(q);
-      return await queryAISpend(resolvedPromUrl, params);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "query failed";
-      const code = message.startsWith("unknown") || message.startsWith("invalid") ? 400 : 502;
       return reply.code(code).send({ error: message });
     }
   });

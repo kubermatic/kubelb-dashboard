@@ -33,7 +33,7 @@ const navGroups = {
   resources: ["Tenants", "Load Balancers", "Routes", "Sync Secrets"],
   infrastructure: ["Envoy Proxy", "Configuration"],
   security: ["WAF Policies"],
-  ai: ["AI & MCP Gateways", "AI Spend"],
+  ai: ["AI & MCP Gateways"],
 };
 
 function NavLinks({
