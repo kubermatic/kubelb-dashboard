@@ -9,6 +9,7 @@ WORKDIR /app
 RUN npm install -g --ignore-scripts pnpm@11.1.1
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
