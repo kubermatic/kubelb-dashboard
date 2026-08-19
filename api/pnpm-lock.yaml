@@ -39,14 +39,14 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0(patch_hash=7089f4cc4a4da223bc7c9c3067d03eb100c0b69c483922eb4701f1d7b702dd5a)
       fastify:
-        specifier: ^5.11.2
-        version: 5.11.2
+        specifier: ^5.11.3
+        version: 5.11.3
       jose:
         specifier: ^6.2.8
         version: 6.2.8
       openid-client:
-        specifier: ^6.8.4
-        version: 6.8.4
+        specifier: ^6.8.5
+        version: 6.8.5
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -831,8 +831,8 @@ packages:
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
 
-  fastify@5.11.2:
-    resolution: {integrity: sha512-i/eJG7nXR9OkbFgoX4jFiPOHoRq0rXqDACVAXELh5Fdg6BFBErIVZ8MyibGCwup9Go1pYrxZJ0ogIub8vVdEcQ==}
+  fastify@5.11.3:
+    resolution: {integrity: sha512-W6hzDP8s0iSeL7LGwY6Oc/ZxuXWOvFEMs6p2L0Si415YRo27W5pBKdOTXxhemBDeSTAcpYf5evRA9onF2OYhPA==}
 
   fastq@1.20.1:
     resolution: {integrity: sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==}
@@ -846,8 +846,8 @@ packages:
       picomatch:
         optional: true
 
-  find-my-way@9.7.0:
-    resolution: {integrity: sha512-f2JHn75x2JlwUwLenZypgczR7YWMb/uO9BvUXtus+JMgkbIkLADd38cI4EiV+OQqrGo1Zlq6V8wnqMJ8e62wUQ==}
+  find-my-way@9.8.0:
+    resolution: {integrity: sha512-JtyUgATO7qxRp2zKhrmWof74Mqxc1ikbwpwMY97p8ipuTj2QtreA4gK2JNAF6SOqqHnYYkwMUvsgQVi2AJxIyw==}
     engines: {node: '>=20'}
 
   form-data@4.0.6:
@@ -1052,8 +1052,8 @@ packages:
       encoding:
         optional: true
 
-  oauth4webapi@3.8.6:
-    resolution: {integrity: sha512-iwemM91xz8nryHti2yTmg5fhyEMVOkOXwHNqbvcATjyajb5oQxCQzrNOA6uElRHuMhQQTKUyFKV9y/CNyg25BQ==}
+  oauth4webapi@3.8.7:
+    resolution: {integrity: sha512-4RxcKxXjuItDFZ20RRPf4YTw3kpeXJyCgJFxVzJ068A7PNJ18st2Dg90tlC1LkSDS0GecroagCLHYEIVUhCAkw==}
 
   obug@2.1.3:
     resolution: {integrity: sha512-9miFgM2OFba7hB+pRgvtV84pYTBaoTHohvmIgiRt6dRIzbwEOIaNaP+dIlGs2fNFoB0SeISs0Jz5WFVRid6Xyg==}
@@ -1066,8 +1066,8 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
-  openid-client@6.8.4:
-    resolution: {integrity: sha512-QSw0BA08piujetEwfZsHoTrDpMEha7GDZDicQqVwX4u0ChCjefvjDB++TZ8BTg76UpwhzIQgdvvfgfl3HpCSAw==}
+  openid-client@6.8.5:
+    resolution: {integrity: sha512-jNGC/5wnTYwCcEUe2ss0IRUmVRQcgxM0A1nLb3eX/9llqNbMWOQd2xd+qDAgfVCpA5Qh96Y1cdnkfbva6+bSdA==}
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
@@ -1602,7 +1602,7 @@ snapshots:
       js-yaml: 5.2.3
       jsonpath-plus: 10.4.0
       node-fetch: 2.7.0
-      openid-client: 6.8.4
+      openid-client: 6.8.5
       rfc4648: 1.5.4
       socks-proxy-agent: 8.0.5
       stream-buffers: 3.0.3
@@ -2041,7 +2041,7 @@ snapshots:
 
   fastify-plugin@6.0.0: {}
 
-  fastify@5.11.2:
+  fastify@5.11.3:
     dependencies:
       '@fastify/ajv-compiler': 4.0.6
       '@fastify/error': 4.2.0
@@ -2050,7 +2050,7 @@ snapshots:
       abstract-logging: 2.0.1
       avvio: 9.3.0
       fast-json-stringify: 7.0.1
-      find-my-way: 9.7.0
+      find-my-way: 9.8.0
       light-my-request: 6.6.0
       pino: 10.3.1
       process-warning: 5.1.0
@@ -2067,7 +2067,7 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.4
 
-  find-my-way@9.7.0:
+  find-my-way@9.8.0:
     dependencies:
       fast-deep-equal: 3.1.3
       fast-querystring: 1.1.2
@@ -2233,7 +2233,7 @@ snapshots:
     dependencies:
       whatwg-url: 5.0.0
 
-  oauth4webapi@3.8.6: {}
+  oauth4webapi@3.8.7: {}
 
   obug@2.1.3: {}
 
@@ -2243,10 +2243,10 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openid-client@6.8.4:
+  openid-client@6.8.5:
     dependencies:
       jose: 6.2.8
-      oauth4webapi: 3.8.6
+      oauth4webapi: 3.8.7
 
   pathe@2.0.3: {}
 
